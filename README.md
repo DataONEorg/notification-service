@@ -28,7 +28,8 @@ This is a java application, built using the Maven build tool.
 
 ## Usage Example
 
-TBD
+> NOTE: this web application uses version 5 of the Java Servlet Specification, which is supported
+> only by Tomcat version 10 or later.
 
 ## License
 ```
