@@ -1,0 +1,21 @@
+Configuration:
+  status: warn
+
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "dataone-indexer %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"
+
+  Loggers:
+    Root:
+      level: debug
+      AppenderRef:
+        ref: Console
+    Logger:
+      name: org.jboss
+      level: error
+      additivity: false
+      AppenderRef:
+        ref: Console
