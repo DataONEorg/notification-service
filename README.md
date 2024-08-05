@@ -31,6 +31,30 @@ This is a java application, built using the Maven build tool.
 > NOTE: this web application uses version 5 of the Java Servlet Specification, which is supported
 > only by Tomcat version 10 or later.
 
+build with maven and copy the war file to your tomcat webapps directory
+```shell
+$ mvn clean package  [ -DskipTests ]
+# [...lots of maven output]
+
+$ cp ./target/notifications.war $TOMCAT_HOME/webapps
+```
+...and restart Tomcat.
+
+Example API interactions, using curl:
+```shell
+# Get a list of subscriptions for user authenticated with jwt $TOKEN:
+#
+$ curl --request GET "http://localhost:8080/notifications/datasets" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
+# Subscribe user authenticated with jwt $TOKEN, to update notifications for
+# the dataset identified by {pid}
+#
+$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+```
+
+
 ## License
 ```
 Copyright [2024] [Regents of the University of California]

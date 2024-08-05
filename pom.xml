@@ -29,11 +29,11 @@
             <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <version>4.1.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jakarta.enterprise</groupId>-->
+<!--            <artifactId>jakarta.enterprise.cdi-api</artifactId>-->
+<!--            <version>4.1.0</version>-->
+<!--        </dependency>-->
         <!-- need the jersey (eclipse) implementation, since Tomcat 10 is not fully compliant -->
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
