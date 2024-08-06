@@ -65,6 +65,7 @@ public class Resource {
         ResourceType resourceType = getResourceType(resource);
 
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
+        // TODO: do we need to verify that subject still has access to all subscribed resources?
 
         NsRecord response = new NsRecord(subject, resourceType, pids);
 
@@ -103,9 +104,7 @@ public class Resource {
 
         authProvider.authorize(subject, resourceType, List.of(pid));
 
-        dataProvider.addSubscription(subject, resourceType, pid);
-
-        NsRecord response = new NsRecord(subject, resourceType, List.of(pid));
+        NsRecord response = dataProvider.addSubscription(subject, resourceType, pid);
 
         return response;
     }

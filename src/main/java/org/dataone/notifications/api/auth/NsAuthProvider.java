@@ -53,15 +53,15 @@ public class NsAuthProvider implements AuthProvider {
     @Override
     public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids) throws NotAuthorizedException {
 
-        log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject,
-                  resourceType, pids.toString());
-
         if (isBlank(subject)) {
             throw new NotAuthorizedException("Missing Subject");
         }
         if (pids == null || pids.isEmpty()) {
             throw new NotFoundException("Missing pid(s)");
         }
+        log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject,
+                  resourceType, pids.toString());
+
         // Automatically de-duplicates the list of PIDs
         Set<String> authPidSet = new HashSet<>(pids);
 

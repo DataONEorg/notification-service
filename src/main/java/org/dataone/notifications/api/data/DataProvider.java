@@ -26,30 +26,7 @@ public interface DataProvider {
      * @param subject the subject of the user
      * @param resourceType the type of resource
      * @param pid the pid of the resource to which the user is subscribed
+     * @return the NsRecord containing the successful subscription details
      */
-    void addSubscription(String subject, ResourceType resourceType, String pid);
-
-    /**
-     * Remove a subscription for a given subject and resource type.
-     *
-     * @param subject the subject of the user
-     * @param resourceType the type of resource
-     * @param pid the pid of the resource to which the user is subscribed
-     */
-    void removeSubscription(String subject, ResourceType resourceType, String pid);
-
-    /**
-     * Remove all subscriptions for a given subject and resource type.
-     *
-     * @param subject the subject of the user
-     * @param resourceType the type of resource
-     */
-    void removeAllSubscriptions(String subject, ResourceType resourceType);
-
-    /**
-     * Remove all subscriptions for a given subject.
-     *
-     * @param subject the subject of the user
-     */
-    void removeAllSubscriptions(String subject);
+    NsRecord addSubscription(String subject, ResourceType resourceType, String pid);
 }

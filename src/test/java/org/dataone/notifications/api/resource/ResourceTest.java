@@ -60,6 +60,8 @@ class ResourceTest {
             .thenReturn(EXPECTED_PID_LIST);
         doThrow(new NotAuthorizedException("Access Denied"))
             .when(mockDataProvider).addSubscription(null, ResourceType.DATASETS, EXPECTED_PID);
+        when(mockDataProvider.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE, EXPECTED_PID))
+            .thenReturn(EXPECTED_PARAMS);
 
         resource = new Resource(mockAuthProvider, mockDataProvider);
     }
@@ -85,8 +87,8 @@ class ResourceTest {
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS.resourceType(), result.resourceType());
-        assertEquals(1, result.resourceIds().size());
-        assertEquals(EXPECTED_PID, result.resourceIds().get(0));
+        assertEquals(4, result.resourceIds().size());
+        assertTrue(result.resourceIds().contains(EXPECTED_PID));
     }
 
     @Test
