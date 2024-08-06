@@ -1,9 +1,15 @@
 package org.dataone.notifications.api.auth;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.security.auth.message.AuthException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dataone.notifications.api.resource.ResourceType;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.apache.logging.log4j.util.Strings.isBlank;
 
@@ -17,31 +23,53 @@ public class NsAuthProvider implements AuthProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
 
-    private NsAuthProvider() {}
+    public NsAuthProvider() {}
 
     @Override
-    public String authenticate(String token) {
+    public String authenticate(String authHeader) throws NotAuthorizedException {
 
-        log.debug("Authenticating token: {}[redacted]{}", token.substring(0, 4),
-                  token.substring(token.length() - 5));
+        String token;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+            log.debug(
+                "Authenticating token: {}[redacted]{}", token.substring(0, 3),
+                token.substring(token.length() - 3));
+        } else {
+            log.debug("No Auth token found - throwing NotAuthorizedException");
+            throw new NotAuthorizedException("Bearer");
+        }
 
-        // TODO: HARD-CODED EXAMPLE! get subject from auth call to d1_portal
-        String authedSubject = "https://orcid.org/0000-2222-4444-999X";
+        // TODO: HARD-CODED EXAMPLE! get subject from auth call to d1_portal ///////////////////////
+        String authSubject = "https://orcid.org/0000-2222-4444-999X";
+        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
 
-        return authedSubject;
+        if (isBlank(authSubject)) {
+            log.info("Subject not authenticated - throwing NotAuthorizedException");
+            throw new NotAuthorizedException("Bearer");
+        }
+        return authSubject;
     }
 
     @Override
-    public void authorize(String subject, String pid) throws AuthException {
+    public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids) throws NotAuthorizedException {
 
-        log.debug("Authorizing subject: {} for pid: {}", subject, pid);
+        log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject,
+                  resourceType, pids.toString());
 
-        if (isBlank(subject) || isBlank(pid)) {
-            throw new AuthException("Missing data. Subject: " + subject + " pid: " + pid);
+        if (isBlank(subject)) {
+            throw new NotAuthorizedException("Missing Subject");
         }
-        // TODO: HARD-CODED EXAMPLE! get subject from auth call to d1_portal
-        if (!subject.equals("https://orcid.org/0000-2222-4444-999X")) {
-            throw new AuthException("Unauthorized user: " + subject);
+        if (pids == null || pids.isEmpty()) {
+            throw new NotFoundException("Missing pid(s)");
         }
+        // Automatically de-duplicates the list of PIDs
+        Set<String> authPidSet = new HashSet<>(pids);
+
+        // TODO: HARD-CODED EXAMPLE! Assume the subject has access to all requested resources. /////
+        //
+        // TODO: Ask metacat API if subject has access to requested resources. bulk API call avail?
+
+        return authPidSet;
+        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
     }
 }

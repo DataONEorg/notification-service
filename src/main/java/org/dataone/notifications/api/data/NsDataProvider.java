@@ -3,6 +3,7 @@ package org.dataone.notifications.api.data;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dataone.notifications.api.resource.NsRecord;
 import org.dataone.notifications.api.resource.ResourceType;
 
 import java.util.ArrayList;
@@ -21,12 +22,13 @@ public class NsDataProvider implements DataProvider {
 
         log.debug("Get subscriptions to {} for {}", resourceType, subject);
 
-//      // TODO: HARD-CODED EXAMPLE! get pids from database instead...
+//      // TODO: HARD-CODED EXAMPLE! get pids from database instead... /////////////////////////////
         List<String> pids = new ArrayList<>();
         pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50251");
         pids.add("urn:uuid:1add8838-861b-4afb-af00-7b2ecca585bf");
         pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50233");
         pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50255");
+        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
 
         return pids;
     }
@@ -35,7 +37,8 @@ public class NsDataProvider implements DataProvider {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
 
-//      // TODO: HARD-CODED EXAMPLE! save to database instead...
+//      // TODO: HARD-CODED EXAMPLE! save to database instead... ///////////////////////////////////
+        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
     }
 
     public void removeSubscription(String subject, ResourceType resourceType, String pid) {

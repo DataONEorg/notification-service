@@ -1,13 +1,13 @@
 package org.dataone.notifications.api.resource;
 
 import jakarta.inject.Inject;
-import jakarta.security.auth.message.AuthException;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.Path;
@@ -19,8 +19,6 @@ import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.api.data.DataProvider;
 
 import java.util.List;
-
-import static org.apache.logging.log4j.util.Strings.isBlank;
 
 /**
  * A class that provides CRUD operations for notification subscriptions for a given subject (user).
@@ -62,9 +60,9 @@ public class Resource {
 
         log.debug("GET /{}", resource);
 
-        String subject = getSubject(authHeader);
+        String subject = authProvider.authenticate(authHeader);
 
-        ResourceType resourceType = ResourceType.valueOf(resource.toUpperCase());
+        ResourceType resourceType = getResourceType(resource);
 
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
 
@@ -91,15 +89,19 @@ public class Resource {
     public Record subscribe(
         @HeaderParam("Authorization") String authHeader,
         @NotNull @PathParam("resource") String resource,
-        @NotNull @PathParam("pid") String pid) throws NotAuthorizedException, AuthException {
+        @NotNull @PathParam("pid") String pid) throws NotAuthorizedException, NotFoundException {
 
         log.debug("POST /{}/{}", resource, pid);
 
-        String subject = getSubject(authHeader);
+        if (pid == null) {
+            log.error("Missing pid");
+            throw new NotFoundException("Missing pid");
+        }
+        String subject = authProvider.authenticate(authHeader);
 
-        ResourceType resourceType = ResourceType.valueOf(resource.toUpperCase());
+        ResourceType resourceType = getResourceType(resource);
 
-        authProvider.authorize(subject, pid);
+        authProvider.authorize(subject, resourceType, List.of(pid));
 
         dataProvider.addSubscription(subject, resourceType, pid);
 
@@ -108,21 +110,18 @@ public class Resource {
         return response;
     }
 
-    private String getSubject(String authHeader) throws NotAuthorizedException {
+    private ResourceType getResourceType(String requestedResource) {
 
-        String token;
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        } else {
-            log.debug("No Auth token found - throwing NotAuthorizedException");
-            throw new NotAuthorizedException("Bearer");
+        if (requestedResource == null) {
+            log.error("Missing resource type");
+            throw new NotFoundException("Missing resource type");
         }
-        String subject = authProvider.authenticate(token);
 
-        if (isBlank(subject)) {
-            log.info("Subject not authenticated - throwing NotAuthorizedException");
-            throw new NotAuthorizedException("Bearer");
+        try {
+            return ResourceType.valueOf(requestedResource.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid resource type: {}", requestedResource);
+            throw new NotFoundException("Invalid resource type: " + requestedResource);
         }
-        return subject;
     }
 }

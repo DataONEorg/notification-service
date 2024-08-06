@@ -1,6 +1,7 @@
 package org.dataone.notifications.api.data;
 
 
+import org.dataone.notifications.api.resource.NsRecord;
 import org.dataone.notifications.api.resource.ResourceType;
 
 import java.util.List;
