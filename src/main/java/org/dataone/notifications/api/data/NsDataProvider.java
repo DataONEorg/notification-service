@@ -7,8 +7,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.resource.NsRecord;
 import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.util.DatabaseUtils;
 import org.dataone.notifications.util.StringUtils;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +41,24 @@ public class NsDataProvider implements DataProvider {
         pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50233");
         pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50255");
         // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
+
+        String sql = "SELECT pid FROM subscriptions WHERE resource=? AND subject=?";
+
+        try (Connection connection = DatabaseUtils.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, resourceType.toString());
+            statement.setString(2, subject);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    pids.add(resultSet.getString("pid"));
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Database error: {}", e.getMessage());
+            throw new RuntimeException("Database error", e);
+        }
 
         return pids;
     }

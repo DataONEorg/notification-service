@@ -1,0 +1,4 @@
+database:
+  url: jdbc:postgresql://localhost:5432/notifications
+  user: notifications
+  password: notifications
