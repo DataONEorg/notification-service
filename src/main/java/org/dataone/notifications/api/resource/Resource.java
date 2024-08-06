@@ -1,141 +1,127 @@
 package org.dataone.notifications.api.resource;
 
+import jakarta.inject.Inject;
 import jakarta.security.auth.message.AuthException;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dataone.notifications.api.data.DataAccess;
+import org.dataone.notifications.api.auth.AuthProvider;
+import org.dataone.notifications.api.data.DataProvider;
 
 import java.util.List;
 
 import static org.apache.logging.log4j.util.Strings.isBlank;
 
+/**
+ * A class that provides CRUD operations for notification subscriptions for a given subject (user).
+ */
+@SuppressWarnings("UnnecessaryLocalVariable")
 @Path("/{resource}")
 public class Resource {
 
-    private final Logger LOGGER = LogManager.getLogger(this.getClass().getName());
+    private final Logger log = LogManager.getLogger(this.getClass().getName());
+    private final AuthProvider authProvider;
+    private final DataProvider dataProvider;
+
+    @Inject
+    public Resource(AuthProvider authProvider, DataProvider dataProvider) {
+        log.debug("@Injected AuthService & DataProvider into Resource");
+        this.authProvider = authProvider;
+        this.dataProvider = dataProvider;
+    }
 
     /**
-     * GET pids of all existing notification subscriptions for this subject (user). Example:
-     * $ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8080/notifications/datasets
-     *
-     * @param resource the resource being queried (eg "datasets"). Automatically populated
+     * GET pids of all existing notification subscriptions for this subject (user).
+     * Example:
+     * {@code
+     * $ curl -X GET http://localhost:8080/notifications/datasets \
+     *        -H "Authorization: Bearer $TOKEN" \
+     *        -H "Content-Type: application/json"
+     * }
+     * @param resource the resource being queried (eg "datasets"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
-     *              defined in <code>@Produces</code>
+     *     defined in <code>@Produces</code>
      */
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Record getSubscriptions(@PathParam("resource") String resource) {
+    public Record getSubscriptions(
+        @HeaderParam("Authorization") String authHeader,
+        @PathParam("resource") String resource)
+        throws NotAuthorizedException {
 
-        LOGGER.debug("GET /{}", resource);
-        String subject;
-        try {
-            subject = getSubject();
-        } catch (AuthException e) {
-            return new HttpErrorRecord(Status.UNAUTHORIZED, "Not authorized");
-        }
+        log.debug("GET /{}", resource);
+
+        String subject = getSubject(authHeader);
 
         ResourceType resourceType = ResourceType.valueOf(resource.toUpperCase());
 
-        List<String> pids = DataAccess.getInstance().getSubscribedPids(subject, resourceType);
+        List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
 
-        NsRecord response =  new NsRecord(subject, resourceType, pids);
+        NsRecord response = new NsRecord(subject, resourceType, pids);
 
         return response;
     }
 
-//    @GET
-//    @Consumes(MediaType.APPLICATION_JSON)
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public Record getSubscriptions(@PathParam("resource") ResourceType resource) {
-//
-//        LOGGER.debug("GET /{}", resource);
-//        String subject;
-//        try {
-//            subject = getSubject();
-//        } catch (AuthException e) {
-//            return new HttpErrorRecord(Status.UNAUTHORIZED, "Not authorized");
-//        }
-//
-////      // TODO: HARD-CODED EXAMPLE! get from database instead
-//        NsRecord response =
-//            new NsRecord(subject, resource, getSubscribedPids(subject, resource));
-//
-//        return response;
-//    }
+    /**
+     * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
+     * Example:
+     * $ curl -X POST "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ad325c10e9" \
+     *        -H "Authorization: Bearer $TOKEN" \
+     *        -H "Content-Type: application/json"
+     *
+     * @param resource the resource type (eg "datasets"). Automatically populated
+     * @return Record containing name-value pairs that will be automatically converted to the type
+     *              defined in <code>@Produces</code>
+     */
+    @POST
+    @Path("/{pid}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Record subscribe(
+        @HeaderParam("Authorization") String authHeader,
+        @NotNull @PathParam("resource") String resource,
+        @NotNull @PathParam("pid") String pid) throws NotAuthorizedException, AuthException {
 
-//    /**
-//     * GET pids of all existing notification subscriptions for this subject (user). Example:
-//     * $ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8080/notifications/datasets
-//     *
-//     * @param resource the resource type (eg "datasets"). Automatically populated
-//     * @param body the NsRecord request body. Automatically populated by converting from the
-//     *            type defined in <code>@Consumes</code>
-//     * @return Record containing name-value pairs that will be automatically converted to the type
-//     *              defined in <code>@Produces</code>
-//     */
-//    @POST
-//    @Path("/{pid}")
-//    @Consumes(MediaType.APPLICATION_JSON)
-////    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public Record subscribe(
-//        @NotNull @PathParam("resource") ResourceType resource,
-//        @NotNull @PathParam("pid") String pid,
-//        @NotNull NsRecord body) {
-//
-//        List<String> targetPids;
-//
-//        if (body != null) {
-//            targetPids = body.resourceIds();
-//        } else {
-//            targetPids = new ArrayList<>(1);
-//        }
-//        if (!isBlank(pid)) {
-//            targetPids.add(pid);
-//        }
-//        if (targetPids.isEmpty()) {
-//            return new HttpErrorRecord(Status.BAD_REQUEST,
-//                                       "At least one pid must be provided");
-//        }
-//
-//
-//        LOGGER.debug("POST /{}/{} with subject={}", resource.toString(), targetPids, subject);
-//
-//
-//
-//        String subject;
-//        try {
-//            subject = getSubject();
-//        } catch (AuthException e) {
-//            return new HttpErrorRecord(Status.UNAUTHORIZED, "Not authorized");
-//        }
-//
-////        // TODO: HARD-CODED EXAMPLE!
-////        //       1. Check this subject has read access to the targetPid
-////        //       2. subscribe in DB
-//        NsRecord response = new NsRecord(subject, resource.toString(),
-//                                                 new String[]{ targetPid });
-//
-//        return response;
-//    }
+        log.debug("POST /{}/{}", resource, pid);
 
-    private String getSubject() throws AuthException {
+        String subject = getSubject(authHeader);
 
-//      // TODO: HARD-CODED EXAMPLE! get subject from authenticated jwt token...
-        String subject = "https://orcid.org/0000-2222-4444-999X";
+        ResourceType resourceType = ResourceType.valueOf(resource.toUpperCase());
+
+        authProvider.authorize(subject, pid);
+
+        dataProvider.addSubscription(subject, resourceType, pid);
+
+        NsRecord response = new NsRecord(subject, resourceType, List.of(pid));
+
+        return response;
+    }
+
+    private String getSubject(String authHeader) throws NotAuthorizedException {
+
+        String token;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else {
+            log.debug("No Auth token found - throwing NotAuthorizedException");
+            throw new NotAuthorizedException("Bearer");
+        }
+        String subject = authProvider.authenticate(token);
 
         if (isBlank(subject)) {
-            LOGGER.info("Subject not authorized - throwing AuthException");
-            throw new AuthException("Subject not authorized") ;
+            log.info("Subject not authenticated - throwing NotAuthorizedException");
+            throw new NotAuthorizedException("Bearer");
         }
         return subject;
     }

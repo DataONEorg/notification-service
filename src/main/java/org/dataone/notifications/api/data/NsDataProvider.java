@@ -1,5 +1,6 @@
 package org.dataone.notifications.api.data;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
@@ -7,27 +8,18 @@ import org.dataone.notifications.api.resource.ResourceType;
 import java.util.ArrayList;
 import java.util.List;
 
-//class that queries the database for the requested data
-public class DataAccess {
-    private static DataAccess instance = null;
-    private final Logger LOGGER = LogManager.getLogger(this.getClass().getName());
+/**
+ * A class that provides access to the data store for the notifications service.
+ * <code>@ApplicationScoped</code> means this is a singleton bean.
+ */
+@ApplicationScoped
+public class NsDataProvider implements DataProvider {
 
-    private DataAccess() {}
+    private final Logger log = LogManager.getLogger(this.getClass().getName());
 
-    // constructor with double locking for singleton pattern
-    public static DataAccess getInstance() {
-        if (instance == null) {
-            synchronized (DataAccess.class) {
-                if (instance == null) {
-                    instance = new DataAccess();
-                }
-            }
-        }
-        return instance;
-    }
+    public List<String> getSubscriptions(String subject, ResourceType resourceType) {
 
-    public List<String> getSubscribedPids(String subject, ResourceType resourceType) {
-
+        log.debug("Get subscriptions to {} for {}", resourceType, subject);
 
 //      // TODO: HARD-CODED EXAMPLE! get pids from database instead...
         List<String> pids = new ArrayList<>();
@@ -41,17 +33,20 @@ public class DataAccess {
 
     public void addSubscription(String subject, ResourceType resourceType, String pid) {
 
+        log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
+
+//      // TODO: HARD-CODED EXAMPLE! save to database instead...
     }
 
     public void removeSubscription(String subject, ResourceType resourceType, String pid) {
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     public void removeAllSubscriptions(String subject, ResourceType resourceType) {
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     public void removeAllSubscriptions(String subject) {
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

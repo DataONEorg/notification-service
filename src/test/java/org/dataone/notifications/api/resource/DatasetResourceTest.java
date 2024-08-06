@@ -1,5 +1,8 @@
 package org.dataone.notifications.api.resource;
 
+import jakarta.inject.Inject;
+import org.dataone.notifications.api.auth.AuthProvider;
+import org.dataone.notifications.api.data.DataProvider;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.util.ArrayList;
@@ -10,9 +13,14 @@ class DatasetResourceTest {
     private static final String SUBJECT = "https://orcid.org/0000-2222-4444-999X";
     private static final String PID = "urn:mypid:12345-67890";
     private static final List<String> PID_LIST = new ArrayList<>();
-    private static final NsRecord EXPECETD_JSON =
+    private static final NsRecord EXPECTED_JSON =
         new NsRecord(SUBJECT, ResourceType.DATASETS, PID_LIST);
-    Resource resource = new Resource();
+    Resource resource;
+
+    @Inject
+    public DatasetResourceTest(AuthProvider authProvider, DataProvider dataProvider) {
+        resource = new Resource(authProvider, dataProvider);
+    }
 
     @BeforeAll
     static void setUp() {
@@ -28,7 +36,7 @@ class DatasetResourceTest {
 //        NsRecord result =
 //            (NsRecord) resource.getSubscriptions(ResourceType.DATASETS);
 //        assertNotNull(result);
-//        assertEquals(EXPECETD_JSON.subject(), result.subject());
+//        assertEquals(EXPECTED_JSON.subject(), result.subject());
 //        assertEquals(ResourceType.DATASETS, result.resourceType());
 //        assertEquals(4, result.resourceIds().size());
 //        assertTrue(result.resourceIds().get(0).contains("urn:uuid:0"));
@@ -42,7 +50,7 @@ class DatasetResourceTest {
 //        NsRecord result =
 //            (NsRecord) resource.subscribe(ResourceType.DATASETS);
 //        assertNotNull(result);
-//        assertEquals(EXPECETD_JSON.subject(), result.subject());
+//        assertEquals(EXPECTED_JSON.subject(), result.subject());
 //        assertEquals(RESOURCE_TYPE, result.resourceType());
 //        assertEquals(1, result.resourceIds().length);
 //        assertEquals(PID, result.resourceIds()[0]);
