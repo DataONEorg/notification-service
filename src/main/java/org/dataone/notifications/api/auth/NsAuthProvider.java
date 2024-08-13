@@ -40,7 +40,7 @@ public class NsAuthProvider implements AuthProvider {
         }
 
         // TODO: HARD-CODED EXAMPLE! get subject from auth call to d1_portal ///////////////////////
-        String authSubject = "https://orcid.org/0000-2222-4444-999X";
+        String authSubject = "https://orcid.org/0000-1234-5678-999X";
         // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
 
         if (isBlank(authSubject)) {

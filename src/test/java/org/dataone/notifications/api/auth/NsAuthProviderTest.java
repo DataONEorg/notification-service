@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NsAuthProviderTest {
 
-    private static final String EXPECTED_SUBJECT = "https://orcid.org/0000-2222-4444-999X";
+    private static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
     private NsAuthProvider authProvider;
 
     @BeforeEach
@@ -39,7 +39,7 @@ class NsAuthProviderTest {
         Set<String> expectedPids = Set.of("pid1", "pid2", "pid3");
 
         Set<String> actualPids =
-            authProvider.authorize(EXPECTED_SUBJECT, ResourceType.DATASETS, requested_pids);
+            authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasets, requested_pids);
         assertEquals(expectedPids, actualPids);
     }
 
@@ -49,14 +49,14 @@ class NsAuthProviderTest {
         List<String> requested_pids = List.of("pid1", "pid2");
         assertThrows(
             NotAuthorizedException.class,
-            () -> authProvider.authorize(subject, ResourceType.DATASETS, requested_pids));
+            () -> authProvider.authorize(subject, ResourceType.datasets, requested_pids));
     }
 
     @Test
     void authorizeNullPids() {
         assertThrows(
             NotFoundException.class,
-            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.DATASETS, null));
+            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasets, null));
     }
 
     @Test
@@ -64,6 +64,6 @@ class NsAuthProviderTest {
         List<String> empty_pids_list = List.of();
         assertThrows(
             NotFoundException.class,
-            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.DATASETS, empty_pids_list));
+            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasets, empty_pids_list));
     }
 }

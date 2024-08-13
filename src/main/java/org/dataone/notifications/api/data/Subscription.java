@@ -13,7 +13,7 @@ import java.util.List;
  * @param subject The unique identifier for this user (e.g. an orcid or DN), as stored in the
  *                account service
  * @param resourceType Denotes the type of resource the user wants to monitor for changes (e.g. a
- *                    dataset, citations, etc)
+ *                    dataset, citations, etc). Lowercase enum value
  * @param resourceIds An array of zero or more <code>pids</code> of the given
  *                  <code>resourceType</code>, to which this <code>subject</code> is subscribed
  */

@@ -10,16 +10,7 @@ import java.util.Locale;
  * }
  */
 public enum ResourceType {
-    DATASETS,
-    CITATIONS;
+    datasets,
+    citations;
     //...add more resource names as needed...
-
-    /**
-     * Returns the name of the resource type in lowercase.
-     *
-     * @return the name of the resource type in lowercase
-     */
-    public String toStringLower() {
-        return this.toString().toLowerCase(Locale.ROOT);
-    }
 }

@@ -28,4 +28,15 @@ public interface DataProvider {
      * @return the Subscription containing the successful subscription details
      */
     Subscription addSubscription(String subject, ResourceType resourceType, String pid);
+
+    /**
+     * Delete one or more subscriptions for a given subject and resource type.
+     *
+     * @param subject the subject of the user
+     * @param resourceType the type of resource
+     * @param pidList a List of the resource pids to which the user is already subscribed
+     * @return a Subscription object containing the successful unsubscribe details
+     */
+    Subscription deleteSubscriptions(
+        String subject, ResourceType resourceType, List<String> pidList);
 }

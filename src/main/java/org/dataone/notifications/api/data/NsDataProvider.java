@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,8 +37,8 @@ public class NsDataProvider implements DataProvider {
     public List<String> getSubscriptions(String subject, ResourceType resourceType)
         throws NotAuthorizedException, NotFoundException {
 
+        log.debug("Get subscriptions to {} for {}", resourceType, subject);
         validateInput(subject, resourceType);
-        log.debug("Get subscriptions to {} for {}", resourceType.toStringLower(), subject);
 
         List<String> pids = new ArrayList<>();
 
@@ -45,7 +46,7 @@ public class NsDataProvider implements DataProvider {
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, resourceType.toStringLower());
+            statement.setString(1, resourceType.toString());
             statement.setString(2, subject);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
@@ -53,8 +54,8 @@ public class NsDataProvider implements DataProvider {
                 }
             }
         } catch (SQLException e) {
-            log.error("Database error: {}", e.getMessage());
-            throw new RuntimeException("Database error", e);
+            log.error("Database error: {} retrieving subscriptions", e.getMessage());
+            throw new RuntimeException("Database error retrieving subscriptions", e);
         }
         return pids;
     }
@@ -62,14 +63,51 @@ public class NsDataProvider implements DataProvider {
     public Subscription addSubscription(String subject, ResourceType resourceType, String pid) {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
-
         validateInput(subject, resourceType, pid);
 
-//      // TODO: HARD-CODED EXAMPLE! save to database instead... ///////////////////////////////////
-        Subscription result = new Subscription(subject, resourceType, List.of(pid));
-        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
+        String sql = "INSERT INTO subscriptions (resource_type, subject, pid) VALUES (?, ?, ?)";
 
-        return result;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, resourceType.toString());
+            statement.setString(2, subject);
+            statement.setString(3, pid);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Database error: {} adding subscription", e.getMessage());
+            throw new RuntimeException("Database error adding subscription", e);
+        }
+        return new Subscription(subject, resourceType, List.of(pid));
+    }
+
+    public Subscription deleteSubscriptions(
+        String subject, ResourceType resourceType, List<String> pidList) {
+
+        log.debug("Delete {} subscriptions for {}, to pids {}", resourceType, subject, pidList);
+        validateInput(subject, resourceType);
+
+        List<String> deletedPids = new ArrayList<>();
+
+        String sql = "DELETE FROM subscriptions WHERE resource_type=? AND subject=? AND pid IN ("
+            + String.join(",", Collections.nCopies(pidList.size(), "?")) + ") RETURNING pid";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, resourceType.toString());
+            statement.setString(2, subject);
+            for (int i = 0; i < pidList.size(); i++) {
+                statement.setString(3 + i, pidList.get(i));
+            }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    deletedPids.add(resultSet.getString("pid"));
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Database error: {} deleting subscriptions", e.getMessage());
+            throw new RuntimeException("Database error deleting subscriptions", e);
+        }
+        return new Subscription(subject, resourceType, deletedPids);
     }
 
     private void validateInput(String subject, ResourceType resourceType) {

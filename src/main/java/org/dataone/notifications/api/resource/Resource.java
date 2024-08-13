@@ -3,6 +3,7 @@ package org.dataone.notifications.api.resource;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
@@ -40,13 +41,50 @@ public class Resource {
     }
 
     /**
-     * GET pids of all existing notification subscriptions for this subject (user).
+     * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
      * Example:
-     * {@code
+     * <pre>
+     * $ curl -X POST "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ac10e9" \
+     * -H "Authorization: Bearer $TOKEN" \
+     * -H "Content-Type: application/json"
+     * </pre>
+     *
+     * @param resource the resource type (eg "datasets"). Automatically populated
+     * @return Record containing name-value pairs that will be automatically converted to the type
+     *     defined in <code>@Produces</code>
+     */
+    @POST
+    @Path("/{pid}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Record subscribe(
+        @HeaderParam("Authorization") String authHeader,
+        @NotNull @PathParam("resource") String resource, @NotNull @PathParam("pid") String pid)
+        throws NotAuthorizedException, NotFoundException {
+
+        log.debug("POST /{}/{}", resource, pid);
+
+        if (pid == null) {
+            log.error("Missing pid");
+            throw new NotFoundException("Missing pid");
+        }
+        String subject = authProvider.authenticate(authHeader);
+        ResourceType resourceType = getResourceType(resource);
+        authProvider.authorize(subject, resourceType, List.of(pid));
+
+        Subscription response = dataProvider.addSubscription(subject, resourceType, pid);
+
+        return response;
+    }
+
+    /**
+     * GET pids of all existing notification subscriptions for this subject (user). Example:
+     * <pre>
      * $ curl -X GET http://localhost:8080/notifications/datasets \
-     *        -H "Authorization: Bearer $TOKEN" \
-     *        -H "Content-Type: application/json"
-     * }
+     * -H "Authorization: Bearer $TOKEN" \
+     * -H "Content-Type: application/json"
+     * </pre>
+     *
      * @param resource the resource being queried (eg "datasets"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in <code>@Produces</code>
@@ -55,14 +93,12 @@ public class Resource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Record getSubscriptions(
-        @HeaderParam("Authorization") String authHeader,
-        @PathParam("resource") String resource)
+        @HeaderParam("Authorization") String authHeader, @PathParam("resource") String resource)
         throws NotAuthorizedException {
 
         log.debug("GET /{}", resource);
 
         String subject = authProvider.authenticate(authHeader);
-
         ResourceType resourceType = getResourceType(resource);
 
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
@@ -74,41 +110,43 @@ public class Resource {
     }
 
     /**
-     * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
+     * Unsubscribe the authenticated subject (user) from the given resource (identified by its pid).
      * Example:
-     * $ curl -X POST "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ad325c10e9" \
-     *        -H "Authorization: Bearer $TOKEN" \
-     *        -H "Content-Type: application/json"
+     * <pre>
+     * $ curl -X DELETE "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ad3e9" \
+     * -H "Authorization: Bearer $TOKEN" \
+     * -H "Content-Type: application/json"
+     * </pre>
      *
      * @param resource the resource type (eg "datasets"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
-     *              defined in <code>@Produces</code>
+     *     defined in <code>@Produces</code>
      */
-    @POST
+    @DELETE
     @Path("/{pid}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Record subscribe(
+    public Record unsubscribe(
         @HeaderParam("Authorization") String authHeader,
-        @NotNull @PathParam("resource") String resource,
-        @NotNull @PathParam("pid") String pid) throws NotAuthorizedException, NotFoundException {
+        @NotNull @PathParam("resource") String resource, @NotNull @PathParam("pid") String pid)
+        throws NotAuthorizedException, NotFoundException {
 
-        log.debug("POST /{}/{}", resource, pid);
+        log.debug("DELETE /{}/{}", resource, pid);
 
         if (pid == null) {
             log.error("Missing pid");
             throw new NotFoundException("Missing pid");
         }
         String subject = authProvider.authenticate(authHeader);
-
         ResourceType resourceType = getResourceType(resource);
-
         authProvider.authorize(subject, resourceType, List.of(pid));
 
-        Subscription response = dataProvider.addSubscription(subject, resourceType, pid);
+        Subscription response =
+            dataProvider.deleteSubscriptions(subject, resourceType, List.of(pid));
 
         return response;
     }
+
 
     private ResourceType getResourceType(String requestedResource) {
 
@@ -118,7 +156,7 @@ public class Resource {
         }
 
         try {
-            return ResourceType.valueOf(requestedResource.toUpperCase());
+            return ResourceType.valueOf(requestedResource);
         } catch (IllegalArgumentException e) {
             log.error("Invalid resource type: {}", requestedResource);
             throw new NotFoundException("Invalid resource type: " + requestedResource);
