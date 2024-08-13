@@ -17,6 +17,11 @@ class StringUtilsTest {
     }
 
     @Test
+    void isBlankWithNewlineOnly() {
+        assertTrue(StringUtils.isBlank("\n"));
+    }
+
+    @Test
     void isBlankWithSpacesString() {
         assertTrue(StringUtils.isBlank("    "));
     }
