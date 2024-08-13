@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.api.data.DataProvider;
+import org.dataone.notifications.api.data.Subscription;
 
 import java.util.List;
 
@@ -67,7 +68,7 @@ public class Resource {
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
         // TODO: do we need to verify that subject still has access to all subscribed resources?
 
-        NsRecord response = new NsRecord(subject, resourceType, pids);
+        Subscription response = new Subscription(subject, resourceType, pids);
 
         return response;
     }
@@ -104,7 +105,7 @@ public class Resource {
 
         authProvider.authorize(subject, resourceType, List.of(pid));
 
-        NsRecord response = dataProvider.addSubscription(subject, resourceType, pid);
+        Subscription response = dataProvider.addSubscription(subject, resourceType, pid);
 
         return response;
     }

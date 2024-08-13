@@ -1,13 +1,12 @@
 package org.dataone.notifications.api.data;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dataone.notifications.api.resource.NsRecord;
 import org.dataone.notifications.api.resource.ResourceType;
-import org.dataone.notifications.util.DatabaseUtils;
 import org.dataone.notifications.util.StringUtils;
 
 import java.sql.Connection;
@@ -25,31 +24,29 @@ import java.util.List;
 public class NsDataProvider implements DataProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
+    private final DataSource dataSource;
+
+
+    @Inject
+    public NsDataProvider(DataSource dataSource) {
+        log.debug("@Injected DataSource into NsDataProvider");
+        this.dataSource = dataSource;
+    }
 
     public List<String> getSubscriptions(String subject, ResourceType resourceType)
         throws NotAuthorizedException, NotFoundException {
 
-        log.debug("Get subscriptions to {} for {}", resourceType, subject);
-
         validateInput(subject, resourceType);
+        log.debug("Get subscriptions to {} for {}", resourceType.toStringLower(), subject);
 
-        // TODO: HARD-CODED EXAMPLE! ///////////////////////////////////////////////////////////////
-        // TODO: get pids from database
         List<String> pids = new ArrayList<>();
-        pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50251");
-        pids.add("urn:uuid:1add8838-861b-4afb-af00-7b2ecca585bf");
-        pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50233");
-        pids.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50255");
-        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
 
-        String sql = "SELECT pid FROM subscriptions WHERE resource=? AND subject=?";
+        String sql = "SELECT pid FROM subscriptions WHERE resource_type=? AND subject=?";
 
-        try (Connection connection = DatabaseUtils.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, resourceType.toString());
+            statement.setString(1, resourceType.toStringLower());
             statement.setString(2, subject);
-
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     pids.add(resultSet.getString("pid"));
@@ -59,18 +56,17 @@ public class NsDataProvider implements DataProvider {
             log.error("Database error: {}", e.getMessage());
             throw new RuntimeException("Database error", e);
         }
-
         return pids;
     }
 
-    public NsRecord addSubscription(String subject, ResourceType resourceType, String pid) {
+    public Subscription addSubscription(String subject, ResourceType resourceType, String pid) {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
 
         validateInput(subject, resourceType, pid);
 
 //      // TODO: HARD-CODED EXAMPLE! save to database instead... ///////////////////////////////////
-        NsRecord result = new NsRecord(subject, resourceType, List.of(pid));
+        Subscription result = new Subscription(subject, resourceType, List.of(pid));
         // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
 
         return result;

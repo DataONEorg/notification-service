@@ -1,7 +1,6 @@
 package org.dataone.notifications.api.data;
 
 
-import org.dataone.notifications.api.resource.NsRecord;
 import org.dataone.notifications.api.resource.ResourceType;
 
 import java.util.List;
@@ -26,7 +25,7 @@ public interface DataProvider {
      * @param subject the subject of the user
      * @param resourceType the type of resource
      * @param pid the pid of the resource to which the user is subscribed
-     * @return the NsRecord containing the successful subscription details
+     * @return the Subscription containing the successful subscription details
      */
-    NsRecord addSubscription(String subject, ResourceType resourceType, String pid);
+    Subscription addSubscription(String subject, ResourceType resourceType, String pid);
 }

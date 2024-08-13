@@ -1,5 +1,6 @@
+## TEST properties
 database:
-  name: notifications
+  name: notifications_test_db
   version: 16.0
   jdbcUrl: jdbc:postgresql://localhost:5432/notifications
   driverClassName: org.postgresql.Driver

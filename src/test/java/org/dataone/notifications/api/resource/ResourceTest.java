@@ -4,6 +4,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.api.data.NsDataProvider;
+import org.dataone.notifications.api.data.Subscription;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,8 @@ class ResourceTest {
     private static final String EXPECTED_PID = "urn:mypid:12345-67890";
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
     private static final List<String> EXPECTED_PID_LIST = new ArrayList<>();
-    private static final NsRecord EXPECTED_PARAMS =
-        new NsRecord(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE, EXPECTED_PID_LIST);
+    private static final Subscription EXPECTED_PARAMS =
+        new Subscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE, EXPECTED_PID_LIST);
     private static final String VALID_AUTH_HEADER = "Bearer my-totally-valid-token";
     private static final String INVALID_AUTH_HEADER = "Bearer my-naughty-non-valid-token";
     private static Resource resource;
@@ -69,8 +70,8 @@ class ResourceTest {
     @Test
     void getSubscriptions() {
         // HAPPY PATH
-        NsRecord result = (NsRecord) resource.getSubscriptions(VALID_AUTH_HEADER,
-                                                               ResourceType.DATASETS.toString());
+        Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER,
+                                                                       ResourceType.DATASETS.toString());
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS.resourceType(), result.resourceType());
@@ -81,9 +82,9 @@ class ResourceTest {
 
     @Test
     void validSubscribe() {
-        NsRecord result =
-            (NsRecord) resource.subscribe(VALID_AUTH_HEADER, ResourceType.DATASETS.toString(),
-                                          EXPECTED_PID);
+        Subscription result =
+            (Subscription) resource.subscribe(VALID_AUTH_HEADER, ResourceType.DATASETS.toString(),
+                                              EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS.resourceType(), result.resourceType());
