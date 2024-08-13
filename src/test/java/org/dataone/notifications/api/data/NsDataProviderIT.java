@@ -12,26 +12,24 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NsDataProviderIT {
 
     public static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
     public static final String EXPECTED_PID = "pid1";
-    private NsDataProvider dataProvider;
     private static final Subscription EXPECTED_RECORD =
         new Subscription(EXPECTED_SUBJECT, ResourceType.datasets, List.of(EXPECTED_PID));
-
     private static PostgreSQLContainer<?> pg;
+    private NsDataProvider dataProvider;
 
     @BeforeAll
     static void oneTimeSetUp() {
         pg = TestUtils.getTestDb();
-    }
-
-    @BeforeEach
-    void perTestSetUp() {
-        dataProvider = new NsDataProvider(NsTestDataSource.getInstance(pg));
     }
 
     @AfterAll
@@ -41,11 +39,16 @@ class NsDataProviderIT {
         }
     }
 
+    @BeforeEach
+    void perTestSetUp() {
+        dataProvider = new NsDataProvider(NsTestDataSource.getInstance(pg));
+    }
+
     @Test
     void addSubscriptionValidData() {
-        assertEquals(
-            EXPECTED_RECORD,
-            dataProvider.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets, EXPECTED_PID));
+        assertEquals(EXPECTED_RECORD,
+                     dataProvider.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
+                                                  EXPECTED_PID));
     }
 
     @Test
@@ -75,16 +78,14 @@ class NsDataProviderIT {
     @Test
     void getSubscriptionsInvalidSubject() {
         String subject = "";
-        assertThrows(
-            NotAuthorizedException.class,
-            () -> dataProvider.getSubscriptions(subject, ResourceType.datasets));
+        assertThrows(NotAuthorizedException.class,
+                     () -> dataProvider.getSubscriptions(subject, ResourceType.datasets));
     }
 
     @Test
     void getSubscriptionsInvalidResourceType() {
-        assertThrows(
-            NotFoundException.class,
-            () -> dataProvider.getSubscriptions(EXPECTED_SUBJECT, null));
+        assertThrows(NotFoundException.class,
+                     () -> dataProvider.getSubscriptions(EXPECTED_SUBJECT, null));
     }
 
     @Test

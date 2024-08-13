@@ -5,15 +5,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-
+import jakarta.ws.rs.core.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.auth.AuthProvider;
@@ -51,7 +50,7 @@ public class Resource {
      *
      * @param resource the resource type (eg "datasets"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
-     *     defined in <code>@Produces</code>
+     *     defined in {@code @Produces}
      */
     @POST
     @Path("/{pid}")
@@ -64,10 +63,7 @@ public class Resource {
 
         log.debug("POST /{}/{}", resource, pid);
 
-        if (pid == null) {
-            log.error("Missing pid");
-            throw new NotFoundException("Missing pid");
-        }
+        validatePid(pid);
         String subject = authProvider.authenticate(authHeader);
         ResourceType resourceType = getResourceType(resource);
         authProvider.authorize(subject, resourceType, List.of(pid));
@@ -87,7 +83,7 @@ public class Resource {
      *
      * @param resource the resource being queried (eg "datasets"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
-     *     defined in <code>@Produces</code>
+     *     defined in {@code @Produces}
      */
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
@@ -120,7 +116,7 @@ public class Resource {
      *
      * @param resource the resource type (eg "datasets"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
-     *     defined in <code>@Produces</code>
+     *     defined in {@code @Produces}
      */
     @DELETE
     @Path("/{pid}")
@@ -133,10 +129,7 @@ public class Resource {
 
         log.debug("DELETE /{}/{}", resource, pid);
 
-        if (pid == null) {
-            log.error("Missing pid");
-            throw new NotFoundException("Missing pid");
-        }
+        validatePid(pid);
         String subject = authProvider.authenticate(authHeader);
         ResourceType resourceType = getResourceType(resource);
         authProvider.authorize(subject, resourceType, List.of(pid));
@@ -160,6 +153,13 @@ public class Resource {
         } catch (IllegalArgumentException e) {
             log.error("Invalid resource type: {}", requestedResource);
             throw new NotFoundException("Invalid resource type: " + requestedResource);
+        }
+    }
+
+    private void validatePid(String pid) {
+        if (pid == null) {
+            log.error("Missing pid");
+            throw new NotFoundException("Missing pid");
         }
     }
 }

@@ -42,15 +42,23 @@ $ cp ./target/notifications.war $TOMCAT_HOME/webapps
 
 Example API interactions, using curl:
 ```shell
+
+
+# Subscribe user authenticated with jwt $TOKEN, to update-notifications for
+# the dataset identified by {pid}
+#
+$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
 # Get a list of subscriptions for user authenticated with jwt $TOKEN:
 #
 $ curl --request GET "http://localhost:8080/notifications/datasets" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 
-# Subscribe user authenticated with jwt $TOKEN, to update notifications for
-# the dataset identified by {pid}
+# Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
+# dataset identified by {pid}
 #
-$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
+$ curl --request DELETE "http://localhost:8080/notifications/datasets/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 ```
 

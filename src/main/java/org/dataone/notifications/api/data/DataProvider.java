@@ -13,7 +13,7 @@ public interface DataProvider {
     /**
      * Get a list of subscriptions for a given subject and resource type.
      *
-     * @param subject the subject of the user
+     * @param subject      the subject of the user
      * @param resourceType the type of resource
      * @return a list of pids of the resources to which the user is subscribed
      */
@@ -22,9 +22,9 @@ public interface DataProvider {
     /**
      * Add a subscription for a given subject and resource type.
      *
-     * @param subject the subject of the user
+     * @param subject      the subject of the user
      * @param resourceType the type of resource
-     * @param pid the pid of the resource to which the user is subscribed
+     * @param pid          the pid of the resource to which the user is subscribed
      * @return the Subscription containing the successful subscription details
      */
     Subscription addSubscription(String subject, ResourceType resourceType, String pid);
@@ -32,9 +32,9 @@ public interface DataProvider {
     /**
      * Delete one or more subscriptions for a given subject and resource type.
      *
-     * @param subject the subject of the user
+     * @param subject      the subject of the user
      * @param resourceType the type of resource
-     * @param pidList a List of the resource pids to which the user is already subscribed
+     * @param pidList      a List of the resource pids to which the user is already subscribed
      * @return a Subscription object containing the successful unsubscribe details
      */
     Subscription deleteSubscriptions(

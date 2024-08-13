@@ -65,20 +65,19 @@ class ResourceTest {
         doThrow(new NotAuthorizedException("Access Denied")).when(mockDataProvider)
             .addSubscription(null, ResourceType.datasets, EXPECTED_PID);
         when(mockDataProvider.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
-                                                EXPECTED_PID))
-            .thenReturn(EXPECTED_PARAMS_ONEPID);
+                                              EXPECTED_PID)).thenReturn(EXPECTED_PARAMS_ONEPID);
 
         when(mockDataProvider.deleteSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
-                                                  List.of(EXPECTED_PID)))
-            .thenReturn(EXPECTED_PARAMS_ONEPID);
+                                                  List.of(EXPECTED_PID))).thenReturn(
+            EXPECTED_PARAMS_ONEPID);
         resource = new Resource(mockAuthProvider, mockDataProvider);
     }
 
     @Test
     void getSubscriptions() {
         // HAPPY PATH
-        Subscription result = (Subscription) resource.getSubscriptions(
-                VALID_AUTH_HEADER, ResourceType.datasets.toString());
+        Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER,
+                                                                       ResourceType.datasets.toString());
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_MULTIPID.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS_MULTIPID.resourceType(), result.resourceType());
@@ -147,9 +146,9 @@ class ResourceTest {
 
     @Test
     void validUnsubscribe() {
-        Subscription result = (Subscription) resource.unsubscribe(VALID_AUTH_HEADER,
-                                                                  ResourceType.datasets.toString(),
-                                                                  EXPECTED_PID);
+        Subscription result =
+            (Subscription) resource.unsubscribe(VALID_AUTH_HEADER, ResourceType.datasets.toString(),
+                                                EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_ONEPID, result);
     }

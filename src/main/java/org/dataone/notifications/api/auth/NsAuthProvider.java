@@ -15,7 +15,7 @@ import static org.apache.logging.log4j.util.Strings.isBlank;
 
 /**
  * An implementation of the AuthProvider interface for the notification service.
- * <code>@ApplicationScoped</code> means this is a singleton bean.
+ * {@code @ApplicationScoped} means this is a singleton bean.
  */
 @SuppressWarnings("UnnecessaryLocalVariable")
 @ApplicationScoped
@@ -23,17 +23,14 @@ public class NsAuthProvider implements AuthProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
 
-    public NsAuthProvider() {}
-
     @Override
     public String authenticate(String authHeader) throws NotAuthorizedException {
 
         String token;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            log.debug(
-                "Authenticating token: {}[redacted]{}", token.substring(0, 3),
-                token.substring(token.length() - 3));
+            log.debug("Authenticating token: {}[redacted]{}", token.substring(0, 3),
+                      token.substring(token.length() - 3));
         } else {
             log.debug("No Auth token found - throwing NotAuthorizedException");
             throw new NotAuthorizedException("Bearer");
@@ -51,7 +48,8 @@ public class NsAuthProvider implements AuthProvider {
     }
 
     @Override
-    public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids) throws NotAuthorizedException {
+    public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids)
+        throws NotAuthorizedException {
 
         if (isBlank(subject)) {
             throw new NotAuthorizedException("Missing Subject");
@@ -59,8 +57,8 @@ public class NsAuthProvider implements AuthProvider {
         if (pids == null || pids.isEmpty()) {
             throw new NotFoundException("Missing pid(s)");
         }
-        log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject,
-                  resourceType, pids.toString());
+        log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject, resourceType,
+                  pids.toString());
 
         // Automatically de-duplicates the list of PIDs
         Set<String> authPidSet = new HashSet<>(pids);

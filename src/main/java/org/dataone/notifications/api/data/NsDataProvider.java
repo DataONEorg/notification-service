@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * A class that provides access to the data store for the notifications service.
- * <code>@ApplicationScoped</code> means this is a singleton bean.
+ * {@code @ApplicationScoped} means this is a singleton bean.
  */
 @ApplicationScoped
 public class NsDataProvider implements DataProvider {
