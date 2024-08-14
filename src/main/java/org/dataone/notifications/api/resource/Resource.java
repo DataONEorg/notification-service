@@ -89,13 +89,13 @@ public class Resource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Record getSubscriptions(
-        @HeaderParam("Authorization") String authHeader, @PathParam("resource") String resource)
+        @HeaderParam("Authorization") String authHeader,
+        @PathParam("resource") ResourceType resourceType)
         throws NotAuthorizedException {
 
-        log.debug("GET /{}", resource);
+        log.debug("GET /{}", resourceType);
 
         String subject = authProvider.authenticate(authHeader);
-        ResourceType resourceType = getResourceType(resource);
 
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
         // TODO: do we need to verify that subject still has access to all subscribed resources?

@@ -77,7 +77,7 @@ class ResourceTest {
     void getSubscriptions() {
         // HAPPY PATH
         Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER,
-                                                                       ResourceType.datasets.toString());
+                                                                       ResourceType.datasets);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_MULTIPID.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS_MULTIPID.resourceType(), result.resourceType());

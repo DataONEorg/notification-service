@@ -101,7 +101,7 @@ class ResourceIT {
     void getSubscriptions() {
         // HAPPY PATH
         Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_1,
-                                                                       ResourceType.datasets.toString());
+                                                                       ResourceType.datasets);
         assertNotNull(result);
         assertEquals(EXPECTED_SUBJECT_1, result.subject());
         assertEquals(EXPECTED_RESOURCE_TYPE, result.resourceType());
@@ -203,7 +203,7 @@ class ResourceIT {
 
         // Retrieve the subscription
         Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_3,
-                                                                       ResourceType.datasets.toString());
+                                                                       ResourceType.datasets);
         assertNotNull(result);
         assertEquals(2, result.resourceIds().size());
         assertTrue(result.resourceIds().contains(testPid1),
@@ -235,7 +235,7 @@ class ResourceIT {
 
         // Verify that the subscription was deleted
         Subscription finalResult = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_3,
-                                                                            ResourceType.datasets.toString());
+                                                                            ResourceType.datasets);
         assertNotNull(finalResult);
         assertTrue(finalResult.resourceIds().isEmpty());
     }
