@@ -9,7 +9,9 @@ import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,20 +20,41 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A class that provides access to the data store for the notifications service.
+ * A class that encapsulate and provide access to CRUD actions on the data store. It uses a
+ * {@link DataSource} to connect to the database, and performs an initial migration if needed, via a
+ * {@link DBMigrator}.
  * {@code @ApplicationScoped} means this is a singleton bean.
  */
 @ApplicationScoped
-public class NsDataProvider implements DataProvider {
+public class DataRepository {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
     private final DataSource dataSource;
 
 
     @Inject
-    public NsDataProvider(DataSource dataSource) {
-        log.debug("@Injected DataSource into NsDataProvider");
-        this.dataSource = dataSource;
+    public DataRepository(DataSource source, DBMigrator migrator) {
+        if (source != null) {
+        this.dataSource = source;
+        } else {
+            throw new IllegalStateException("DataRepository not initialized: missing DataSource");
+        }
+
+        try (Connection connection = source.getConnection()) {
+            DatabaseMetaData dbMeta = connection.getMetaData();
+            log.info("Connected to database: " + dbMeta.getDatabaseProductName() + " "
+                         + dbMeta.getDatabaseProductVersion());
+        } catch (SQLException e) {
+            log.error("* * * * * *  Database connection error: {}  * * * * * *", e.getMessage());
+            throw new RuntimeException(
+                "DataRepository not initialized: database connection error", e);
+        }
+
+        if (migrator != null) {
+            migrator.migrate();
+        } else {
+            throw new IllegalStateException("DataRepository not initialized: missing DBMigrator");
+        }
     }
 
     public List<String> getSubscriptions(String subject, ResourceType resourceType)

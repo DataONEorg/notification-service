@@ -18,14 +18,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class NsDataProviderIT {
+class DataRepositoryIT {
 
     public static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
     public static final String EXPECTED_PID = "pid1";
     private static final Subscription EXPECTED_RECORD =
         new Subscription(EXPECTED_SUBJECT, ResourceType.datasets, List.of(EXPECTED_PID));
     private static PostgreSQLContainer<?> pg;
-    private NsDataProvider dataProvider;
+    private DataRepository dataRepo;
 
     @BeforeAll
     static void oneTimeSetUp() {
@@ -33,21 +33,22 @@ class NsDataProviderIT {
     }
 
     @AfterAll
-    static void oneTimeTearDown() {
-        if (pg != null) {
-            pg.stop();
-        }
+    static void oneTimeTearDown() throws InterruptedException {
+        assertNotNull(pg, "Postgres Instance is null - cannot shut down cleanly!");
+        pg.stop();
+        Thread.sleep(1000);
+        System.out.println("DataRepositoryIT: Postgres Instance stopped.");
     }
 
     @BeforeEach
     void perTestSetUp() {
-        dataProvider = new NsDataProvider(NsTestDataSource.getInstance(pg));
+        dataRepo = TestUtils.getTestDataRepository(pg);
     }
 
     @Test
     void addSubscriptionValidData() {
         assertEquals(EXPECTED_RECORD,
-                     dataProvider.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
+                     dataRepo.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
                                                   EXPECTED_PID));
     }
 
@@ -55,7 +56,7 @@ class NsDataProviderIT {
     void addSubscriptionInvalidSubject() {
         String blankSubject = "";
         assertThrows(NotAuthorizedException.class,
-                     () -> dataProvider.addSubscription(blankSubject, ResourceType.datasets,
+                     () -> dataRepo.addSubscription(blankSubject, ResourceType.datasets,
                                                         EXPECTED_PID));
     }
 
@@ -63,13 +64,13 @@ class NsDataProviderIT {
     void addSubscriptionInvalidData() {
         String blankPid = "";
         assertThrows(NotFoundException.class,
-                     () -> dataProvider.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
+                     () -> dataRepo.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
                                                         blankPid));
     }
 
     @Test
     void getSubscriptionsValidSubject() {
-        List<String> pids = dataProvider.getSubscriptions(EXPECTED_SUBJECT, ResourceType.datasets);
+        List<String> pids = dataRepo.getSubscriptions(EXPECTED_SUBJECT, ResourceType.datasets);
         assertNotNull(pids);
         assertFalse(pids.isEmpty());
         assertEquals(3, pids.size());
@@ -79,13 +80,13 @@ class NsDataProviderIT {
     void getSubscriptionsInvalidSubject() {
         String subject = "";
         assertThrows(NotAuthorizedException.class,
-                     () -> dataProvider.getSubscriptions(subject, ResourceType.datasets));
+                     () -> dataRepo.getSubscriptions(subject, ResourceType.datasets));
     }
 
     @Test
     void getSubscriptionsInvalidResourceType() {
         assertThrows(NotFoundException.class,
-                     () -> dataProvider.getSubscriptions(EXPECTED_SUBJECT, null));
+                     () -> dataRepo.getSubscriptions(EXPECTED_SUBJECT, null));
     }
 
     @Test
@@ -94,7 +95,7 @@ class NsDataProviderIT {
         final String testPid = "urn:pid:0000-4444-5555-6666";
 
         assertEquals(new Subscription(testSubject, ResourceType.datasets, List.of(testPid)),
-                     dataProvider.deleteSubscriptions(testSubject, ResourceType.datasets,
+                     dataRepo.deleteSubscriptions(testSubject, ResourceType.datasets,
                                                       List.of(testPid, "nonexistent_pid")));
     }
 
@@ -106,11 +107,11 @@ class NsDataProviderIT {
         final String testPid2 = "urn:node:2_my_test_pid_2";
 
         // Add a subscription
-        dataProvider.addSubscription(testSubject, ResourceType.datasets, testPid1);
-        dataProvider.addSubscription(testSubject, ResourceType.datasets, testPid2);
+        dataRepo.addSubscription(testSubject, ResourceType.datasets, testPid1);
+        dataRepo.addSubscription(testSubject, ResourceType.datasets, testPid2);
 
         // Retrieve the subscription
-        List<String> pids = dataProvider.getSubscriptions(testSubject, ResourceType.datasets);
+        List<String> pids = dataRepo.getSubscriptions(testSubject, ResourceType.datasets);
         assertNotNull(pids);
         assertEquals(2, pids.size());
         assertTrue(pids.contains(testPid1), "Expected " + testPid1 + " to be in: " + pids);
@@ -118,7 +119,7 @@ class NsDataProviderIT {
 
         // Delete the subscription
         Subscription confirmation =
-            dataProvider.deleteSubscriptions(testSubject, ResourceType.datasets,
+            dataRepo.deleteSubscriptions(testSubject, ResourceType.datasets,
                                              List.of(testPid1, testPid2, "nonexistent_pid"));
         assertNotNull(confirmation);
         assertEquals(testSubject, confirmation.subject());
@@ -128,7 +129,7 @@ class NsDataProviderIT {
         assertTrue(confirmation.resourceIds().contains(testPid2));
 
         // Verify that the subscription was deleted
-        pids = dataProvider.getSubscriptions(testSubject, ResourceType.datasets);
+        pids = dataRepo.getSubscriptions(testSubject, ResourceType.datasets);
         assertNotNull(pids);
         assertTrue(pids.isEmpty());
     }

@@ -1,7 +1,10 @@
 database:
+  username: notifications_user
+  ## TODO: move to Secret & env variable
+  password: notifications_password
   name: notifications
   version: 16.0
   jdbcUrl: jdbc:postgresql://localhost:5432/notifications
+  ##  See HikariCP configuration options at:
+  ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
   driverClassName: org.postgresql.Driver
-  username: notifications_user
-  password: notifications_password

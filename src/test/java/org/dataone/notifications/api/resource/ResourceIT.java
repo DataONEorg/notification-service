@@ -3,8 +3,6 @@ package org.dataone.notifications.api.resource;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.NsDataProvider;
-import org.dataone.notifications.api.data.NsTestDataSource;
 import org.dataone.notifications.api.data.Subscription;
 import org.dataone.notifications.util.TestUtils;
 import org.jetbrains.annotations.NotNull;
@@ -65,16 +63,17 @@ class ResourceIT {
         REQUESTED_PID_LIST.add(EXPECTED_PID); //purposely add duplicates
 
         AuthProvider mockAuthProvider = getAuthProvider();
+
         pg = TestUtils.getTestDb();
-        resource =
-            new Resource(mockAuthProvider, new NsDataProvider(NsTestDataSource.getInstance(pg)));
+        resource = new Resource(mockAuthProvider, TestUtils.getTestDataRepository(pg));
     }
 
     @AfterAll
-    static void oneTimeTearDown() {
-        if (pg != null) {
-            pg.stop();
-        }
+    static void oneTimeTearDown() throws InterruptedException {
+        assertNotNull(pg, "Postgres Instance is null - cannot shut down cleanly!");
+        pg.stop();
+        Thread.sleep(1000);
+        System.out.println("ResourceIT: Postgres Instance stopped.");
     }
 
     private static @NotNull AuthProvider getAuthProvider() {

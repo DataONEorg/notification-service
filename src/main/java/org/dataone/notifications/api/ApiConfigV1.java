@@ -11,5 +11,4 @@ import jakarta.ws.rs.core.Application;
  * include the version in the URL.
  */
 @ApplicationPath("/")
-public class ApiConfigV1 extends Application {
-}
+public class ApiConfigV1 extends Application {}

@@ -2,37 +2,37 @@ package org.dataone.notifications.util;
 
 import org.apache.commons.configuration2.YAMLConfiguration;
 import org.dataone.notifications.NsConfig;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.output.MigrateResult;
+import org.dataone.notifications.api.data.DataRepository;
+import org.dataone.notifications.api.data.DBConnectionParams;
+import org.dataone.notifications.api.data.DBMigrator;
+import org.dataone.notifications.api.data.NsDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.sql.DataSource;
 
 public class TestUtils {
-
 
     public static PostgreSQLContainer<?> getTestDb() {
 
         YAMLConfiguration nsConfig = NsConfig.getConfig();
-
-        // Set up postgres TestContainer
         PostgreSQLContainer<?> pg =
             new PostgreSQLContainer<>("postgres:" + nsConfig.getString("database.version"));
 
-        pg.withExposedPorts(5432).withDatabaseName(nsConfig.getString("database.name"))
+        pg.withExposedPorts(5432)
+            .withDatabaseName(nsConfig.getString("database.name"))
             .withUsername(nsConfig.getString("database.username"))
             .withPassword(nsConfig.getString("database.password"));
         pg.start();
 
-        //initialize with test data using FlyWay
-        MigrateResult result = Flyway.configure()
-            .dataSource(pg.getJdbcUrl(), pg.getUsername(), pg.getPassword())
-            .cleanDisabled(false)
-            .load()
-            .migrate();
-
-        assertTrue(result.success, "Flyway migration failed");
-
         return pg;
+    }
+
+    public static DataRepository getTestDataRepository(PostgreSQLContainer<?> pg) {
+
+        DBConnectionParams dbConnectionParams =
+            new DBConnectionParams(pg.getJdbcUrl(), pg.getDriverClassName(), pg.getUsername(),
+                                   pg.getPassword());
+        DataSource dataSource = new NsDataSource(dbConnectionParams);
+        return new DataRepository(dataSource, new DBMigrator(dataSource));
     }
 }

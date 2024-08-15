@@ -1,8 +1,9 @@
-## TEST properties
+#################################################
+##             TEST properties                 ##
+#################################################
+##
 database:
+  username: notifications_test_user
+  password: notifications_test_password
   name: notifications_test_db
-  version: 16.0
-  jdbcUrl: jdbc:postgresql://localhost:5432/notifications
-  driverClassName: org.postgresql.Driver
-  username: notifications_user
-  password: notifications_password
+  version: 16

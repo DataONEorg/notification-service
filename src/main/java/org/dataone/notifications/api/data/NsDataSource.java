@@ -1,43 +1,28 @@
 package org.dataone.notifications.api.data;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
-import org.apache.commons.configuration2.YAMLConfiguration;
-import org.dataone.notifications.NsConfig;
-import org.flywaydb.core.Flyway;
+import jakarta.inject.Inject;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 /**
- * A class that initializes and provides access to a data source, with connection pooling managed
- * by HikariCP.
+ * Provides access to a data source, with connection pooling managed by HikariCP.
+ * See HikariCP configuration options at:
+ * https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
  */
-@Default
 @ApplicationScoped
-public class NsDataSource implements DataSource {
+@Default
+public class NsDataSource extends HikariDataSource implements DataSource {
 
-    private static final HikariDataSource dataSource;
+    @Inject
+    public NsDataSource(DBConnectionParams params) {
+        super();
 
-    static {
-        HikariConfig hikariConfig = new HikariConfig();
-        YAMLConfiguration nsConfig = NsConfig.getConfig();
-        hikariConfig.setDriverClassName(nsConfig.getString("database.driverClassName"));
-        hikariConfig.setJdbcUrl(nsConfig.getString("database.jdbcUrl"));
-        hikariConfig.setUsername(nsConfig.getString("database.username"));
-        hikariConfig.setPassword(nsConfig.getString("database.password"));
-        dataSource = new HikariDataSource(hikariConfig);
-
-        Flyway flyway = Flyway.configure().dataSource(
-            NsConfig.getConfig().getString("database.jdbcUrl"),
-            NsConfig.getConfig().getString("database.username"),
-            NsConfig.getConfig().getString("database.password")).cleanDisabled(false).load();
-        flyway.migrate();
-    }
-
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+        this.setJdbcUrl(params.getJdbcUrl());
+        this.setDriverClassName(params.getDriverClassName());
+        this.setUsername(params.getUsername());
+        this.setPassword(params.getPassword());
     }
 }

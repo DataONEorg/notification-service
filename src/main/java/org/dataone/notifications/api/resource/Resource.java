@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.DataProvider;
+import org.dataone.notifications.api.data.DataRepository;
 import org.dataone.notifications.api.data.Subscription;
 
 import java.util.List;
@@ -29,13 +29,13 @@ public class Resource {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
     private final AuthProvider authProvider;
-    private final DataProvider dataProvider;
+    private final DataRepository dataRepository;
 
     @Inject
-    public Resource(AuthProvider authProvider, DataProvider dataProvider) {
-        log.debug("@Injected AuthService & DataProvider into Resource");
+    public Resource(AuthProvider authProvider, DataRepository dataRepository) {
+        log.debug("@Injected AuthService & DataRepository into Resource");
         this.authProvider = authProvider;
-        this.dataProvider = dataProvider;
+        this.dataRepository = dataRepository;
     }
 
     /**
@@ -67,7 +67,7 @@ public class Resource {
         validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
-        return dataProvider.addSubscription(subject, resourceType, pid);
+        return dataRepository.addSubscription(subject, resourceType, pid);
     }
 
     /**
@@ -95,7 +95,7 @@ public class Resource {
         validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
 
-        List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
+        List<String> pids = dataRepository.getSubscriptions(subject, resourceType);
         // TODO: do we need to verify that subject still has access to all subscribed resources?
 
         return new Subscription(subject, resourceType, pids);
@@ -130,7 +130,7 @@ public class Resource {
         validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
-        return dataProvider.deleteSubscriptions(subject, resourceType, List.of(pid));
+        return dataRepository.deleteSubscriptions(subject, resourceType, List.of(pid));
     }
 
 

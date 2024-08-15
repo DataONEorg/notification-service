@@ -3,7 +3,7 @@ package org.dataone.notifications.api.resource;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.NsDataProvider;
+import org.dataone.notifications.api.data.DataRepository;
 import org.dataone.notifications.api.data.Subscription;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class ResourceTest {
     static void setUp() {
 
         EXPECTED_PID_LIST.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50251");
-        EXPECTED_PID_LIST.add("urn:uuid:1add8838-861b-4afb-af00-7b2ecca585bf");
+        EXPECTED_PID_LIST.add("urn:uuid:1add8838-861b-4afb-af00-7b2e3ca585bf");
         EXPECTED_PID_LIST.add("urn:uuid:0e01a574-35cd-4316-a834-267f70f50233");
         EXPECTED_PID_LIST.add(EXPECTED_PID);
 
@@ -58,19 +58,19 @@ class ResourceTest {
                                         REQUESTED_PID_LIST)).thenReturn(
             new HashSet<>(EXPECTED_PID_LIST));
 
-        NsDataProvider mockDataProvider = mock(NsDataProvider.class);
+        DataRepository mockDataRepo = mock(DataRepository.class);
         when(
-            mockDataProvider.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
+            mockDataRepo.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
             EXPECTED_PID_LIST);
-        doThrow(new NotAuthorizedException("Access Denied")).when(mockDataProvider)
+        doThrow(new NotAuthorizedException("Access Denied")).when(mockDataRepo)
             .addSubscription(null, ResourceType.datasets, EXPECTED_PID);
-        when(mockDataProvider.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
+        when(mockDataRepo.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
                                               EXPECTED_PID)).thenReturn(EXPECTED_PARAMS_ONEPID);
 
-        when(mockDataProvider.deleteSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
+        when(mockDataRepo.deleteSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
                                                   List.of(EXPECTED_PID))).thenReturn(
             EXPECTED_PARAMS_ONEPID);
-        resource = new Resource(mockAuthProvider, mockDataProvider);
+        resource = new Resource(mockAuthProvider, mockDataRepo);
     }
 
     @Test
@@ -126,7 +126,6 @@ class ResourceTest {
                                         () -> resource.subscribe(VALID_AUTH_HEADER, null,
                                                                  EXPECTED_PID),
                                         "Expected subscribe() to throw NotFoundException");
-
         assertTrue(
             thrown.getMessage().contains("resource"),
             "Expected message to contain 'resource', but was: " + thrown.getMessage());
