@@ -98,23 +98,9 @@ class ResourceIT {
     }
 
     @Test
-    void getSubscriptions() {
-        // HAPPY PATH
-        Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_1,
-                                                                       ResourceType.datasets);
-        assertNotNull(result);
-        assertEquals(EXPECTED_SUBJECT_1, result.subject());
-        assertEquals(EXPECTED_RESOURCE_TYPE, result.resourceType());
-        assertEquals(3, result.resourceIds().size());
-        assertTrue(result.resourceIds().contains(EXPECTED_PID_1A));
-        assertTrue(result.resourceIds().contains(EXPECTED_PID_1B));
-        assertTrue(result.resourceIds().contains(EXPECTED_PID_1C));
-    }
-
-    @Test
     void validSubscribe() {
         Subscription result =
-            (Subscription) resource.subscribe(VALID_AUTH_HEADER_2, ResourceType.datasets.toString(),
+            (Subscription) resource.subscribe(VALID_AUTH_HEADER_2, ResourceType.datasets,
                                               EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_SUBJECT_2, result.subject());
@@ -126,7 +112,7 @@ class ResourceIT {
     @Test
     void subscribe_missingPid() {
         try {
-            resource.subscribe(VALID_AUTH_HEADER_1, ResourceType.datasets.toString(), null);
+            resource.subscribe(VALID_AUTH_HEADER_1, ResourceType.datasets, null);
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
             assertTrue(e.getMessage().contains("pid"));
@@ -149,7 +135,7 @@ class ResourceIT {
     void subscribe_missingAuthHeader() {
 
         Exception thrown = assertThrows(NotAuthorizedException.class, () -> resource.subscribe(null,
-                                                                                               ResourceType.datasets.toString(),
+                                                                                               ResourceType.datasets,
                                                                                                EXPECTED_PID),
                                         "Expected subscribe() to throw NotAuthorizedException");
         assertTrue(thrown.getMessage().contains("401"),
@@ -160,7 +146,7 @@ class ResourceIT {
     void subscribe_unauthorized() {
         Exception thrown = assertThrows(NotAuthorizedException.class,
                                         () -> resource.subscribe(INVALID_AUTH_HEADER,
-                                                                 ResourceType.datasets.toString(),
+                                                                 ResourceType.datasets,
                                                                  EXPECTED_PID),
                                         "Expected subscribe() to throw NotAuthorizedException");
         assertTrue(
@@ -169,9 +155,23 @@ class ResourceIT {
     }
 
     @Test
+    void getSubscriptions() {
+        // HAPPY PATH
+        Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_1,
+                                                                       ResourceType.datasets);
+        assertNotNull(result);
+        assertEquals(EXPECTED_SUBJECT_1, result.subject());
+        assertEquals(EXPECTED_RESOURCE_TYPE, result.resourceType());
+        assertEquals(3, result.resourceIds().size());
+        assertTrue(result.resourceIds().contains(EXPECTED_PID_1A));
+        assertTrue(result.resourceIds().contains(EXPECTED_PID_1B));
+        assertTrue(result.resourceIds().contains(EXPECTED_PID_1C));
+    }
+
+    @Test
     void unsubscribe_notAlreadySubscribed() {
         Subscription result = (Subscription) resource.unsubscribe(VALID_AUTH_HEADER_4,
-                                                                  ResourceType.datasets.toString(),
+                                                                  ResourceType.datasets,
                                                                   EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_SUBJECT_4, result.subject());
@@ -182,7 +182,7 @@ class ResourceIT {
     @Test
     void validUnsubscribe() {
         Subscription result = (Subscription) resource.unsubscribe(VALID_AUTH_HEADER_4,
-                                                                  ResourceType.datasets.toString(),
+                                                                  ResourceType.datasets,
                                                                   EXPECTED_PID_4);
         assertNotNull(result);
         assertEquals(EXPECTED_SUBJECT_4, result.subject());
@@ -198,8 +198,8 @@ class ResourceIT {
         final String testPid2 = "urn:node:2_my_test_pid_2";
 
         // Add a subscription
-        resource.subscribe(VALID_AUTH_HEADER_3, ResourceType.datasets.toString(), testPid1);
-        resource.subscribe(VALID_AUTH_HEADER_3, ResourceType.datasets.toString(), testPid2);
+        resource.subscribe(VALID_AUTH_HEADER_3, ResourceType.datasets, testPid1);
+        resource.subscribe(VALID_AUTH_HEADER_3, ResourceType.datasets, testPid2);
 
         // Retrieve the subscription
         Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER_3,
@@ -213,7 +213,7 @@ class ResourceIT {
 
         // Delete pid1 subscription
         Subscription confirm1 = (Subscription) resource.unsubscribe(VALID_AUTH_HEADER_3,
-                                                                    ResourceType.datasets.toString(),
+                                                                    ResourceType.datasets,
                                                                     testPid1);
         assertNotNull(confirm1);
         assertEquals(EXPECTED_SUBJECT_3, confirm1.subject());
@@ -224,7 +224,7 @@ class ResourceIT {
 
         // Delete pid2 subscription
         Subscription confirm2 = (Subscription) resource.unsubscribe(VALID_AUTH_HEADER_3,
-                                                                    ResourceType.datasets.toString(),
+                                                                    ResourceType.datasets,
                                                                     testPid2);
         assertNotNull(confirm2);
         assertEquals(EXPECTED_SUBJECT_3, confirm2.subject());

@@ -24,7 +24,6 @@ import java.util.List;
 /**
  * A class that provides CRUD operations for notification subscriptions for a given subject (user).
  */
-@SuppressWarnings("UnnecessaryLocalVariable")
 @Path("/{resource}")
 public class Resource {
 
@@ -48,7 +47,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resource the resource type (eg "datasets"). Automatically populated
+     * @param resourceType the resource type (eg "datasets"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -58,19 +57,17 @@ public class Resource {
     @Produces(MediaType.APPLICATION_JSON)
     public Record subscribe(
         @HeaderParam("Authorization") String authHeader,
-        @NotNull @PathParam("resource") String resource, @NotNull @PathParam("pid") String pid)
+        @PathParam("resource") ResourceType resourceType,
+        @NotNull @PathParam("pid") String pid)
         throws NotAuthorizedException, NotFoundException {
 
-        log.debug("POST /{}/{}", resource, pid);
+        log.debug("POST /{}/{}", resourceType, pid);
 
         validatePid(pid);
+        validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
-        ResourceType resourceType = getResourceType(resource);
         authProvider.authorize(subject, resourceType, List.of(pid));
-
-        Subscription response = dataProvider.addSubscription(subject, resourceType, pid);
-
-        return response;
+        return dataProvider.addSubscription(subject, resourceType, pid);
     }
 
     /**
@@ -81,7 +78,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resource the resource being queried (eg "datasets"). (Auto-populated)
+     * @param resourceType the resource being queried (eg "datasets"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -95,14 +92,13 @@ public class Resource {
 
         log.debug("GET /{}", resourceType);
 
+        validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
 
         List<String> pids = dataProvider.getSubscriptions(subject, resourceType);
         // TODO: do we need to verify that subject still has access to all subscribed resources?
 
-        Subscription response = new Subscription(subject, resourceType, pids);
-
-        return response;
+        return new Subscription(subject, resourceType, pids);
     }
 
     /**
@@ -114,7 +110,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resource the resource type (eg "datasets"). Automatically populated
+     * @param resourceType the resource type (eg "datasets"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -124,35 +120,24 @@ public class Resource {
     @Produces(MediaType.APPLICATION_JSON)
     public Record unsubscribe(
         @HeaderParam("Authorization") String authHeader,
-        @NotNull @PathParam("resource") String resource, @NotNull @PathParam("pid") String pid)
+        @NotNull @PathParam("resource") ResourceType resourceType,
+        @NotNull @PathParam("pid") String pid)
         throws NotAuthorizedException, NotFoundException {
 
-        log.debug("DELETE /{}/{}", resource, pid);
+        log.debug("DELETE /{}/{}", resourceType, pid);
 
         validatePid(pid);
+        validateResourceType(resourceType);
         String subject = authProvider.authenticate(authHeader);
-        ResourceType resourceType = getResourceType(resource);
         authProvider.authorize(subject, resourceType, List.of(pid));
-
-        Subscription response =
-            dataProvider.deleteSubscriptions(subject, resourceType, List.of(pid));
-
-        return response;
+        return dataProvider.deleteSubscriptions(subject, resourceType, List.of(pid));
     }
 
 
-    private ResourceType getResourceType(String requestedResource) {
-
-        if (requestedResource == null) {
+    private void validateResourceType(ResourceType resourceType) {
+        if (resourceType == null) {
             log.error("Missing resource type");
             throw new NotFoundException("Missing resource type");
-        }
-
-        try {
-            return ResourceType.valueOf(requestedResource);
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid resource type: {}", requestedResource);
-            throw new NotFoundException("Invalid resource type: " + requestedResource);
         }
     }
 

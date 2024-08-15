@@ -6,7 +6,7 @@ Configuration:
       name: Console
       target: SYSTEM_OUT
       PatternLayout:
-        pattern: "dataone-indexer %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"
+        pattern: "notification-service %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"
 
   Loggers:
     Root:
