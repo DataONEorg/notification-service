@@ -35,7 +35,7 @@ public class DataRepository {
     @Inject
     public DataRepository(DataSource source, DBMigrator migrator) {
         if (source != null) {
-        this.dataSource = source;
+            this.dataSource = source;
         } else {
             throw new IllegalStateException("DataRepository not initialized: missing DataSource");
         }
