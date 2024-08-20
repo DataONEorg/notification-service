@@ -1,14 +1,15 @@
 package org.dataone.notifications.api.data;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.dataone.notifications.NsConfig;
 
 /**
  * A class that encapsulates the database connection parameters.
- * {@code @ApplicationScoped} means this is a singleton bean.
  */
-@ApplicationScoped
+@Singleton
+@Default
 public class DBConnectionParams {
 
     private final String jdbcUrl;

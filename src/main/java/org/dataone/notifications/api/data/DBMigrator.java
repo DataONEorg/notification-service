@@ -1,16 +1,17 @@
 package org.dataone.notifications.api.data;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.flywaydb.core.Flyway;
 
 import javax.sql.DataSource;
 
 /**
  * A class that encapsulates the database migration process. Implemented using FlywayDB.
- * {@code @ApplicationScoped} means this is a singleton bean.
  */
-@ApplicationScoped
+@Singleton
+@Default
 public class DBMigrator {
 
     private final Flyway flyway;

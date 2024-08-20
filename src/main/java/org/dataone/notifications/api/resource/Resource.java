@@ -1,6 +1,9 @@
 package org.dataone.notifications.api.resource;
 
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -24,12 +27,16 @@ import java.util.List;
 /**
  * A class that provides CRUD operations for notification subscriptions for a given subject (user).
  */
+@RequestScoped
 @Path("/{resource}")
 public class Resource {
-
     private final Logger log = LogManager.getLogger(this.getClass().getName());
     private final AuthProvider authProvider;
     private final DataRepository dataRepository;
+
+    public Resource() {
+        throw new IllegalStateException("Resource not initialized: missing AuthService & DataRepository");
+    }
 
     @Inject
     public Resource(AuthProvider authProvider, DataRepository dataRepository) {

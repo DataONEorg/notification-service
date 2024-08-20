@@ -5,6 +5,7 @@ import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.api.data.DataRepository;
 import org.dataone.notifications.api.data.DBConnectionParams;
 import org.dataone.notifications.api.data.DBMigrator;
+import org.dataone.notifications.api.data.NsDataRepository;
 import org.dataone.notifications.api.data.NsDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -33,6 +34,6 @@ public class TestUtils {
             new DBConnectionParams(pg.getJdbcUrl(), pg.getDriverClassName(), pg.getUsername(),
                                    pg.getPassword());
         DataSource dataSource = new NsDataSource(dbConnectionParams);
-        return new DataRepository(dataSource, new DBMigrator(dataSource));
+        return new NsDataRepository(dataSource, new DBMigrator(dataSource));
     }
 }

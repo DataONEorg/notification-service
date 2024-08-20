@@ -4,6 +4,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.api.data.DataRepository;
+import org.dataone.notifications.api.data.NsDataRepository;
 import org.dataone.notifications.api.data.Subscription;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ class ResourceTest {
                                         REQUESTED_PID_LIST)).thenReturn(
             new HashSet<>(EXPECTED_PID_LIST));
 
-        DataRepository mockDataRepo = mock(DataRepository.class);
+        DataRepository mockDataRepo = mock(NsDataRepository.class);
         when(
             mockDataRepo.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
             EXPECTED_PID_LIST);

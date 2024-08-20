@@ -1,6 +1,7 @@
 package org.dataone.notifications.api.auth;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
+import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.apache.logging.log4j.LogManager;
@@ -15,10 +16,9 @@ import static org.apache.logging.log4j.util.Strings.isBlank;
 
 /**
  * An implementation of the AuthProvider interface for the notification service.
- * {@code @ApplicationScoped} means this is a singleton bean.
  */
-@SuppressWarnings("UnnecessaryLocalVariable")
-@ApplicationScoped
+@Singleton
+@Default
 public class NsAuthProvider implements AuthProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass().getName());
