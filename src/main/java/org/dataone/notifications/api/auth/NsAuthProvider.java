@@ -4,9 +4,8 @@ import jakarta.enterprise.inject.Default;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.apache.logging.log4j.LogManager;
-import org.slf4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
@@ -59,7 +58,7 @@ public class NsAuthProvider implements AuthProvider {
             throw new NotFoundException("Missing pid(s)");
         }
         log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject, resourceType,
-                  pids.toString());
+                  pids);
 
         // Automatically de-duplicates the list of PIDs
         Set<String> authPidSet = new HashSet<>(pids);

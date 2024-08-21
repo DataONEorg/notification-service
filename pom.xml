@@ -17,6 +17,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <flyway.url>jdbc:postgresql://localhost:5432/notifications</flyway.url>
         <flyway.user>notifications_user</flyway.user>
+        <!-- TODO: move to a secret -->
         <flyway.password>notifications_password</flyway.password>
         <jersey.version>3.1.8</jersey.version>
         <jackson.version>2.17.2</jackson.version>
@@ -41,23 +42,6 @@
             <version>10.0.0</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>jakarta.ws.rs</groupId>-->
-<!--            <artifactId>all</artifactId>-->
-<!--            <version>4.0.0</version>-->
-<!--            <type>pom</type>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.glassfish.jersey.ext.cdi</groupId>-->
-<!--            <artifactId>jersey-cdi1x</artifactId>-->
-<!--            <version>${jersey.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>javax.enterprise</groupId>-->
-<!--            <artifactId>cdi-api</artifactId>-->
-<!--            <version>2.0</version>-->
-<!--        </dependency>-->
-
         <!-- YAML Config Support -->
         <dependency>
             <groupId>org.yaml</groupId>
@@ -73,6 +57,13 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
             <version>1.9.4</version>
+            <!-- Vulnerability in version 1.9.2 from commons-collections: excluding it here -->
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-collections</groupId>
+                    <artifactId>commons-collections</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -151,8 +142,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.20.0</version>
-            <!--            <version>1.20.1</version>-->
+            <version>1.20.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

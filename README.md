@@ -22,19 +22,38 @@ contributions with us.
 
 Documentation is a work in progress, and can be found here in the README
 
+### Jakarta EE
+Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally
+J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source
+software.
+
+Here are some useful links for those unfamiliar with Jakarta EE:
+- [Jakarta EE 10](https://jakarta.ee/release/10/)
+- [Jakarta EE 10 API](https://jakarta.ee/specifications/platform/10/apidocs/)
+- [Jakarta EE REST Service
+  Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
+
+### Web Application Server
+
+> Jakarta EE 10 is supported only by compliant web application servers. Tomcat version 10 is NOT yet
+> fully compliant with Jakarta EE 10, so for the time being, it is recommended to use
+> **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional
+> libraries needed to support Jakarta EE.
+
+TomEE can be downloaded from https://tomee.apache.org:
+- Version 9.1 (Webprofile) is a Final Release that is only Jakarta 9 EE compliant, but seems to work
+OK with the current v10 codebase
+- Version 10.0.0-M2 (Webprofile) is a Milestone Release that is Jakarta EE 10 compliant.
+
 ## Development build
 
 This is a java application, built using the Maven build tool.
 
 ## Usage Example
 
-> NOTE: this web application uses version 5 of the Java Servlet Specification, which is supported
-> only by Tomcat version 10 or later.
-
 build with maven and copy the war file to your tomcat webapps directory
 ```shell
 $ mvn clean package  [ -DskipTests ]
-# [...lots of maven output]
 
 $ cp ./target/notifications.war $TOMCAT_HOME/webapps
 ```
@@ -42,8 +61,6 @@ $ cp ./target/notifications.war $TOMCAT_HOME/webapps
 
 Example API interactions, using curl:
 ```shell
-
-
 # Subscribe user authenticated with jwt $TOKEN, to update-notifications for
 # the dataset identified by {pid}
 #

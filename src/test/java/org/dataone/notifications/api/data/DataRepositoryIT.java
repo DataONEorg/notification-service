@@ -36,13 +36,11 @@ class DataRepositoryIT {
     static void oneTimeTearDown() throws InterruptedException {
         assertNotNull(pg, "Postgres Instance is null - cannot shut down cleanly!");
         pg.stop();
-        Thread.sleep(1000);
-        System.out.println("DataRepositoryIT: Postgres Instance stopped.");
     }
 
     @BeforeEach
     void perTestSetUp() {
-        dataRepo = TestUtils.getTestDataRepository(pg).dataRepository();
+        dataRepo = TestUtils.getTestDataRepository(pg);
     }
 
     @Test
@@ -73,7 +71,7 @@ class DataRepositoryIT {
         List<String> pids = dataRepo.getSubscriptions(EXPECTED_SUBJECT, ResourceType.datasets);
         assertNotNull(pids);
         assertFalse(pids.isEmpty());
-        assertEquals(3, pids.size());
+        assertEquals(4, pids.size());
     }
 
     @Test

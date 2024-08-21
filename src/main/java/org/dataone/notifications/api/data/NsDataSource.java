@@ -19,7 +19,6 @@ public class NsDataSource extends HikariDataSource implements DataSource {
     @Inject
     public NsDataSource(DBConnectionParams params) {
         super();
-        System.out.println("NsDataSource constructor called; JdbcUrl: " + params.getJdbcUrl());
         this.setJdbcUrl(params.getJdbcUrl());
         this.setDriverClassName(params.getDriverClassName());
         this.setUsername(params.getUsername());

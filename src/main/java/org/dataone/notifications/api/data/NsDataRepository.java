@@ -5,7 +5,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.apache.logging.log4j.LogManager;
 import org.slf4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
@@ -33,10 +32,6 @@ public class NsDataRepository implements DataRepository {
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataSource dataSource;
 
-    public NsDataRepository() {
-        throw new IllegalStateException("Resource not initialized: missing DataSource");
-    }
-
     @Inject
     public NsDataRepository(DataSource source, NsDBMigrator migrator) {
         if (source != null) {
@@ -47,8 +42,8 @@ public class NsDataRepository implements DataRepository {
 
         try (Connection connection = source.getConnection()) {
             DatabaseMetaData dbMeta = connection.getMetaData();
-            log.info("Connected to database: " + dbMeta.getDatabaseProductName() + " "
-                         + dbMeta.getDatabaseProductVersion());
+            log.info("Connected to database: {} {}", dbMeta.getDatabaseProductName(),
+                     dbMeta.getDatabaseProductVersion());
         } catch (SQLException e) {
             log.error("* * * * * *  Database connection error: {}  * * * * * *", e.getMessage());
             throw new RuntimeException(
