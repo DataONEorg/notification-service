@@ -4,7 +4,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jvnet.hk2.annotations.Service;
 
 import javax.sql.DataSource;
 
@@ -14,7 +13,6 @@ import javax.sql.DataSource;
  * https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
  */
 @Singleton
-@Service
 @Default
 public class NsDataSource extends HikariDataSource implements DataSource {
 

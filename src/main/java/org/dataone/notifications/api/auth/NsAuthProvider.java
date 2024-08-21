@@ -4,10 +4,10 @@ import jakarta.enterprise.inject.Default;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +22,7 @@ import static org.apache.logging.log4j.util.Strings.isBlank;
 @Default
 public class NsAuthProvider implements AuthProvider {
 
-    private final Logger log = LogManager.getLogger(this.getClass().getName());
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
 
     @Override
     public String authenticate(String authHeader) throws NotAuthorizedException {

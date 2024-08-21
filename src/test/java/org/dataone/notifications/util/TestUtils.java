@@ -20,7 +20,8 @@ public class TestUtils {
         PostgreSQLContainer<?> pg =
             new PostgreSQLContainer<>("postgres:" + nsConfig.getString("database.version"));
 
-        pg.withExposedPorts(5432).withDatabaseName(nsConfig.getString("database.name"))
+        pg.withExposedPorts(5432)
+            .withDatabaseName(nsConfig.getString("database.name"))
             .withUsername(nsConfig.getString("database.username"))
             .withPassword(nsConfig.getString("database.password"));
         pg.start();
@@ -33,7 +34,7 @@ public class TestUtils {
         final DBConnectionParams dbConnectionParams =
             new DBConnectionParams(pg.getJdbcUrl(), pg.getDriverClassName(), pg.getUsername(),
                                    pg.getPassword());
-        final DataSource dataSource = new NsDataSource(dbConnectionParams);
+        final NsDataSource dataSource = new NsDataSource(dbConnectionParams);
         final NsDBMigrator migrator = new NsDBMigrator(dataSource);
         final DataRepository dataRepository = new NsDataRepository(dataSource, migrator);
 

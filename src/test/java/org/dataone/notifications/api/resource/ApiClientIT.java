@@ -72,14 +72,16 @@ class ApiClientIT extends JerseyTest {
     @Override
     protected Application configure() {
         ResourceConfig config = new ResourceConfig();
-        // Register the pre-instantiated classes, to disable injection
-        config.registerInstances(Resource.class, resource);
-        config.registerInstances(AuthProvider.class, mockAuthProvider);
-        config.registerInstances(DBConnectionParams.class, dataRepoObjects.dbConnectionParams());
-        config.registerInstances(DataSource.class, dataRepoObjects.dataSource());
-        config.registerInstances(NsDataRepository.class, dataRepoObjects.dataRepository());
-        config.registerInstances(NsDBMigrator.class, dataRepoObjects.migrator());
-        return config;
+        return config.registerInstances(Resource.class, resource);
+//        ResourceConfig config = new ResourceConfig();
+//        // Register the pre-instantiated classes, to disable injection
+//        config.registerInstances(Resource.class, resource);
+//        config.registerInstances(AuthProvider.class, mockAuthProvider);
+//        config.registerInstances(DBConnectionParams.class, dataRepoObjects.dbConnectionParams());
+//        config.registerInstances(DataSource.class, dataRepoObjects.dataSource());
+//        config.registerInstances(NsDataRepository.class, dataRepoObjects.dataRepository());
+//        config.registerInstances(NsDBMigrator.class, dataRepoObjects.migrator());
+//        return config;
     }
 
     @AfterAll

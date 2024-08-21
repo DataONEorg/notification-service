@@ -39,87 +39,45 @@
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-web-api</artifactId>
             <version>10.0.0</version>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        <!-- need the jersey (eclipse) implementation, since Tomcat 10 is not fully compliant -->
-        <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-servlet</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-<!--        START CHANGE-->
-
-        <!--        from https://github.com/aws/serverless-java-container/blob/main/samples/jersey/pet-store/-->
 <!--        <dependency>-->
-<!--            <groupId>org.glassfish.jersey.inject</groupId>-->
-<!--            <artifactId>jersey-cdi2-se</artifactId>-->
+<!--            <groupId>jakarta.ws.rs</groupId>-->
+<!--            <artifactId>all</artifactId>-->
+<!--            <version>4.0.0</version>-->
+<!--            <type>pom</type>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.glassfish.jersey.ext.cdi</groupId>-->
+<!--            <artifactId>jersey-cdi1x</artifactId>-->
 <!--            <version>${jersey.version}</version>-->
 <!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>javax.enterprise</groupId>-->
+<!--            <artifactId>cdi-api</artifactId>-->
+<!--            <version>2.0</version>-->
+<!--        </dependency>-->
 
-        <!--        from https://github.com/aws/serverless-java-container/blob/main/samples/jersey/pet-store/-->
+        <!-- YAML Config Support -->
         <dependency>
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-            <version>${jersey.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-
-<!--        https://stackoverflow.com/questions/78851627/org-glassfish-hk2-api-unsatisfieddependencyexception-there-was-no-object-avail-->
-        <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-api</artifactId>
-            <version>3.1.1</version>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.2</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-core</artifactId>
-            <version>3.1.1</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.11.0</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-locator</artifactId>
-            <version>3.1.1</version>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.4</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-
-
-<!--        END-->
-
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>3.0.1</version>
-<!--            <version>4.0.2</version>-->
-        </dependency>
-        <dependency>
-            <groupId>org.apache.xmlbeans</groupId>
-            <artifactId>xmlbeans</artifactId>
-            <version>5.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>3.0.2</version>
-<!--            <version>4.0.5</version>-->
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -128,43 +86,20 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.fasterxml.jackson.module</groupId>-->
-<!--            <artifactId>jackson-module-jaxb-annotations</artifactId>-->
-<!--            <version>${jackson.version}</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>${jersey.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
+        <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -181,21 +116,10 @@
             <version>${log4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <version>2.9.0</version>
-<!--            <version>2.11.0</version>-->
-        </dependency>
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-            <version>1.9.4</version>
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>junit</groupId>-->
-<!--                    <artifactId>junit</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+            <version>2.0.16</version>
+            <scope>test</scope>
         </dependency>
         <!-- DATABASE -->
         <dependency>
@@ -228,7 +152,7 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>1.20.0</version>
-<!--            <version>1.20.1</version>-->
+            <!--            <version>1.20.1</version>-->
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -252,6 +176,13 @@
         <dependency>
             <groupId>org.glassfish.jersey.test-framework.providers</groupId>
             <artifactId>jersey-test-framework-provider-inmemory</artifactId>
+            <version>${jersey.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
             <version>${jersey.version}</version>
             <scope>test</scope>
         </dependency>

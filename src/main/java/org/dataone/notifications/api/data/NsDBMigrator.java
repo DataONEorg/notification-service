@@ -4,7 +4,6 @@ import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.flywaydb.core.Flyway;
-import org.jvnet.hk2.annotations.Service;
 
 import javax.sql.DataSource;
 
@@ -12,7 +11,6 @@ import javax.sql.DataSource;
  * A class that encapsulates the database migration process. Implemented using FlywayDB.
  */
 @Singleton
-@Service
 @Default
 public class NsDBMigrator implements DBMigrator {
 

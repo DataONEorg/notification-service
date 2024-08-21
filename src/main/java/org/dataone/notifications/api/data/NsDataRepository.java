@@ -5,12 +5,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
-import org.jvnet.hk2.annotations.Service;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -28,11 +27,10 @@ import java.util.List;
  * {@link NsDBMigrator}.
  */
 @Singleton
-@Service
 @Default
 public class NsDataRepository implements DataRepository {
 
-    private final Logger log = LogManager.getLogger(this.getClass().getName());
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataSource dataSource;
 
     public NsDataRepository() {
