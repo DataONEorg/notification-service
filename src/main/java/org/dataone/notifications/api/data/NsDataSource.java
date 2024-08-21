@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jvnet.hk2.annotations.Service;
 
 import javax.sql.DataSource;
 
@@ -13,20 +14,14 @@ import javax.sql.DataSource;
  * https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
  */
 @Singleton
+@Service
 @Default
 public class NsDataSource extends HikariDataSource implements DataSource {
 
     @Inject
     public NsDataSource(DBConnectionParams params) {
         super();
-        System.out.println("\n\n************************************************************\n");
-        System.out.println("\n\nNsDataSource constructor called; Params: ");
-        System.out.println("params.getUsername(): " + params.getUsername());
-        System.out.println("params.getPassword(): " + params.getPassword());
-        System.out.println("params.getJdbcUrl(): " + params.getJdbcUrl());
-        System.out.println("params.getDriverClassName(): " + params.getDriverClassName());
-        System.out.println("\n\n************************************************************\n\n");
-
+        System.out.println("NsDataSource constructor called; JdbcUrl: " + params.getJdbcUrl());
         this.setJdbcUrl(params.getJdbcUrl());
         this.setDriverClassName(params.getDriverClassName());
         this.setUsername(params.getUsername());

@@ -42,14 +42,14 @@ class DataRepositoryIT {
 
     @BeforeEach
     void perTestSetUp() {
-        dataRepo = TestUtils.getTestDataRepository(pg);
+        dataRepo = TestUtils.getTestDataRepository(pg).dataRepository();
     }
 
     @Test
     void addSubscriptionValidData() {
         assertEquals(EXPECTED_RECORD,
                      dataRepo.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
-                                                  EXPECTED_PID));
+                                              EXPECTED_PID));
     }
 
     @Test
@@ -57,7 +57,7 @@ class DataRepositoryIT {
         String blankSubject = "";
         assertThrows(NotAuthorizedException.class,
                      () -> dataRepo.addSubscription(blankSubject, ResourceType.datasets,
-                                                        EXPECTED_PID));
+                                                    EXPECTED_PID));
     }
 
     @Test
@@ -65,7 +65,7 @@ class DataRepositoryIT {
         String blankPid = "";
         assertThrows(NotFoundException.class,
                      () -> dataRepo.addSubscription(EXPECTED_SUBJECT, ResourceType.datasets,
-                                                        blankPid));
+                                                    blankPid));
     }
 
     @Test
@@ -96,7 +96,7 @@ class DataRepositoryIT {
 
         assertEquals(new Subscription(testSubject, ResourceType.datasets, List.of(testPid)),
                      dataRepo.deleteSubscriptions(testSubject, ResourceType.datasets,
-                                                      List.of(testPid, "nonexistent_pid")));
+                                                  List.of(testPid, "nonexistent_pid")));
     }
 
     @Test
@@ -118,9 +118,9 @@ class DataRepositoryIT {
         assertTrue(pids.contains(testPid2), "Expected " + testPid2 + " to be in: " + pids);
 
         // Delete the subscription
-        Subscription confirmation =
-            dataRepo.deleteSubscriptions(testSubject, ResourceType.datasets,
-                                             List.of(testPid1, testPid2, "nonexistent_pid"));
+        Subscription confirmation = dataRepo.deleteSubscriptions(testSubject, ResourceType.datasets,
+                                                                 List.of(testPid1, testPid2,
+                                                                         "nonexistent_pid"));
         assertNotNull(confirmation);
         assertEquals(testSubject, confirmation.subject());
         assertEquals(ResourceType.datasets, confirmation.resourceType());

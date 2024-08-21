@@ -5,10 +5,12 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
+import org.jvnet.hk2.annotations.Service;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -23,9 +25,10 @@ import java.util.List;
 /**
  * A class that encapsulate and provide access to CRUD actions on the data store. It uses a
  * {@link DataSource} to connect to the database, and performs an initial migration if needed, via a
- * {@link DBMigrator}.
+ * {@link NsDBMigrator}.
  */
 @Singleton
+@Service
 @Default
 public class NsDataRepository implements DataRepository {
 
@@ -37,7 +40,7 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Inject
-    public NsDataRepository(DataSource source, DBMigrator migrator) {
+    public NsDataRepository(DataSource source, NsDBMigrator migrator) {
         if (source != null) {
             this.dataSource = source;
         } else {

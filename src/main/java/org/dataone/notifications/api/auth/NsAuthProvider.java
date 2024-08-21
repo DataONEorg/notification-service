@@ -4,6 +4,7 @@ import jakarta.enterprise.inject.Default;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dataone.notifications.api.resource.ResourceType;

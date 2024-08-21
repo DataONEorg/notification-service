@@ -1,9 +1,9 @@
 package org.dataone.notifications.api.resource;
 
+
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import jakarta.persistence.PersistenceContext;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -27,6 +27,7 @@ import java.util.List;
 /**
  * A class that provides CRUD operations for notification subscriptions for a given subject (user).
  */
+@Default
 @RequestScoped
 @Path("/{resource}")
 public class Resource {

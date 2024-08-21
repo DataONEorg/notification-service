@@ -9,14 +9,16 @@ import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.api.data.DBConnectionParams;
 import org.dataone.notifications.api.data.DBMigrator;
 import org.dataone.notifications.api.data.DataRepository;
+import org.dataone.notifications.api.data.NsDBMigrator;
 import org.dataone.notifications.api.data.NsDataRepository;
-import org.dataone.notifications.api.data.NsDataSource;
 import org.dataone.notifications.util.TestUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.DataSource;
@@ -56,35 +58,27 @@ class ApiClientIT extends JerseyTest {
 
     private static final Resource resource;
     private static final PostgreSQLContainer<?> pg;
-    private static final DataRepository testDataRepository;
+    private static final TestUtils.DataRepoObjects dataRepoObjects;
     private static final AuthProvider mockAuthProvider;
-    private static final DBConnectionParams dbConnectionParams;
-    private static final DataSource dataSource;
+
 
     static {
         pg = TestUtils.getTestDb();
-//        testDataRepository = TestUtils.getTestDataRepository(pg);
-
+        dataRepoObjects = TestUtils.getTestDataRepository(pg);
         mockAuthProvider = getAuthProvider();
-        dbConnectionParams =
-            new DBConnectionParams(pg.getJdbcUrl(), pg.getDriverClassName(), pg.getUsername(),
-                                   pg.getPassword());
-        dataSource = new NsDataSource(dbConnectionParams);
-        testDataRepository = new NsDataRepository(dataSource, new DBMigrator(dataSource));
-
-        resource = new Resource(mockAuthProvider, testDataRepository);
+        resource = new Resource(mockAuthProvider, dataRepoObjects.dataRepository());
     }
 
     @Override
     protected Application configure() {
         ResourceConfig config = new ResourceConfig();
+        // Register the pre-instantiated classes, to disable injection
         config.registerInstances(Resource.class, resource);
-
-        // Register the pre-instantiated resource, to disable injection
-        config.registerInstances(DBConnectionParams.class, dbConnectionParams);
         config.registerInstances(AuthProvider.class, mockAuthProvider);
-        config.registerInstances(DataSource.class, dataSource);
-        config.registerInstances(NsDataRepository.class, testDataRepository);
+        config.registerInstances(DBConnectionParams.class, dataRepoObjects.dbConnectionParams());
+        config.registerInstances(DataSource.class, dataRepoObjects.dataSource());
+        config.registerInstances(NsDataRepository.class, dataRepoObjects.dataRepository());
+        config.registerInstances(NsDBMigrator.class, dataRepoObjects.migrator());
         return config;
     }
 
@@ -115,20 +109,8 @@ class ApiClientIT extends JerseyTest {
         return mockAuthProvider;
     }
 
-    @Test
-    void repeat() {
-        for (int i = 0; i < 100; i++) {
-            validSubscribe("datasets");
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-//    @ParameterizedTest
-//    @ValueSource(strings = {"datasets"})
+    @ParameterizedTest
+    @ValueSource(strings = {"datasets"})
     void validSubscribe(String resourceType) {
 
         Response response =
@@ -143,7 +125,7 @@ class ApiClientIT extends JerseyTest {
             MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
     }
 
-//    @Test
+    @Test
     void validGetSubscriptions() {
 
         Response response = target("/datasets/")
