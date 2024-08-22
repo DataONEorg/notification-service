@@ -71,7 +71,7 @@ class DataRepositoryIT {
         List<String> pids = dataRepo.getSubscriptions(EXPECTED_SUBJECT, ResourceType.datasets);
         assertNotNull(pids);
         assertFalse(pids.isEmpty());
-        assertEquals(4, pids.size());
+        assertEquals(3, pids.size());
     }
 
     @Test

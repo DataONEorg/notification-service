@@ -38,7 +38,7 @@ class ApiClientIT extends JerseyTest {
     private static final String EXPECTED_PID_1A = EXPECTED_PID;
     private static final String EXPECTED_PID_1B = "urn:pid:0000-1111-2222-3333";
     private static final String EXPECTED_PID_1C = "urn:pid:0000-4444-5555-6666";
-    private static final String EXPECTED_PID_3 = "urn:pid:0000-1111-3333-5555";
+    private static final String EXPECTED_PID_5 = "urn:pid:0000-1111-3333-5555";
     private static final String VALID_AUTH_HEADER_1 = "Bearer my-totally-valid-token";
     private static final String EXPECTED_SUBJECT_1 = "https://orcid.org/0000-1234-5678-999X";
     private static final String VALID_AUTH_HEADER_2 = "Bearer my-other-totally-valid-token";
@@ -47,6 +47,9 @@ class ApiClientIT extends JerseyTest {
     private static final String EXPECTED_SUBJECT_3 = "dn=\"uid=test,o=NCEAS,dc=dataone,dc=org\"";
     private static final String VALID_AUTH_HEADER_4 = "Bearer my-valid-unsubscription-token";
     private static final String EXPECTED_SUBJECT_4 = "https://orcid.org/0000-7777-8888-9999";
+    private static final String VALID_AUTH_HEADER_5 = "Bearer my-other-valid-crud-token";
+    private static final String EXPECTED_SUBJECT_5 = "https://orcid.org/0000-1111-3333-5555";
+
     private static final String INVALID_AUTH_HEADER = "Bearer my-naughty-non-valid-token";
     private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasets;
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
@@ -77,6 +80,7 @@ class ApiClientIT extends JerseyTest {
         when(mockAuthProvider.authenticate(VALID_AUTH_HEADER_2)).thenReturn(EXPECTED_SUBJECT_2);
         when(mockAuthProvider.authenticate(VALID_AUTH_HEADER_3)).thenReturn(EXPECTED_SUBJECT_3);
         when(mockAuthProvider.authenticate(VALID_AUTH_HEADER_4)).thenReturn(EXPECTED_SUBJECT_4);
+        when(mockAuthProvider.authenticate(VALID_AUTH_HEADER_5)).thenReturn(EXPECTED_SUBJECT_5);
 
         when(mockAuthProvider.authenticate(INVALID_AUTH_HEADER)).thenThrow(
             new NotAuthorizedException("Unauthorized"));
@@ -102,8 +106,7 @@ class ApiClientIT extends JerseyTest {
     void post(String resourceType) {
         Response response = doPost(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + EXPECTED_PID,
                                    Response.Status.OK);
-        assertEquals(
-            MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
+        assertJsonContentType(response);
         String body = getBody(response);
         assertTrue(body.contains(EXPECTED_PID), "body didn't contain expected PID: " + body);
     }
@@ -121,9 +124,11 @@ class ApiClientIT extends JerseyTest {
         Response response = doGet(VALID_AUTH_HEADER_1, DATASETS, Response.Status.OK);
         assertJsonContentType(response);
         String body = getBody(response);
-        assertTrue(body.contains(EXPECTED_PID_1A), "body didn't contain expected PID: " + body);
-        assertTrue(body.contains(EXPECTED_PID_1B), "body didn't contain expected PID: " + body);
-        assertTrue(body.contains(EXPECTED_PID_1C), "body didn't contain expected PID: " + body);
+        List<String> pids = getPids(body);
+        assertEquals(3, pids.size());
+        assertTrue(pids.contains(EXPECTED_PID_1A), "body didn't contain expected PID: " + body);
+        assertTrue(pids.contains(EXPECTED_PID_1B), "body didn't contain expected PID: " + body);
+        assertTrue(pids.contains(EXPECTED_PID_1C), "body didn't contain expected PID: " + body);
     }
 
     @Test
@@ -135,12 +140,13 @@ class ApiClientIT extends JerseyTest {
     @ParameterizedTest
     @ValueSource(strings = {"datasets"})
     void delete(String resourceType) {
-        Response response = doDelete(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + EXPECTED_PID_3,
+        Response response = doDelete(VALID_AUTH_HEADER_5, "/" + resourceType + "/" + EXPECTED_PID_5,
                                      Response.Status.OK);
+        assertJsonContentType(response);
         assertEquals(
             MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
         String body = getBody(response);
-        assertTrue(body.contains(EXPECTED_PID_3), "body didn't contain expected PID: " + body);
+        assertTrue(body.contains(EXPECTED_PID_5), "body didn't contain expected PID: " + body);
     }
 
     @Test
@@ -149,6 +155,50 @@ class ApiClientIT extends JerseyTest {
             doDelete(INVALID_AUTH_HEADER, DATASETS + EXPECTED_PID, Response.Status.UNAUTHORIZED);
         String body = getBody(response);
         assertFalse(body.contains(EXPECTED_PID), "body didn't contain expected PID: " + body);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"datasets"})
+    void testSubscriptionCRUD(String resourceType) {
+
+        // actually CRD - currently no need for an update operation
+        final String testSubject = "dn=\"uid=test,o=NCEAS,dc=ecoinformatics,dc=org\"";
+        final String testPid1 = "urn:node:1_my_api_client_test_pid_1";
+        final String testPid2 = "urn:node:2_my_api_client_test_pid_2";
+
+        // Get count of existing subscriptions for this test user
+        String body = getBody(doGet(VALID_AUTH_HEADER_3, "/" + resourceType, Response.Status.OK));
+        int startingPids = getPids(body).size();
+        System.out.println("Starting pids: " + startingPids + "; body: " + body);
+
+        // Add a subscription
+        doPost(VALID_AUTH_HEADER_3, "/" + resourceType + "/" + testPid1, Response.Status.OK);
+        doPost(VALID_AUTH_HEADER_3, "/" + resourceType + "/" + testPid2, Response.Status.OK);
+
+        // Retrieve the subscription
+        body = getBody(doGet(VALID_AUTH_HEADER_3, "/" + resourceType, Response.Status.OK));
+        List<String> pids = getPids(body);
+        assertEquals(startingPids + 2, pids.size());
+        assertTrue(pids.contains(testPid1), "body didn't contain testPid1: " + body);
+        assertTrue(pids.contains(testPid2), "body didn't contain testPid2: " + body);
+
+        // Delete one subscription
+        doDelete(VALID_AUTH_HEADER_3, "/" + resourceType + "/" + testPid1, Response.Status.OK);
+        // then check again
+        body = getBody(doGet(VALID_AUTH_HEADER_3, "/" + resourceType, Response.Status.OK));
+        pids = getPids(body);
+        assertEquals(startingPids + 1, pids.size());
+        assertFalse(pids.contains(testPid1));
+        assertTrue(pids.contains(testPid2));
+
+        // Delete the other subscription
+        doDelete(VALID_AUTH_HEADER_3, "/" + resourceType + "/" + testPid2, Response.Status.OK);
+        // then check again
+        body = getBody(doGet(VALID_AUTH_HEADER_3, "/" + resourceType, Response.Status.OK));
+        pids = getPids(body);
+        assertEquals(startingPids, pids.size());
+        assertFalse(pids.contains(testPid1));
+        assertFalse(pids.contains(testPid2));
     }
 
     private Response doPost(String authHeader, String targetURI, Response.Status expectedStatus) {
@@ -182,5 +232,15 @@ class ApiClientIT extends JerseyTest {
     private void assertJsonContentType(Response response) {
         assertEquals(MediaType.APPLICATION_JSON,
                      response.getHeaderString(HttpHeaders.CONTENT_TYPE));
+    }
+
+    private List<String> getPids(String body) {
+        String pidsListString = body.substring(body.indexOf('[') + 1, body.indexOf(']'));
+        pidsListString = pidsListString
+            .replaceAll("^\"", "").replaceAll("\"$", "");
+        pidsListString = pidsListString.replace("\",\"", "|").replace("\\", "\"");
+        String[] pidsArray = pidsListString.split("\\|");
+
+        return (pidsArray[0].isBlank()) ? new ArrayList<>() : List.of(pidsArray);
     }
 }
