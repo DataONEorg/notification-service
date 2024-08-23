@@ -33,31 +33,75 @@ Here are some useful links for those unfamiliar with Jakarta EE:
 - [Jakarta EE REST Service
   Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
-### Web Application Server
+## Development build
 
-> Jakarta EE 10 is supported only by compliant web application servers. Tomcat version 10 is NOT yet
+This is a java application, built using the Maven build tool.
+
+```shell
+$ mvn clean package  [ -DskipTests ]
+```
+
+### Building the Docker Image
+
+> (Temporary manual step -- This is a workaround until we start pulling config from environment
+> variables.): Edit `src/main/resources/properties.yaml` and change `localhost` to
+> `host.docker.internal` in the `database.jdbcUrl` property:
+>  ```yaml
+>  database:
+>    jdbcUrl: jdbc:postgresql://host.docker.internal:5432/notifications
+>   ```
+
+```shell
+# TAG: the docker image tag string; use a version # for releases, or "DEVELOP" for dev
+# NS_VERSION: the notification-service war version to use; defaults to ${TAG} if
+#             "--build-arg NS_VERSION=..." is omitted
+
+$ docker image build -t ghcr.io/dataoneorg/notification-service:${TAG} \
+                     -f docker/Dockerfile  \
+                     --build-arg NS_VERSION=${NS_VERSION}  .
+
+# Don't forget the trailing dot!
+```
+For build-debugging purposes, you can also add `--progress=plain` and/or `--no-cache`.
+
+### Running in Docker
+
+Use `docker compose`, which will start all the required components (Tomcat container & PostgreSQL
+database container)
+
+```shell
+$ docker compose up
+```
+
+To attach to the running container:
+
+```shell
+docker container exec  --interactive --tty notification-service-webapp-1 bash
+```
+
+### Building and Running on a Localhost Webapp Server
+
+> NOTE: Jakarta EE 10 is supported only by compliant web application servers. Tomcat version 10 is
+> NOT yet
 > fully compliant with Jakarta EE 10, so for the time being, it is recommended to use
 > **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional
 > libraries needed to support Jakarta EE.
 
 TomEE can be downloaded from https://tomee.apache.org:
 - Version 9.1 (Webprofile) is a Final Release that is only Jakarta 9 EE compliant, but seems to work
-OK with the current v10 codebase
+  OK with the current v10 codebase
 - Version 10.0.0-M2 (Webprofile) is a Milestone Release that is Jakarta EE 10 compliant.
 
-## Development build
+Build with maven and copy the war file to your TomEE webapps directory
 
-This is a java application, built using the Maven build tool.
-
-## Usage Example
-
-build with maven and copy the war file to your tomcat webapps directory
 ```shell
-$ mvn clean package  [ -DskipTests ]
+$ mvn clean package -DskipTests
 
-$ cp ./target/notifications.war $TOMCAT_HOME/webapps
+$ cp ./target/notification-service-${NS_VERSION}.war $TOMEE_HOME/webapps
 ```
-...and restart Tomcat.
+...and (re)start TomEE.
+
+## API Usage Examples
 
 Example API interactions, using curl:
 ```shell

@@ -1,0 +1,15 @@
+version: '3'
+services:
+  webapp:
+    image: ghcr.io/dataoneorg/notification-service:develop
+    ports:
+      - "8080:8080"
+
+  database:
+    image: postgres:16.0
+    environment:
+        POSTGRES_USER: notifications_user
+        POSTGRES_PASSWORD: notifications_password
+        POSTGRES_DB: notifications
+    ports:
+      - "5432:5432"
