@@ -2,11 +2,11 @@ package org.dataone.notifications.util;
 
 import org.apache.commons.configuration2.YAMLConfiguration;
 import org.dataone.notifications.NsConfig;
-import org.dataone.notifications.api.data.DBConnectionParams;
-import org.dataone.notifications.api.data.DataRepository;
-import org.dataone.notifications.api.data.NsDBMigrator;
-import org.dataone.notifications.api.data.NsDataRepository;
-import org.dataone.notifications.api.data.NsDataSource;
+import org.dataone.notifications.storage.DBConnectionParams;
+import org.dataone.notifications.storage.DataRepository;
+import org.dataone.notifications.storage.NsDBMigrator;
+import org.dataone.notifications.storage.NsDataRepository;
+import org.dataone.notifications.storage.NsDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 public class TestUtils {

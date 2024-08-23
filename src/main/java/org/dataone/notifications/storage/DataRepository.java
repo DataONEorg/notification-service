@@ -1,4 +1,4 @@
-package org.dataone.notifications.api.data;
+package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;

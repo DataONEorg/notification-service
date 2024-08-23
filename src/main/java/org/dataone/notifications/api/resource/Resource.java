@@ -18,8 +18,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.DataRepository;
-import org.dataone.notifications.api.data.Subscription;
+import org.dataone.notifications.storage.DataRepository;
+import org.dataone.notifications.storage.Subscription;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;

@@ -3,9 +3,9 @@ package org.dataone.notifications.api.resource;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.DataRepository;
-import org.dataone.notifications.api.data.NsDataRepository;
-import org.dataone.notifications.api.data.Subscription;
+import org.dataone.notifications.storage.DataRepository;
+import org.dataone.notifications.storage.NsDataRepository;
+import org.dataone.notifications.storage.Subscription;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

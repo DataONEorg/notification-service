@@ -1,4 +1,4 @@
-package org.dataone.notifications.api.data;
+package org.dataone.notifications.storage;
 
 import org.dataone.notifications.api.resource.ResourceType;
 

@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.dataone.notifications.api.auth.AuthProvider;
-import org.dataone.notifications.api.data.DataRepository;
+import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.util.TestUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;

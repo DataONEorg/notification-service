@@ -1,4 +1,4 @@
-package org.dataone.notifications.api.data;
+package org.dataone.notifications.storage;
 
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.enterprise.inject.Default;

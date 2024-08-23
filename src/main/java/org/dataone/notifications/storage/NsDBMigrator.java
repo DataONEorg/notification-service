@@ -1,4 +1,4 @@
-package org.dataone.notifications.api.data;
+package org.dataone.notifications.storage;
 
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
