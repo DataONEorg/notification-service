@@ -47,6 +47,8 @@ public class NsAuthProvider implements AuthProvider {
         return authSubject;
     }
 
+     // TODO: DO WE EVEN NEED THIS? OK to subscribe to something you don't have access to? Actual
+     //       viewing will be blocked if user tries to follow link
     @Override
     public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids)
         throws NotAuthorizedException {

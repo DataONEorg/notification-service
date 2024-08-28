@@ -22,6 +22,8 @@ public interface AuthProvider {
     String authenticate(String authHeader) throws NotAuthorizedException;
 
     /**
+     * TODO: DO WE EVEN NEED THIS? OK to subscribe to something you don't have access to? Actual
+     *       viewing will be blocked if user tries to follow link
      * Verify that a user is Authorized to access a resource. NOTE: Assumes the {@code subject} has
      * already been authenticated  you MUST call the {@code authenticate} method before calling this
      * method.
