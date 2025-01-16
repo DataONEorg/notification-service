@@ -70,7 +70,7 @@ Use `docker compose`, which will start all the required components (Tomcat conta
 database container)
 
 ```shell
-$ docker compose up
+$ docker compose -f docker/docker-compose.yaml up
 ```
 
 To attach to the running container:
