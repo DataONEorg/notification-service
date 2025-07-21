@@ -1,4 +1,6 @@
 Configuration:
+  monitorInterval: 30  # seconds
+
   status: warn
 
   Appenders:
