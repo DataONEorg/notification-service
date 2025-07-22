@@ -41,6 +41,9 @@ This is a java application, built using the Maven build tool.
 $ mvn clean package  [ -DskipTests ]
 ```
 
+> [!NOTE]
+> The build requires Java 21. It can be downloaded from [Adoptium](https://adoptium.net/temurin/releases?version=21&os=any&arch=any). You can also set Java 21 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
+
 ### Building the Docker Image
 
 > (Temporary manual step -- This is a workaround until we start pulling config from environment
