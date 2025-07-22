@@ -19,7 +19,10 @@ public class DBConnectionParams {
 
     @Inject
     public DBConnectionParams() {
-        this(NsConfig.getConfig().getString("database.jdbcUrl"),
+        this(String.format("jdbc:postgresql://%s:%s/%s",
+                NsConfig.getConfig().getString("database.jdbcHost"),
+                NsConfig.getConfig().getString("database.jdbcPort"),
+                NsConfig.getConfig().getString("database.name")),
             NsConfig.getConfig().getString("database.driverClassName"),
             NsConfig.getConfig().getString("database.username"),
             NsConfig.getConfig().getString("database.password"));

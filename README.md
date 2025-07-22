@@ -46,12 +46,11 @@ $ mvn clean package  [ -DskipTests ]
 
 ### Building the Docker Image
 
-> (Temporary manual step -- This is a workaround until we start pulling config from environment
-> variables.): Edit `src/main/resources/properties.yaml` and change `localhost` to
-> `host.docker.internal` in the `database.jdbcUrl` property:
+> (Edit `src/main/resources/properties.yaml` and change `localhost` to
+> `host.docker.internal` in the `database.jdbcHost` property:
 >  ```yaml
 >  database:
->    jdbcUrl: jdbc:postgresql://host.docker.internal:5432/notifications
+>    jdbcHost: host.docker.internal
 >   ```
 
 ```shell
