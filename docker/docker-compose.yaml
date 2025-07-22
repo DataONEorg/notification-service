@@ -1,6 +1,6 @@
 services:
   webapp:
-    image: ghcr.io/dataoneorg/notification-service:DEVELOP
+    image: ghcr.io/dataoneorg/notification-service:develop
     ports:
       - "8080:8080"
 
