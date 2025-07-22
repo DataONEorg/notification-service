@@ -16,8 +16,8 @@ Configuration:
       AppenderRef:
         ref: Console
     Logger:
-      name: org.jboss
-      level: error
-      additivity: false
-      AppenderRef:
-        ref: Console
+      - name: org.jboss
+        level: error
+        additivity: false
+        AppenderRef:
+          ref: Console
