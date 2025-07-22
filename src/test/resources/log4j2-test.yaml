@@ -1,0 +1,48 @@
+Configuration:
+  monitorInterval: 30  # seconds
+
+  status: warn
+
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "notification-service %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"
+
+  Loggers:
+    Root:
+      level: debug
+      AppenderRef:
+        ref: Console
+
+    Logger:
+      - name: org.jboss
+        level: error
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      - name: com.github.dockerjava
+        level: warn
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      - name: com.github.dockerjava.zerodep
+        level: warn
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      - name: org.testcontainers.utility.RyukResourceReaper
+        level: error
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      - name: com.zaxxer.hikari.pool
+        level: error
+        additivity: false
+        AppenderRef:
+          ref: Console
