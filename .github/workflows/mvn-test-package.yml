@@ -30,7 +30,7 @@ jobs:
       id: get_version
     - name: Build and Test
       id: build-and-test
-      run: mvn -s .github/maven/settings.xml --batch-mode --update-snapshots test
+      run: mvn --batch-mode --update-snapshots test
       continue-on-error: true
     - name: Upload test logs if tests failed
       if: steps.build-and-test.outcome != 'success'
@@ -43,7 +43,7 @@ jobs:
       run: exit 1
     - name: Integration Tests
       id: integration-tests
-      run: mvn -s .github/maven/settings.xml --batch-mode --update-snapshots verify -DskipTests=true
+      run: mvn --batch-mode --update-snapshots verify -DskipTests=true
       continue-on-error: true
     - name: Upload test logs if tests failed
       if: steps.integration-tests.outcome != 'success'
@@ -56,7 +56,7 @@ jobs:
       run: exit 1
     - name: Package
       run: |
-        mvn -s .github/maven/settings.xml --batch-mode --update-snapshots -DskipTests=true package
+        mvn --batch-mode --update-snapshots -DskipTests=true package
     - uses: actions/cache@v4
       with:
         path: .
