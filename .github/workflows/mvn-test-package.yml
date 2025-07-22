@@ -21,7 +21,8 @@ env:
 jobs:
   maven-build:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 21
@@ -106,11 +107,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          context: workflow
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=tag
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
