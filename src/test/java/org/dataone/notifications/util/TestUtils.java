@@ -1,6 +1,6 @@
 package org.dataone.notifications.util;
 
-import org.apache.commons.configuration2.YAMLConfiguration;
+import org.apache.commons.configuration2.Configuration;
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.storage.DBConnectionParams;
 import org.dataone.notifications.storage.DataRepository;
@@ -19,7 +19,7 @@ public class TestUtils {
 
     public static PostgreSQLContainer<?> getTestDb() {
 
-        YAMLConfiguration nsConfig = NsConfig.getConfig();
+        Configuration nsConfig = NsConfig.getConfig();
         PostgreSQLContainer<?> pg =
             new PostgreSQLContainer<>("postgres:" + nsConfig.getString("database.version"))
                 .withDatabaseName(nsConfig.getString("database.name"))
