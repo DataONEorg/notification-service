@@ -2,8 +2,9 @@
 ##             TEST properties                 ##
 #################################################
 ##
-database:
-  username: notifications_test_user
-  password: notifications_test_password
-  name: notifications_test_db
-  version: 16
+ns:
+  database:
+    username: notifications_test_user
+    password: notifications_test_password
+    name: notifications_test_db
+    version: 16

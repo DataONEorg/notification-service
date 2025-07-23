@@ -47,7 +47,7 @@ $ mvn clean package  [ -DskipTests ]
 ### Building the Docker Image
 
 > (Edit `src/main/resources/properties.yaml` and change `localhost` to
-> `host.docker.internal` in the `database.jdbcHost` property:
+> `host.docker.internal` in the `ns.database.jdbcHost` property:
 >  ```yaml
 >  database:
 >    jdbcHost: host.docker.internal

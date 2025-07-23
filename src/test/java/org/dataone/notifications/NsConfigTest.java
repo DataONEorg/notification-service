@@ -13,7 +13,7 @@ class NsConfigTest {
     @Test
     void testGetConfig() throws Exception {
 
-        final String key = "database.name";
+        final String key = "ns.database.name";
         final String expectedYaml = "notifications_test_db";
 
         // Test that the configuration is loaded correctly

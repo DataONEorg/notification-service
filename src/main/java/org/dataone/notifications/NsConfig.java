@@ -7,11 +7,17 @@ import org.apache.commons.configuration2.YAMLConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
 
 public class NsConfig {
 
     private static final String CONFIG_FILE = "properties.yaml";
     private static CompositeConfiguration config;
+
+    private static final Logger log = LoggerFactory.getLogger("org.dataone.notifications.NsConfig");
 
     static {
         reload();
@@ -36,6 +42,7 @@ public class NsConfig {
             throw new RuntimeException("Can't load config properties from: " + CONFIG_FILE
                                            + "; Error: " + e.getMessage(), e);
         }
+        log.debug("CONFIGURATION AT STARTUP: \n" + getAsString(composite));
         config = composite;
     }
 
@@ -46,5 +53,14 @@ public class NsConfig {
      */
     public static Configuration getConfig() {
         return config;
+    }
+
+    private static String getAsString(CompositeConfiguration config) {
+        StringBuilder sb = new StringBuilder();
+        for (Iterator<String> it = config.getKeys("ns."); it.hasNext(); ) {
+            String key = it.next();
+            sb.append(key).append(": ").append(config.getString(key)).append("\n");
+        }
+        return sb.toString();
     }
 }

@@ -21,10 +21,10 @@ public class TestUtils {
 
         Configuration nsConfig = NsConfig.getConfig();
         PostgreSQLContainer<?> pg =
-            new PostgreSQLContainer<>("postgres:" + nsConfig.getString("database.version"))
-                .withDatabaseName(nsConfig.getString("database.name"))
-                .withUsername(nsConfig.getString("database.username"))
-                .withPassword(nsConfig.getString("database.password"))
+            new PostgreSQLContainer<>("postgres:" + nsConfig.getString("ns.database.version"))
+                .withDatabaseName(nsConfig.getString("ns.database.name"))
+                .withUsername(nsConfig.getString("ns.database.username"))
+                .withPassword(nsConfig.getString("ns.database.password"))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(1)))
                 .waitingFor(
                     Wait.forLogMessage(".*database system is ready to accept connections.*", 1));
