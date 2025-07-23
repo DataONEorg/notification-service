@@ -22,6 +22,46 @@ contributions with us.
 
 Documentation is a work in progress, and can be found here in the README
 
+### Getting Started
+
+The simplest way to try out the notification service is to use the Helm chart to deploy
+in a Kubernetes cluster.
+
+For example, install and start [Rancher Desktop](https://rancherdesktop.io/) on your local machine), and do the following:
+
+> [!CAUTION]
+> This is a simplified process, for evaluation purposes only, and is not intended for production use, since it uses defaults for the namespace, release name and secret credentials.
+
+1. Install the latest Helm chart:
+
+    ```shell
+    helm upgrade --install ns --debug -n notifications --create-namespace \
+        -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+        oci://ghcr.io/dataoneorg/notification-service
+    ```
+
+## API Usage Examples
+
+Example API interactions, using curl:
+```shell
+# Subscribe user authenticated with jwt $TOKEN, to update-notifications for
+# the dataset identified by {pid}
+#
+$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
+# Get a list of subscriptions for user authenticated with jwt $TOKEN:
+#
+$ curl --request GET "http://localhost:8080/notifications/datasets" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
+# Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
+# dataset identified by {pid}
+#
+$ curl --request DELETE "http://localhost:8080/notifications/datasets/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+```
+
 ### Jakarta EE
 Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally
 J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source
@@ -102,28 +142,6 @@ $ mvn clean package -DskipTests
 $ cp ./target/notification-service-${NS_VERSION}.war $TOMEE_HOME/webapps
 ```
 ...and (re)start TomEE.
-
-## API Usage Examples
-
-Example API interactions, using curl:
-```shell
-# Subscribe user authenticated with jwt $TOKEN, to update-notifications for
-# the dataset identified by {pid}
-#
-$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-
-# Get a list of subscriptions for user authenticated with jwt $TOKEN:
-#
-$ curl --request GET "http://localhost:8080/notifications/datasets" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-
-# Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
-# dataset identified by {pid}
-#
-$ curl --request DELETE "http://localhost:8080/notifications/datasets/{pid}" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-```
 
 
 ## License

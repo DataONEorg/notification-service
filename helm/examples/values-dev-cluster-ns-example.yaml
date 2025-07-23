@@ -1,0 +1,22 @@
+## override values.yaml with values to use for running on the NCEAS dev cluster
+##
+## examples:
+## from local helm chart:
+##  helm install myrelease -n mynamespace ./helm -f ./helm/examples/values-dev-cluster-example.yaml
+##
+## or from pre-packaged chart:
+##  helm install myrelease -n mynamespace oci://ghcr.io/nceas/charts/metacat --version [version#] \
+##       -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+##       --debug --render-subchart-notes
+##
+## see values.yaml for full documentation on the following parameters
+##
+
+global:
+  ## Use your own release name instead of ns
+  passwordsSecret: &passwordSecretName ns-notifications-secrets
+
+
+postgresql:
+  auth:
+    existingSecret: *passwordSecretName
