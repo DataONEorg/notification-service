@@ -1,15 +1,11 @@
 ns:
   database:
     username: notifications_user
-    ## TODO: move to Secret & env variable
     password: notifications_password
     name: notifications
     version: 16.0
     jdbcHost: localhost
     jdbcPort: 5432
-  #  jdbcUrl: jdbc:postgresql://host.docker.internal:5432/notifications    # for docker-compose
-  #  jdbcUrl: jdbc:postgresql://localhost:5432/notifications               # for local development
-  #  jdbcUrl: jdbc:postgresql://ns-postgresql-hl:5432/notifications        # for k8s
 
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby

@@ -8,3 +8,4 @@ ns:
     password: notifications_test_password
     name: notifications_test_db
     version: 16
+    testOnlyCamelCaseKey: yaml-value-for-testing-only

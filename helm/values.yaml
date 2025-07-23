@@ -1,6 +1,54 @@
-# Default values for notifications.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+## Default values for metacat.
+## This is a YAML-formatted file.
+##
+##     * * *  NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",  * * *
+##     * * *        WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME       * * *
+##
+## Make sure you're in the correct k8s context, then:
+##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
+##         oci://ghcr.io/dataone/charts/metacat --version [version] \
+##         --debug --render-subchart-notes
+##
+
+## @section Global Properties Shared Across Sub-Charts Within This Deployment
+##
+global:
+  ## @param global.passwordsSecret The name of the Secret containing application passwords
+  ## This is the secret deployed using your own private, edited version of `../admin/secrets.yaml`.
+  ##
+  ## (Note the actual key passwordsSecret is not used anywhere; only the yaml anchor/alias
+  ##  &passwordSecretName. IF YOU OVERRIDE THIS VALUE IN ANOTHER VALUES-OVERLAY FILE, YOU ALSO
+  ## NEED TO OVERRIDE THE VALUES THAT USE THIS ANCHOR - search this file for 'passwordSecretName')
+  ##
+  ## IMPORTANT NOTE: make sure you edit this, since IT INCLUDES THE RELEASE NAME! For
+  ## example, if the release name is 'myrelease', the value of name: would be
+  ## 'myrelease-notifications-secrets'.
+  ##
+  passwordsSecret: &passwordSecretName ${RELEASE_NAME}-notifications-secrets
+
+  ## @param global.defaultStorageClass Global default StorageClass for Persistent Volume(s)
+  ##
+  ## Inspect your cluster to see what storageClass is set as default:
+  ##    $  kubectl get storageclass
+  ## ...and then explicitly set defaultStorageClass to match the name of the default storageclass
+  ## (e.g. for Rancher Desktop, use:   defaultStorageClass: local-path)
+  ##
+  defaultStorageClass: local-path
+
+## @section Application-Specific Properties for notification-service
+##
+ns:
+  database:
+    ## @param ns.database.jdbcHost Override auto-populated database connection hostname.
+    ## Leave empty to use the default value, which is the name of the postgresql headless service.
+    ##
+    jdbcHost: ""
+
+    ## @param ns.database.jdbcPort The port for the database connection.
+    ## This is used by the application to connect to the database.
+    ##
+    jdbcPort: 5432
+
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
@@ -9,14 +57,14 @@ replicaCount: 1
 image:
   repository: ghcr.io/dataoneorg/notification-service
   # This sets the pull policy for images.
-  pullPolicy: Never
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "DEVELOP"
+  tag: ""
 
 
-#This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
-## ServiceAccount
-## @param serviceAccount.create Should a service account be created to run Metacat?
+## This section builds out the service account more information can be found here:
+##   https://kubernetes.io/docs/concepts/security/service-accounts/ServiceAccount
+## @param serviceAccount.create Should a service account be created to run notifications?
 ## @param serviceAccount.annotations Annotations to add to the service account
 ## @param serviceAccount.name The name to use for the service account.
 ##                  If not set and create is true, a name is generated using the fullname template
@@ -111,7 +159,7 @@ readinessProbe:
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
@@ -156,37 +204,36 @@ postgresql:
   ## connection URI is set accordingly).
   ## Once the postgres container is running, test using:
   ##   $  kubectl exec -it <postgresql-pod-name> -- psql  -U <username>  -d <databasename>
-  ## (or from a shell in metacat container: psql  -U <username>  -h <pghostname> <databasename>)
+  ## (or from a shell in notifications container: psql  -U <username>  -h <pghostname> <databasename>)
   ##
   enabled: true
 
   auth:
     ## @param postgresql.auth.username Username for accessing the database
-    ## For the corresponding password, see POSTGRES_PASSWORD in secrets.yaml
+    ## For the corresponding password, see ns.database.password in secrets
     ## (These values are also used by the application to authenticate)
     ##
     username: notifications_user
 
-    ## @param postgresql.auth.database The name of the database used by metacat.
-    ## Make sure metacat.database.connectionURI is using this value
+    ## @param postgresql.auth.database The name of the database used by the notification service.
     ##
     database: notifications
 
     ## @param postgresql.auth.existingSecret Secrets location for postgres password
-    ## Typically the existing secrets also used by metacat - see ./admin/secrets.yaml
+    ## Typically the existing secrets also used by notifications - see ./admin/secrets.yaml
     ##
-    existingSecret: ns-notifications-secrets
+    existingSecret: *passwordSecretName
 
-    ## @param postgresql.auth.secretKeys.userPasswordKey Identifies metacat db's account password
-    ## within metacat's existing secrets
+    ## @param postgresql.auth.secretKeys.userPasswordKey Identifies database account password
+    ## within existing secrets
     ##
     secretKeys:
-      userPasswordKey: POSTGRES_PASSWORD
+      userPasswordKey: NS_DATABASE_PASSWORD
 
       ## @param postgresql.auth.secretKeys.adminPasswordKey Dummy value - not used (see notes):
       ## Bitnami expects to find it in our 'existingSecret' secrets location, and fails otherwise
       ##
-      adminPasswordKey: POSTGRES_PASSWORD
+      adminPasswordKey: NS_DATABASE_PASSWORD
 
   ## @param postgresql.primary.pgHbaConfiguration PostgreSQL Primary client authentication
   ## configuration; ref: https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html
@@ -197,7 +244,7 @@ postgresql:
       enabled: true
       ## @param postgresql.primary.containerSecurityContext.runAsUser uid for container to run as
       ##
-      runAsUser: 59996
+      runAsUser: 56701
 
     ## postgresql.primary.PodSecurityContext - common securityContext settings at pod level
     ## for all containers
