@@ -1,6 +1,12 @@
 apiVersion: v2
 name: notifications
-description: A Helm chart for deploying the dataONE notifications-service in Kubernetes
+description: |
+  A Helm chart for deploying the dataONE notifications-service in Kubernetes
+  (https://github.com/DataONEorg/notification-service)
+
+# OCI Annotations - see https://github.com/helm/helm/pull/11204
+sources:
+  - https://github.com/DataONEorg/notification-service
 
 type: application
 
