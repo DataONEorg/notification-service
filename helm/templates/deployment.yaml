@@ -40,6 +40,8 @@ spec:
             - /usr/local/tomee/bin/catalina.sh
             - run
           env:
+            - name: NS_PROPERTIES_YAML_PATH
+              value: /etc/dataone/notification-service/properties.yaml
             - name: CATALINA_OPTS
               value: {{ join " " .Values.tomcat.extraCatalinaOpts }}
                       {{- if .Values.tomcat.jmxEnabled }}
@@ -48,7 +50,7 @@ spec:
                         {{- end }}
                         {{- join " " .Values.tomcat.jmxCatalinaOpts }}
                       {{- end }}{{- printf " " -}}
-                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s
+                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.yaml
           envFrom:
             - secretRef:
                 name: {{ required "missing name for passwords K8s Secret!" .Values.postgresql.auth.existingSecret }}

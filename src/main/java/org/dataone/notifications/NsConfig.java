@@ -17,10 +17,12 @@ import java.util.Set;
 
 public class NsConfig {
 
-    private static final String CONFIG_FILE = "properties.yaml";
-    private static Configuration config;
-
+    private static final String EXT_CFG_FILE_ENV_VAR = "NS_PROPERTIES_YAML_PATH";
+    private static final String DEFAULT_CONFIG_FILE = "properties.yaml";
+    private static final String EXTERNAL_CONFIG_FILE =
+        "/etc/dataone/notification-service/properties.yaml";
     private static final Logger log = LoggerFactory.getLogger("org.dataone.notifications.NsConfig");
+    private static Configuration config;
 
     static {
         reload();
@@ -32,24 +34,59 @@ public class NsConfig {
      */
     public static synchronized void reload() {
         CompositeConfiguration composite = new CompositeConfiguration();
-        try {
-            // Get YAML config so we can get a list of all the expected ns.camelCase.keys...
-            YAMLConfiguration yamlConfig =
-                new FileBasedConfigurationBuilder<>(YAMLConfiguration.class).configure(
-                    new Parameters().fileBased().setFileName(CONFIG_FILE)).getConfiguration();
 
-            // First add environment variables to config, as highest precedence
-            composite.addConfiguration(new MapConfiguration(getEnvOverridesFor(yamlConfig)));
-
-            // Then add YAML file as fallback
-            composite.addConfiguration(yamlConfig);
-
-        } catch (ConfigurationException e) {
-            throw new RuntimeException("Can't load config properties from: " + CONFIG_FILE
-                                           + "; Error: " + e.getMessage(), e);
+        YAMLConfiguration externalYamlConfig = null;
+        String extConfigFilePath = System.getenv(EXT_CFG_FILE_ENV_VAR);
+        if (extConfigFilePath == null || extConfigFilePath.trim().isEmpty()) {
+            log.info(
+                "No external config file path set in env variable {}. Using defaults from {}",
+                EXT_CFG_FILE_ENV_VAR, DEFAULT_CONFIG_FILE);
+        } else if (!new java.io.File(extConfigFilePath).exists()) {
+            log.warn(
+                "Could not load external config file from path {} found in env variable {}. Using"
+                    + " defaults from {} instead",
+                extConfigFilePath, EXT_CFG_FILE_ENV_VAR, DEFAULT_CONFIG_FILE);
+        } else {
+            log.info(
+                "Loading external config file from path {} found in env variable {}",
+                extConfigFilePath, EXT_CFG_FILE_ENV_VAR);
+            try {
+                externalYamlConfig = new FileBasedConfigurationBuilder<>(YAMLConfiguration.class)
+                    .configure(new Parameters().fileBased().setFileName(extConfigFilePath))
+                    .getConfiguration();
+            } catch (ConfigurationException e) {
+                throw new RuntimeException(
+                    "Can't load config properties from external config file: "
+                        + EXTERNAL_CONFIG_FILE + "; Error: " + e.getMessage(), e);
+            }
         }
-        log.debug("CONFIGURATION AT STARTUP: \n{}", getAsString(composite));
+
+        YAMLConfiguration defaultYamlConfig;
+        try {
+            // Get default YAML config from src/resources/properties.yaml, so we can get a list of
+            // all the expected ns.camelCase.keys...
+            defaultYamlConfig = new FileBasedConfigurationBuilder<>(YAMLConfiguration.class)
+                .configure(new Parameters().fileBased().setFileName(DEFAULT_CONFIG_FILE))
+                .getConfiguration();
+        } catch (ConfigurationException e) {
+            throw new RuntimeException(
+                "Can't load config properties from default config file: " + DEFAULT_CONFIG_FILE
+                    + "; Error: " + e.getMessage(), e);
+        }
+
+        // First add any environment variables to config, as highest precedence
+        composite.addConfiguration(new MapConfiguration(getEnvOverrides(defaultYamlConfig)));
+
+        // Then add external YAML overrides, if they exist
+        if (externalYamlConfig != null) {
+            composite.addConfiguration(externalYamlConfig);
+        }
+
+        // Finally add default YAML config (lowest precedence)
+        composite.addConfiguration(defaultYamlConfig);
+
         config = composite;
+        log.debug("CONFIGURATION AT STARTUP: \n{}", getAsString(config));
     }
 
     /**
@@ -61,18 +98,15 @@ public class NsConfig {
         return config;
     }
 
-    /**
-     * Get  the values that have been overridden by environment variables, each associated with its
-     * original YAML key, since the environment variable names are generally uppercase versions
-     * of the YAML keys, with periods replaced by underscores (for example: you'd use the
-     * environment variable NS_DATABASE_DRIVERCLASSNAME to override the yaml property with key
-     * ns.database.driverClassName)
+     /**
+     * Retrieve environment variable overrides, mapping them to their original YAML keys.
+     * Environment variables use uppercase and replace dots with underscores.
+     * Example: NS_DATABASE_DRIVERCLASSNAME overrides ns.database.driverClassName.
      *
-     * @param yamlConfig the Configuration containing the YAML properties
-     * @return a Map containing the values that have been overridden by environment variables,
-     *                   each associated with its original YAML key.
+     * @param yamlConfig the Configuration object containing the original YAML properties
+     * @return a Map of overridden values, keyed by their corresponding YAML property names.
      */
-    private static Map<String, Object> getEnvOverridesFor(Configuration yamlConfig) {
+    private static Map<String, Object> getEnvOverrides(Configuration yamlConfig) {
         Map<String, String> yamlKeys = new HashMap<>();
         yamlConfig.getKeys().forEachRemaining(key -> {
             String keyLower = key.toLowerCase();
@@ -96,7 +130,7 @@ public class NsConfig {
         return envOverrides;
     }
 
-    private static String getAsString(CompositeConfiguration config) {
+    private static String getAsString(Configuration config) {
         StringBuilder sb = new StringBuilder();
         String value;
         Set<String> redactedKeyEndings = Set.of("password", "passwd", "pwd", "secret", "token");
