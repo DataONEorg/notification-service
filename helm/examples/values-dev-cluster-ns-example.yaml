@@ -16,7 +16,12 @@ global:
   ## Use your own release name instead of ns
   passwordsSecret: &passwordSecretName ns-notifications-secrets
 
+ns:
+  logLevel: debug
 
 postgresql:
   auth:
     existingSecret: *passwordSecretName
+
+tomcat:
+  jmxEnabled: true

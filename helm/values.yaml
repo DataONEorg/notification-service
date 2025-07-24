@@ -38,6 +38,10 @@ global:
 ## @section Application-Specific Properties for notification-service
 ##
 ns:
+  ## @param ns.logLevel The log level for the notification service.
+  ## (trace, debug, info, warn, error, fatal)
+  logLevel: warn
+
   database:
     ## @param ns.database.jdbcHost Override auto-populated database connection hostname.
     ## Leave empty to use the default value, which is the name of the postgresql headless service.
@@ -268,7 +272,7 @@ tomcat:
   ## When JMX is enabled by setting this to 'true', you can view the JMX metrics using a JMX client
   ## such as VisualVM or JConsole, connected via port-forwarding to the port set in tomcat.jmxPort
   ##
-  jmxEnabled: true
+  jmxEnabled: false
 
   ## @param tomcat.jmxPort The port to use for JMX connections. IMPORTANT: If you change this...
   ## 1. you must also change the port in the tomcat.jmxCatalinaOpts section, in the following two
