@@ -22,5 +22,5 @@ dependencies:
     # @param version  --  the bitnami postgresql CHART version, NOT the database version
     # get full list using:  $  helm search repo bitnami/postgresql --versions
     #
-    version: 15.5.38    # postgres version 16.4.0 is deployed by chart version 15.5.38
+    version: 16.7.21    # bitnami chart version 16.7.21 deploys postgres version 17.5.0
     condition: postgresql.enabled

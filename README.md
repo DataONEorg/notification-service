@@ -27,18 +27,18 @@ Documentation is a work in progress, and can be found here in the README
 The simplest way to try out the notification service is to use the Helm chart to deploy
 in a Kubernetes cluster.
 
-For example, install and start [Rancher Desktop](https://rancherdesktop.io/) on your local machine), and do the following:
+For example, assuming you have installed and started [Rancher Desktop](https://rancherdesktop.io/) on your local machine, it's easy to install the latest Helm chart:
+
+```shell
+helm upgrade --install ns --debug -n notifications --create-namespace \
+    -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+    oci://ghcr.io/dataoneorg/notification-service
+```
 
 > [!CAUTION]
 > This is a simplified process, for evaluation purposes only, and is not intended for production use, since it uses defaults for the namespace, release name and secret credentials.
-
-1. Install the latest Helm chart:
-
-    ```shell
-    helm upgrade --install ns --debug -n notifications --create-namespace \
-        -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-        oci://ghcr.io/dataoneorg/notification-service
-    ```
+> 
+> For production use, you should set credentials appropriately, and may need to override more of the values.yaml settings.
 
 ## API Usage Examples
 
@@ -61,17 +61,6 @@ $ curl --request GET "http://localhost:8080/notifications/datasets" \
 $ curl --request DELETE "http://localhost:8080/notifications/datasets/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 ```
-
-### Jakarta EE
-Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally
-J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source
-software.
-
-Here are some useful links for those unfamiliar with Jakarta EE:
-- [Jakarta EE 10](https://jakarta.ee/release/10/)
-- [Jakarta EE 10 API](https://jakarta.ee/specifications/platform/10/apidocs/)
-- [Jakarta EE REST Service
-  Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
 ## Development build
 
@@ -123,26 +112,44 @@ docker container exec  --interactive --tty notification-service-webapp-1 bash
 
 ### Building and Running on a Localhost Webapp Server
 
-> NOTE: Jakarta EE 10 is supported only by compliant web application servers. Tomcat version 10 is
-> NOT yet
-> fully compliant with Jakarta EE 10, so for the time being, it is recommended to use
-> **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional
-> libraries needed to support Jakarta EE.
+#### Prerequisites
+1. Java 21 is required to build and run this application. It can be downloaded from [Adoptium](https://adoptium.net/temurin/releases?version=21&os=any&arch=any).
+2. [Maven v3.9+](https://maven.apache.org/download.cgi).
+3. [Apache TomEE](https://tomee.apache.org) v10+ (or other web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10)
 
-TomEE can be downloaded from https://tomee.apache.org:
-- Version 9.1 (Webprofile) is a Final Release that is only Jakarta 9 EE compliant, but seems to work
-  OK with the current v10 codebase
-- Version 10.0.0-M2 (Webprofile) is a Milestone Release that is Jakarta EE 10 compliant.
+> [!NOTE]
+> Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE.
 
-Build with maven and copy the war file to your TomEE webapps directory
+4. A running PostgreSQL database. This can easily be started in container, using the following command:
+
+```shell
+## NOTE: the default postgres password is literally "YOUR-PASSWORD-HERE"; 
+##       if you change it below, you must also change it in settings.yaml!
+docker run --name notifications-db \
+    -e POSTGRES_USER=notifications_user \
+    -e POSTGRES_PASSWORD=YOUR-PASSWORD-HERE \
+    -e POSTGRES_DB=notifications -p 5432:5432 -d postgres:latest
+```
+
+Then simply build with maven and copy the war file to your TomEE webapps directory
 
 ```shell
 $ mvn clean package -DskipTests
 
-$ cp ./target/notification-service-${NS_VERSION}.war $TOMEE_HOME/webapps
+$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps
 ```
 ...and (re)start TomEE.
 
+### Jakarta EE
+Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally
+J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source
+software.
+
+Here are some useful links for those unfamiliar with Jakarta EE:
+- [Jakarta EE 10](https://jakarta.ee/release/10/)
+- [Jakarta EE 10 API](https://jakarta.ee/specifications/platform/10/apidocs/)
+- [Jakarta EE REST Service
+  Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
 ## License
 ```

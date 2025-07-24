@@ -21,7 +21,7 @@ public class TestUtils {
 
         Configuration nsConfig = NsConfig.getConfig();
         PostgreSQLContainer<?> pg =
-            new PostgreSQLContainer<>("postgres:" + nsConfig.getString("ns.database.version"))
+            new PostgreSQLContainer<>("postgres:" + nsConfig.getString("ns.database.test.version"))
                 .withDatabaseName(nsConfig.getString("ns.database.name"))
                 .withUsername(nsConfig.getString("ns.database.username"))
                 .withPassword(nsConfig.getString("ns.database.password"))

@@ -1,12 +1,16 @@
+#############################################
+##  Properties for NON-K8S deployments     ##
+##      (see values.yaml for K8S)          ##
+#############################################
+##
 ns:
   database:
     username: notifications_user
-    password: notifications_password
+    # Change this to your own password!
+    password: YOUR-PASSWORD-HERE
     name: notifications
-    version: 16.0
     jdbcHost: localhost
     jdbcPort: 5432
-
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
     driverClassName: org.postgresql.Driver

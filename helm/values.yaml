@@ -1,4 +1,4 @@
-## Default values for metacat.
+## Default values for notification-service.
 ## This is a YAML-formatted file.
 ##
 ##     * * *  NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",  * * *
@@ -6,7 +6,7 @@
 ##
 ## Make sure you're in the correct k8s context, then:
 ##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
-##         oci://ghcr.io/dataone/charts/metacat --version [version] \
+##         oci://ghcr.io/dataone/charts/notification-service --version [version] \
 ##         --debug --render-subchart-notes
 ##
 
@@ -164,18 +164,10 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+extraVolumes: []
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
-
+extraVolumeMounts: []
 
 service:
   enabled: false
@@ -197,6 +189,8 @@ resources: {}
   # requests:
   #   cpu: 100m
 #   memory: 128Mi
+
+
 
 postgresql:
   ## @param postgresql.enabled enable the postgresql sub-chart
@@ -254,3 +248,63 @@ postgresql:
       ## @param postgresql.primary.podSecurityContext.runAsNonRoot pod defaults to run as non-root?
       ##
       runAsNonRoot: true
+
+## @section Tomcat Configuration
+tomcat:
+  ## @param tomcat.extraCatalinaOpts Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:
+  ## 1. Do not set JMX-related values here, without first checking they're not already defined in
+  ##    tomcat.jmxCatalinaOpts (assuming tomcat.jmxEnabled is true)
+  ## 2. You can also set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead
+  ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
+  ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
+  ##
+  ## (extraCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  extraCatalinaOpts:
+    - -XX:MaxRAMPercentage=75
+
+  ## @param tomcat.jmxEnabled Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.
+  ## When JMX is enabled by setting this to 'true', you can view the JMX metrics using a JMX client
+  ## such as VisualVM or JConsole, connected via port-forwarding to the port set in tomcat.jmxPort
+  ##
+  jmxEnabled: true
+
+  ## @param tomcat.jmxPort The port to use for JMX connections. IMPORTANT: If you change this...
+  ## 1. you must also change the port in the tomcat.jmxCatalinaOpts section, in the following two
+  ##    entries:
+  ##     -Dcom.sun.management.jmxremote.port=9010
+  ##     -Dcom.sun.management.jmxremote.rmi.port=9010
+  ##
+  ## 2. If you plan on using a different port # on localhost, it's easiest to use that same port on
+  ##    the pod, so you're using a single port for both JMX and RMI.(e.g. instead of port
+  ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
+  ##    to localhost:9011)
+  ##
+  ## Note that the JMX port is not (and should not be) exposed outside the cluster. It is therefore
+  ## necessary to use port-forwarding in order to connect.
+  ##
+  jmxPort: 9010
+
+  ## @param tomcat.jmxCatalinaOpts [default: see values.yaml] Tomcat JVM options for enabling JMX
+  ## Use these to change the port, for example, or to enable authentication.
+  ##
+  ## IMPORTANT NOTES:
+  ## 1. If you change the port numbers here, you must also change the value of tomcat.jmxPort to
+  ##    match!
+  ## 2. If you plan on using a different port # on localhost, it's easiest to use that same port on
+  ##    the pod, so you're using a single port for both JMX and RMI.(e.g. instead of port
+  ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
+  ##    to localhost:9011)
+  ##
+  ## (jmxCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  jmxCatalinaOpts:
+    - -Dcom.sun.management.jmxremote
+    - -Dcom.sun.management.jmxremote.port=9010
+    - -Dcom.sun.management.jmxremote.rmi.port=9010
+    - -Dcom.sun.management.jmxremote.local.only=false
+    - -Dcom.sun.management.jmxremote.authenticate=false
+    - -Dcom.sun.management.jmxremote.ssl=false
+    - -Djava.rmi.server.hostname=127.0.0.1

@@ -17,7 +17,7 @@ class NsConfigTest {
     @Test
     void testGetConfig() throws Exception {
 
-        final String yamlKey = "ns.database.testOnlyCamelCaseKey";
+        final String yamlKey = "ns.database.test.camelCaseTestKey";
         final String expectedYamlValue = "yaml-value-for-testing-only";
 
         // Test that the configuration is loaded correctly
@@ -31,19 +31,19 @@ class NsConfigTest {
         String expectedEnvValue = "test-env-override";
 
         // Set an environment variable to override the YAML value
-        String envKey = "NS_DATABASE_TESTONLYCAMELCASEKEY";
+        String envKey = "NS_DATABASE_TEST_CAMELCASETESTKEY";
         testEnvOverride(envKey, expectedEnvValue, yamlKey, expectedEnvValue);
 
         // This one should also work - env vars should be case-agnostic
-        envKey = "ns_database_testOnlyCamelCaseKey";
+        envKey = "ns_database_test_camelCaseTestKey";
         testEnvOverride(envKey, expectedEnvValue, yamlKey, expectedEnvValue);
 
         // This one should not work - env vars should have underscores, not periods
-        envKey = "ns.database.testOnlyCamelCaseKey";
+        envKey = "ns.database.test.camelCaseTestKey";
         testEnvOverride(envKey, expectedEnvValue, yamlKey, expectedYamlValue);
 
         // This one should not work - underscores must match yaml periods exactly
-        envKey = "NS_DATABASE_TEST_ONLY_CAMELCASE_KEY";
+        envKey = "NS_DATABASE_TEST_CAMELCASE_TEST_KEY";
         testEnvOverride(envKey, expectedEnvValue, yamlKey, expectedYamlValue);
 
         // Now unset the env variable and check that the original YAML value is restored

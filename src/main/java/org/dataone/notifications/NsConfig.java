@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class NsConfig {
 
@@ -97,9 +98,14 @@ public class NsConfig {
 
     private static String getAsString(CompositeConfiguration config) {
         StringBuilder sb = new StringBuilder();
+        String value;
+        Set<String> redactedKeyEndings = Set.of("password", "passwd", "pwd", "secret", "token");
         for (Iterator<String> it = config.getKeys("ns."); it.hasNext(); ) {
             String key = it.next();
-            sb.append(key).append(": ").append(config.getString(key)).append("\n");
+            String keyLower = key.toLowerCase();
+            boolean isSensitive = redactedKeyEndings.stream().anyMatch(keyLower::endsWith);
+            value = isSensitive? "(redacted)" : config.getString(key);
+            sb.append(key).append(": ").append(value).append("\n");
         }
         return sb.toString();
     }

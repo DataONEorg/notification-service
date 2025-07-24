@@ -7,5 +7,6 @@ ns:
     username: notifications_test_user
     password: notifications_test_password
     name: notifications_test_db
-    version: 16
-    testOnlyCamelCaseKey: yaml-value-for-testing-only
+    test:
+      version: 17
+      camelCaseTestKey: yaml-value-for-testing-only

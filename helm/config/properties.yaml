@@ -1,0 +1,10 @@
+ns:
+  database:
+    username: {{ .Values.postgresql.auth.username | default "notifications_user" }}
+    password: "This key is required, but this value overridden from postgresql.auth.existingSecret"
+    name: {{ .Values.postgresql.auth.database | default "notifications" }}
+    jdbcHost: {{ include "notifications.jdbcHostName" . }}
+    jdbcPort: {{ default "5432" .Values.ns.database.jdbcPort | quote }}
+    ##  See HikariCP configuration options at:
+    ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+    driverClassName: "org.postgresql.Driver"
