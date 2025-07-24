@@ -32,7 +32,7 @@ For example, assuming you have installed and started [Rancher Desktop](https://r
 ```shell
 helm upgrade --install ns --debug -n notifications --create-namespace \
     -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-    oci://ghcr.io/dataoneorg/notification-service
+    oci://ghcr.io/dataoneorg/charts/notifications
 ```
 
 > [!CAUTION]
