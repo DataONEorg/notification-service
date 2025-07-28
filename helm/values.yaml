@@ -96,7 +96,8 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+## This block is for setting up the ingress for more information can be found here:
+## https://kubernetes.io/docs/concepts/services-networking/ingress/
 ## Ingress is a collection of rules that allow inbound connections to reach the endpoints defined
 ## by a backend. An Ingress can be configured to give services externally-reachable urls, load
 ## balance traffic, terminate SSL, offer name based virtual hosting etc.
@@ -137,17 +138,29 @@ ingress:
   defaultBackend:
     enabled: false
 
+  ## @param ingress.annotations Annotations to add to the ingress
+  ##
+  ## Example
+  ##
+  ## ingress:
+  ##   annotations:
+  ##     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  ##   hosts:
+  ##     - host: &hostname notifications.test.dataone.org
+  ##       paths:
+  ##         - path: /
+  ##           pathType: Prefix
+  ##   tls:
+  ##     - hosts:
+  ##         - *hostname
+  ##       secretName: ingress-nginx-tls-cert
   annotations: {}
-
   hosts:
     - host: localhost
       paths:
         - path: /
           pathType:
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 livenessProbe:
   httpGet:
