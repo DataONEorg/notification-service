@@ -140,7 +140,7 @@ ingress:
 
   ## @param ingress.annotations Annotations to add to the ingress
   ##
-  ## Example
+  ## Example:
   ##
   ## ingress:
   ##   annotations:
