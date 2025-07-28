@@ -34,4 +34,4 @@ jobs:
         run: helm package helm/ --destination .
 
       - name: Push Helm chart to GHCR
-        run: helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+        run: helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/dataoneorg/charts
