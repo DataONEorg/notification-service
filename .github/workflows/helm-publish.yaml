@@ -3,11 +3,7 @@
 name: Helm Publish
 
 on:
-  workflow_call:
-    inputs:
-      version:
-        required: true
-        type: string
+  workflow_call: {}
 
 jobs:
   helm-publish:
@@ -28,8 +24,14 @@ jobs:
       - name: Update Helm dependencies
         run: helm dependency update helm/
 
+      - name: Read Helm chart version
+        id: chart
+        run: |
+          version=$(grep '^version:' helm/Chart.yaml | awk '{ print $2 }')
+          echo "chart_version=$version" >> $GITHUB_OUTPUT
+
       - name: Package Helm chart
         run: helm package helm/ --destination .
 
       - name: Push Helm chart to GHCR
-        run: helm push notifications-${{ inputs.version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+        run: helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts

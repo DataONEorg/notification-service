@@ -57,5 +57,3 @@ jobs:
     # Don't need to run helm-publish if there are no helm changes
     if: needs.detect-changes.outputs.helm_changed == 'true' && (github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/'))
     uses: ./.github/workflows/helm-publish.yaml
-    with:
-      version: ${{ needs.maven-build.outputs.version }}
