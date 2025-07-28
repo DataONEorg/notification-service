@@ -20,6 +20,8 @@ jobs:
       non_helm_changed: ${{ steps.detect.outputs.non_helm_changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Fetch enough history so prev. commit will be found
 
       - name: Detect changes in helm/ and outside helm/
         id: detect
