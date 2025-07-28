@@ -3,7 +3,12 @@
 name: Helm Publish
 
 on:
-  workflow_call: {}
+  workflow_call:
+    secrets:
+      GHCR_PAT:
+        required: true
+      GHCR_USR:
+        required: true
 
 jobs:
   helm-publish:
