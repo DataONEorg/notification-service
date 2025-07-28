@@ -1,13 +1,13 @@
 ## override values.yaml with values to use for running on the NCEAS dev cluster
 ##
-## examples:
-## from local helm chart:
-##  helm install myrelease -n mynamespace ./helm -f ./helm/examples/values-dev-cluster-example.yaml
+## example:
 ##
-## or from pre-packaged chart:
-##  helm install myrelease -n mynamespace oci://ghcr.io/nceas/charts/metacat --version [version#] \
-##       -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-##       --debug --render-subchart-notes
+##  helm upgrade --install ns --debug -n notifications \
+##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+##                          oci://ghcr.io/dataoneorg/charts/notifications
+##
+## (or to install from local helm chart code, replace: oci://ghcr.io/dataoneorg/charts/notifications
+##  with: ./helm)
 ##
 ## see values.yaml for full documentation on the following parameters
 ##
@@ -22,14 +22,37 @@ ns:
 postgresql:
   auth:
     existingSecret: *passwordSecretName
+  primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 150m
+        memory: 192Mi
+    persistence:
+      size: 10Gi
 
 tomcat:
-  jmxEnabled: true
+  jmxEnabled: false
 
 resources:
   limits:
-    cpu: 1
-    memory: 2Gi
-  requests:
     cpu: 500m
-    memory: 1Gi
+    memory: 512Mi
+  requests:
+    cpu: 300m
+    memory: 128Mi
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: &hostname notifications.test.dataone.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - *hostname
+      secretName: ingress-nginx-tls-cert

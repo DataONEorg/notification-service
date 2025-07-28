@@ -1,0 +1,36 @@
+## override values.yaml with values to use for running on a local Rancher Desktop cluster
+##
+## example:
+##
+##  helm upgrade --install ns --debug -n notifications --create-namespace \
+##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+##                          oci://ghcr.io/dataoneorg/charts/notifications
+##
+## (or to install from local helm chart code, replace: oci://ghcr.io/dataoneorg/charts/notifications
+##  with: ./helm)
+## see values.yaml for full documentation on the following parameters
+##
+
+global:
+  ## Note:
+  ## Prerequisite: install "ns-notifications-secrets" from helm/admin/secrets.yaml
+  ## (assumes release name is "ns")
+  passwordsSecret: &passwordSecretName ns-notifications-secrets
+
+ns:
+  logLevel: debug
+
+postgresql:
+  auth:
+    existingSecret: *passwordSecretName
+
+tomcat:
+  jmxEnabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 300m
+    memory: 128Mi
