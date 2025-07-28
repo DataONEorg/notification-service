@@ -39,21 +39,24 @@ jobs:
           fi
 
   maven-build:
+    uses: ./.github/workflows/maven-build.yaml
     needs: [detect-changes]
     # Don't need to run maven-build if these are helm-only changes
     if: needs.detect-changes.outputs.non_helm_changed == 'true'
-    uses: ./.github/workflows/maven-build.yaml
 
   docker-publish:
+    uses: ./.github/workflows/docker-publish.yaml
     needs: [maven-build, detect-changes]
     # Don't need to run docker-publish if these are helm-only changes
     if: needs.detect-changes.outputs.non_helm_changed == 'true' && (github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/'))
-    uses: ./.github/workflows/docker-publish.yaml
     with:
       version: ${{ needs.maven-build.outputs.version }}
 
   helm-publish:
+    uses: ./.github/workflows/helm-publish.yaml
+    secrets:
+      GHCR_PAT: ${{ secrets.GHCR_PAT }}
+      GHCR_USR: ${{ secrets.GHCR_USR }}
     needs: [detect-changes]
     # Don't need to run helm-publish if there are no helm changes
     if: needs.detect-changes.outputs.helm_changed == 'true' && (github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/'))
-    uses: ./.github/workflows/helm-publish.yaml
