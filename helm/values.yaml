@@ -154,6 +154,7 @@ ingress:
   ##     - hosts:
   ##         - *hostname
   ##       secretName: ingress-nginx-tls-cert
+  ##
   annotations: {}
   hosts:
     - host: localhost
