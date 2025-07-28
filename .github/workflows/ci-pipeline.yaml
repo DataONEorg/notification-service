@@ -13,11 +13,11 @@ on:
 
 jobs:
   maven-build:
-    uses: ./ci/maven-build.yml
+    uses: ./.github/workflows/ci/maven-build.yml
 
   docker-publish:
     if: github.ref_name == 'develop' || github.ref_name == '*.*.*'
     needs: maven-build
-    uses: ./ci/docker-publish.yml
+    uses: ./.github/workflows/ci/docker-publish.yml
     with:
       version: ${{ needs.maven-build.outputs.version }}
