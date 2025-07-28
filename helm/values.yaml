@@ -138,29 +138,35 @@ ingress:
   defaultBackend:
     enabled: false
 
-  ## @param ingress.annotations Annotations to add to the ingress
-  ##
-  ## Example:
+  ## @param ingress.annotations Annotations to add to the ingress; e.g. to use cert-manager
+  ## to automatically issue TLS certificates for the ingress hosts, you can add the following:
   ##
   ## ingress:
   ##   annotations:
   ##     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  ##
+  annotations: {}
+
+  ## @param ingress.hosts List of hosts to be used for the ingress
+  ## Each host must have a path defined, and the pathType must be set to either
+  ## 'ImplementationSpecific', 'Exact', or 'Prefix'; e.g:
   ##   hosts:
   ##     - host: &hostname notifications.test.dataone.org
   ##       paths:
   ##         - path: /
   ##           pathType: Prefix
-  ##   tls:
-  ##     - hosts:
-  ##         - *hostname
-  ##       secretName: ingress-nginx-tls-cert
-  ##
-  annotations: {}
   hosts:
     - host: localhost
       paths:
         - path: /
           pathType:
+  ## @param ingress.tls List of TLS configurations for the ingress
+  ## Each TLS configuration must have a secretName defined, and the hosts must match the
+  ## hosts defined in the ingress.hosts section. For example:
+  ##   tls:
+  ##     - hosts:
+  ##         - *hostname
+  ##       secretName: ingress-nginx-tls-cert
   tls: []
 
 livenessProbe:
