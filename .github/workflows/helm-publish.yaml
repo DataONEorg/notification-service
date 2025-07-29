@@ -4,11 +4,11 @@ name: Helm Publish
 
 on:
   workflow_call:
-    secrets:
-      GHCR_PAT:
-        required: true
-      GHCR_USR:
-        required: true
+#    secrets:
+#      GHCR_PAT:
+#        required: true
+#      GHCR_USR:
+#        required: true
 
 jobs:
   helm-publish:
@@ -38,6 +38,11 @@ jobs:
 
       - name: Package Helm chart
         run: helm package helm/ --destination .
+
+      - name: Debug token scope
+        run: |
+          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               https://ghcr.io/v2/dataoneorg/charts/tags/list
 
       - name: Push Helm chart to GHCR
         run: helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/dataoneorg/charts
