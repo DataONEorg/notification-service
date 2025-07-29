@@ -215,7 +215,6 @@ resources: {}
 #    cpu: 300m
 #    memory: 128Mi
 
-
 ## @section PostgreSQL Configuration
 postgresql:
   ## @param postgresql.enabled enable the postgresql sub-chart
