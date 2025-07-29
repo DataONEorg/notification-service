@@ -67,6 +67,9 @@ jobs:
 #    if: needs.detect-changes.outputs.helm_changed == 'true' && (github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/'))
 
   helm-publish:
+    needs: [detect-changes]
+    # Don't need to run helm-publish if there are no helm changes
+    if: needs.detect-changes.outputs.helm_changed == 'true' && (github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
