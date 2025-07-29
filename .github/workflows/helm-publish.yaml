@@ -4,13 +4,6 @@ name: Helm Publish
 
 on:
   workflow_call:
-    secrets:
-      GITHUB_TOKEN:
-        required: true
-#      GHCR_PAT:
-#        required: true
-#      GHCR_USR:
-#        required: true
 
 jobs:
   helm-publish:
@@ -26,7 +19,6 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Log in to GHCR
-#        run: echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io --username ${{ secrets.GHCR_USR }} --password-stdin
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
       - name: Update Helm dependencies
@@ -40,14 +32,6 @@ jobs:
 
       - name: Package Helm chart
         run: helm package helm/ --destination .
-
-      - name: Debug token scope
-        run: |
-          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-               https://ghcr.io/v2/dataoneorg/charts/tags/list
-          echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Org: ${{ github.repository_owner }}"
 
       - name: Push Helm chart to GHCR
         run: |
