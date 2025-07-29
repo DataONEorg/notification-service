@@ -71,7 +71,7 @@ image:
 ## @param serviceAccount.create Should a service account be created to run notifications?
 ## @param serviceAccount.annotations Annotations to add to the service account
 ## @param serviceAccount.name The name to use for the service account.
-##                  If not set and create is true, a name is generated using the fullname template
+##                   If not set and create is true, a name is generated using the fullname template
 ##
 serviceAccount:
   create: false
