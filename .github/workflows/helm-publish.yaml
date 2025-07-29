@@ -43,6 +43,11 @@ jobs:
         run: |
           curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                https://ghcr.io/v2/dataoneorg/charts/tags/list
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Org: ${{ github.repository_owner }}"
 
       - name: Push Helm chart to GHCR
-        run: helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/dataoneorg/charts
+        run: |
+          export HELM_EXPERIMENTAL_OCI=1
+          helm push notifications-${{ steps.chart.outputs.chart_version }}.tgz oci://ghcr.io/dataoneorg/charts
