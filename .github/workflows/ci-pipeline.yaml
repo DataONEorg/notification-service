@@ -12,6 +12,10 @@ on:
     tags:
       - '*.*.*'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
@@ -54,9 +58,6 @@ jobs:
 
   helm-publish:
     uses: ./.github/workflows/helm-publish.yaml
-    permissions:
-      contents: read
-      packages: write
 #    secrets:
 #      GHCR_PAT: ${{ secrets.GHCR_PAT }}
 #      GHCR_USR: ${{ secrets.GHCR_USR }}
