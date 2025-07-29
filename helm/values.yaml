@@ -1,8 +1,8 @@
 ## Default values for notification-service.
 ## This is a YAML-formatted file.
 ##
-##     * * *  NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",  * * *
-##     * * *        WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME       * * *
+##     * * *   NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",   * * *
+##     * * *         WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME        * * *
 ##
 ## Make sure you're in the correct k8s context, then:
 ##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
