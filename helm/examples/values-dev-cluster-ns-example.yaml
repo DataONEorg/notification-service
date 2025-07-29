@@ -4,9 +4,10 @@
 ##
 ##  helm upgrade --install ns --debug -n notifications \
 ##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-##                          oci://ghcr.io/dataoneorg/charts/notifications
+##                          oci://ghcr.io/dataoneorg/charts/notifications --version [version]
 ##
-## (or to install from local helm chart code, replace: oci://ghcr.io/dataoneorg/charts/notifications
+## (or to install from local helm chart code, replace:
+##  oci://ghcr.io/dataoneorg/charts/notifications --version [version]
 ##  with: ./helm)
 ##
 ## see values.yaml for full documentation on the following parameters
