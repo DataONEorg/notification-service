@@ -57,8 +57,9 @@ jobs:
       version: ${{ needs.maven-build.outputs.version }}
 
   helm-publish:
-    uses: ./.github/workflows/helm-publish.yaml
-#    secrets:
+    uses: ./.github/workflows/helm-publish.yaml  secrets:
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #      GHCR_PAT: ${{ secrets.GHCR_PAT }}
 #      GHCR_USR: ${{ secrets.GHCR_USR }}
     needs: [detect-changes]

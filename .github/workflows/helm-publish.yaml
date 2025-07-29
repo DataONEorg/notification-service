@@ -4,7 +4,9 @@ name: Helm Publish
 
 on:
   workflow_call:
-#    secrets:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
 #      GHCR_PAT:
 #        required: true
 #      GHCR_USR:
