@@ -230,7 +230,7 @@ postgresql:
   ## As a stopgap, we reference the legacy images, which are still available for free (but note
   ## that newer versions will not become available in the future, so we need to find an alternative
   ## source for images...)
-  ## @param postgresql.global.security.allowInsecureImages Allow insecure images, since
+  ## @param postgresql.global.security.allowInsecureImages Allow non-bitnami-hardened images
   ## @param postgresql.image.repository source repo for main image
   ## @param postgresql.volumePermissions.image.repository  source repo for volumePermissions image
   ## @param postgresql.metrics.image.repository  source repo for metrics image
