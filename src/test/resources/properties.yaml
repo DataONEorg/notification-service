@@ -1,11 +1,11 @@
-#################################################
-##             TEST properties                 ##
-#################################################
+####################
+##  TEST properties
+####################
 ##
 ns:
   auth:
     api:
-      baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
+      baseUrl: https://bogus-cn-host.test.dataone.org/cn/v2
       authenticate: /diag/subject
 
   database:

@@ -6,7 +6,7 @@
 ns:
   auth:
     api:
-      baseUrl: https://cn.dataone.org/cn/v2
+      baseUrl: https://cn-stage.test.dataone.org/cn/v2
       authenticate: /diag/subject
   database:
     username: notifications_user

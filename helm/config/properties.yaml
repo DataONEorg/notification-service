@@ -1,7 +1,7 @@
 ns:
   auth:
     api:
-      baseUrl: {{ .Values.ns.auth.baseUrl | default "https://cn.dataone.org/cn/v2" }}
+      baseUrl: {{ .Values.ns.auth.baseUrl | default "https://cn-stage.test.dataone.org/cn/v2" }}
       authenticate: {{ .Values.ns.auth.authenticate | default "/diag/subject" }}
   database:
     username: {{ .Values.postgresql.auth.username | default "notifications_user" }}

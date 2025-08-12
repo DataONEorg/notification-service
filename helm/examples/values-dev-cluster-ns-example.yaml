@@ -20,6 +20,9 @@ global:
 
 ns:
   logLevel: debug
+  auth:
+    api:
+      baseUrl: https://cn-stage.test.dataone.org/cn/v2
 
 postgresql:
   auth:
