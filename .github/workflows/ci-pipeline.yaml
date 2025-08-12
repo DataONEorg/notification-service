@@ -13,8 +13,9 @@ on:
       - '*.*.*'
 
 permissions:
-  contents: read
+  contents: write
   packages: write
+  security-events: write
 
 jobs:
   detect-changes:
