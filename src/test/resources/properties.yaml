@@ -3,6 +3,11 @@
 #################################################
 ##
 ns:
+  auth:
+    api:
+      baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
+      authenticate: /diag/subject
+
   database:
     username: notifications_test_user
     password: notifications_test_password

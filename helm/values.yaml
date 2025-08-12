@@ -42,6 +42,11 @@ ns:
   ## (trace, debug, info, warn, error, fatal)
   logLevel: warn
 
+  auth:
+    api:
+      baseUrl: https://cn.dataone.org/cn/v2
+      authenticate: /diag/subject
+
   database:
     ## @param ns.database.jdbcHost Override auto-populated database connection hostname.
     ## Leave empty to use the default value, which is the name of the postgresql headless service.

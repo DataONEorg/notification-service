@@ -5,12 +5,14 @@ import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mockStatic;
 
 class NsAuthProviderTest {
 
@@ -25,7 +27,12 @@ class NsAuthProviderTest {
     @Test
     void authenticateValidToken() {
         String authHeader = "Bearer validToken";
-        assertEquals(EXPECTED_SUBJECT, authProvider.authenticate(authHeader));
+        try (MockedStatic<D1CnAuthUtil> mockedD1CnAuthUtil = mockStatic(D1CnAuthUtil.class)) {
+            mockedD1CnAuthUtil.when(() -> D1CnAuthUtil.getSubject("validToken")).thenReturn(EXPECTED_SUBJECT);
+
+            assertEquals(EXPECTED_SUBJECT, authProvider.authenticate(authHeader));
+        }
+
     }
 
     @Test

@@ -35,16 +35,13 @@ public class NsAuthProvider implements AuthProvider {
             log.debug("No Auth token found - throwing NotAuthorizedException");
             throw new NotAuthorizedException("Bearer");
         }
+        String subject = D1CnAuthUtil.getSubject(token);
 
-        // TODO: HARD-CODED EXAMPLE! get subject from auth call to d1_portal ///////////////////////
-        String authSubject = "https://orcid.org/0000-1234-5678-999X";
-        // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
-
-        if (isBlank(authSubject)) {
-            log.info("Subject not authenticated - throwing NotAuthorizedException");
+        if (isBlank(subject)) {
+            log.debug("Subject not authenticated - throwing NotAuthorizedException");
             throw new NotAuthorizedException("Bearer");
         }
-        return authSubject;
+        return subject;
     }
 
      // TODO: DO WE EVEN NEED THIS? OK to subscribe to something you don't have access to? Actual
@@ -62,14 +59,12 @@ public class NsAuthProvider implements AuthProvider {
         log.debug("Authorizing subject: {} for resource: {} with pid(s): {}", subject, resourceType,
                   pids);
 
-        // Automatically de-duplicates the list of PIDs
-        Set<String> authPidSet = new HashSet<>(pids);
-
         // TODO: HARD-CODED EXAMPLE! Assume the subject has access to all requested resources. /////
         //
         // TODO: Ask metacat API if subject has access to requested resources. bulk API call avail?
 
-        return authPidSet;
+        // Automatically de-duplicates the list of PIDs
+        return new HashSet<>(pids);
         // TODO: END OF HARD-CODED EXAMPLE /////////////////////////////////////////////////////////
     }
 }

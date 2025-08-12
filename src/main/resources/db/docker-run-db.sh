@@ -4,7 +4,7 @@
 
 # Settings
 POSTGRES_USER=notifications_user
-POSTGRES_PASSWORD=notifications_password
+POSTGRES_PASSWORD=YOUR-PASSWORD-HERE
 POSTGRES_VERSION=16
 PORT=5432
 CONTAINER_NAME=notifications-db
