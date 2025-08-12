@@ -15,7 +15,8 @@
 
 global:
   ## Use your own release name instead of ns
-  passwordsSecret: &passwordSecretName ns-notifications-secrets
+  passwordsSecret: &passwordSecretName ns-notify-secrets
+  storageClass: csi-cephfs-sc
 
 ns:
   logLevel: debug
@@ -35,7 +36,7 @@ postgresql:
       size: 10Gi
 
 tomcat:
-  jmxEnabled: false
+  jmxEnabled: true
 
 resources:
   limits:
