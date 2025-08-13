@@ -63,11 +63,11 @@ spec:
               name: jmx
           {{- end }}
           livenessProbe:
-            {{ toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            {{ toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{ toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             {{- if .Values.extraVolumeMounts }}
             {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
