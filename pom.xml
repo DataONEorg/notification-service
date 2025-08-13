@@ -28,6 +28,10 @@
         <jackson.version>2.19.2</jackson.version>
         <log4j.version>2.25.1</log4j.version>
         <mockito-version>5.18.0</mockito-version>
+        <!-- this empty argLine is required by Mockito; see:
+        https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+        -->
+        <argLine/>
     </properties>
 
     <repositories>
@@ -222,7 +226,21 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
                 <version>3.5.3</version>
             </plugin>
             <plugin>
