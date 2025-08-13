@@ -177,12 +177,22 @@ ingress:
 
 livenessProbe:
   httpGet:
-    path: /notifications/metrics/ping
+    path: /
     port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
 readinessProbe:
   httpGet:
     path: /notifications/metrics/ping
     port: http
+  initialDelaySeconds: 20
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
 
 #This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
