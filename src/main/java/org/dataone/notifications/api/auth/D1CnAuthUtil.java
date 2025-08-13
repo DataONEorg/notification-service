@@ -23,7 +23,12 @@ public class D1CnAuthUtil {
     private static final Logger logger = LoggerFactory.getLogger(D1CnAuthUtil.class);
 
     private URL authApiUrl = null;
-    
+
+    /**
+     * Default constructor required for CDI proxying.
+     */
+    D1CnAuthUtil() {}
+
     @Inject
     public D1CnAuthUtil(URL authApiUrl) {
         this.authApiUrl = authApiUrl;
