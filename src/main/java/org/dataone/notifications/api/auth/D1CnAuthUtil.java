@@ -1,10 +1,11 @@
 package org.dataone.notifications.api.auth;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import org.dataone.notifications.NsConfig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.slf4j.Logger;
@@ -14,12 +15,19 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 
+@ApplicationScoped
 public class D1CnAuthUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(D1CnAuthUtil.class);
+
+    private URL authApiUrl = null;
+    
+    @Inject
+    public D1CnAuthUtil(URL authApiUrl) {
+        this.authApiUrl = authApiUrl;
+    }
 
     /**
      * Retrieves subject information based on the provided authentication token.
@@ -30,17 +38,14 @@ public class D1CnAuthUtil {
      * @throws WebApplicationException if there are service connectivity or server issues
      * @throws ProcessingException if the response format is invalid or unparseable
      */
-    public static String getSubject(String token) throws NotAuthorizedException {
+    public String getSubject(String token) throws NotAuthorizedException {
 
-        String urlStr = NsConfig.getConfig().getString("ns.auth.api.baseUrl") + NsConfig.getConfig()
-            .getString("ns.auth.api.authenticate");
+        String urlStr = authApiUrl.toString();
         logger.debug("Authentication API URL: {}", urlStr);
 
         HttpURLConnection con = null;
         try {
-            URI uri = URI.create(urlStr);
-            URL url = uri.toURL();
-            con = (HttpURLConnection) url.openConnection();
+            con = (HttpURLConnection) authApiUrl.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Authorization", "Bearer " + token.trim());
             con.setConnectTimeout(5000);

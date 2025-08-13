@@ -21,7 +21,7 @@ public class NsConfig {
     private static final String DEFAULT_CONFIG_FILE = "properties.yaml";
     private static final String EXTERNAL_CONFIG_FILE =
         "/etc/dataone/notification-service/properties.yaml";
-    private static final Logger log = LoggerFactory.getLogger("org.dataone.notifications.NsConfig");
+    private static final Logger log = LoggerFactory.getLogger(NsConfig.class);
     private static Configuration config;
 
     static {

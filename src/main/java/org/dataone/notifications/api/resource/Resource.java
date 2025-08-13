@@ -36,7 +36,8 @@ public class Resource {
     private final DataRepository dataRepository;
 
     public Resource() {
-        throw new IllegalStateException("Resource not initialized: missing AuthService & DataRepository");
+        throw new IllegalStateException(
+            "Resource not initialized: missing AuthService & DataRepository");
     }
 
     @Inject

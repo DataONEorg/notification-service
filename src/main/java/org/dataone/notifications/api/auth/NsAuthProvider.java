@@ -1,6 +1,7 @@
 package org.dataone.notifications.api.auth;
 
 import jakarta.enterprise.inject.Default;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -22,6 +23,12 @@ import static org.apache.logging.log4j.util.Strings.isBlank;
 public class NsAuthProvider implements AuthProvider {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
+    private final D1CnAuthUtil d1CnAuthUtil;
+
+    @Inject
+    public NsAuthProvider(D1CnAuthUtil d1CnAuthUtil) {
+        this.d1CnAuthUtil = d1CnAuthUtil;
+    }
 
     @Override
     public String authenticate(String authHeader) throws NotAuthorizedException {
@@ -35,7 +42,7 @@ public class NsAuthProvider implements AuthProvider {
             log.debug("No Auth token found - throwing NotAuthorizedException");
             throw new NotAuthorizedException("Bearer");
         }
-        String subject = D1CnAuthUtil.getSubject(token);
+        String subject = d1CnAuthUtil.getSubject(token);
 
         if (isBlank(subject)) {
             log.debug("Subject not authenticated - throwing NotAuthorizedException");

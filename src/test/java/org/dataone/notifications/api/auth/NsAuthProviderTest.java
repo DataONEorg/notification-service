@@ -5,34 +5,39 @@ import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.resource.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 class NsAuthProviderTest {
 
     private static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
     private NsAuthProvider authProvider;
+    private D1CnAuthUtil util;
 
     @BeforeEach
-    void setUp() {
-        authProvider = new NsAuthProvider();
+    void setUp() throws MalformedURLException {
+        URL mockUrl = URI.create("http://localhost/authenticate").toURL();
+        util = new D1CnAuthUtil(mockUrl);
+        authProvider = new NsAuthProvider(util);
     }
 
     @Test
     void authenticateValidToken() {
         String authHeader = "Bearer validToken";
-        try (MockedStatic<D1CnAuthUtil> mockedD1CnAuthUtil = mockStatic(D1CnAuthUtil.class)) {
-            mockedD1CnAuthUtil.when(() -> D1CnAuthUtil.getSubject("validToken")).thenReturn(EXPECTED_SUBJECT);
+        D1CnAuthUtil utilSpy = spy(util);
+        doReturn(EXPECTED_SUBJECT).when(utilSpy).getSubject("validToken");
+        authProvider = new NsAuthProvider(utilSpy);
 
-            assertEquals(EXPECTED_SUBJECT, authProvider.authenticate(authHeader));
-        }
-
+        assertEquals(EXPECTED_SUBJECT, authProvider.authenticate(authHeader));
     }
 
     @Test
