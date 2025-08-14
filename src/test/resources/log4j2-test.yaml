@@ -11,8 +11,13 @@ Configuration:
         pattern: "notification-service %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"
 
   Loggers:
+    # Root log level defaults to DEBUG. Override from the command line if needed, using
+    # '-DLOG_LEVEL='; e.g.:
+    #
+    #   mvn verify -DLOG_LEVEL=warn
+    #
     Root:
-      level: debug
+      level: ${sys:LOG_LEVEL:-debug}
       AppenderRef:
         ref: Console
 
@@ -43,6 +48,30 @@ Configuration:
 
       - name: com.zaxxer.hikari.pool
         level: error
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      # ↓ these control http logging output from Rest Assured. Defaults to ERROR. Override from
+      #   the command line if needed, using '-DLOG_LEVEL='; e.g.:
+      #
+      #   mvn verify -DLOG_LEVEL=warn mvn -PsmokeTest \
+      #     -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN"
+      #
+
+      - name: io.restassured
+        level: ${sys:LOG_LEVEL:-warn}
+        additivity: false
+        AppenderRef: { ref: Console }
+
+      - name: org.apache.http
+        level: ${sys:LOG_LEVEL:-warn}
+        additivity: false
+        AppenderRef:
+          ref: Console
+
+      - name: org.apache.http.wire
+        level: ${sys:LOG_LEVEL:-warn}
         additivity: false
         AppenderRef:
           ref: Console
