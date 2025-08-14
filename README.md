@@ -144,27 +144,18 @@ mvn verify -PsmokeTest -DBASE_URL="https://notifications.test.dataone.org" -DTOK
 
 ### Building and Running on a Localhost Web Application Server
 
-#### Prerequisites
-
-In addition to the Java and maven versions listed above, you will need:
-
-1. [Apache TomEE](https://tomee.apache.org) v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10)
-
 > [!NOTE]
-> Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE.
+> **Prerequisites:**
+> In addition to the Java and maven versions listed above, you will need:
+> 1. [Apache TomEE](https://tomee.apache.org) v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
+ Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE.)
+> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script:
+>
+> ```shell
+> ./scripts/docker-run-db.sh
+> ```
 
-2. A running PostgreSQL database. This can easily be started in a container, using the following command:
-
-```shell
-## NOTE: the default postgres password is literally "YOUR-PASSWORD-HERE";
-##       if you change it below, you must also change it in properties.yaml!
-docker run --name notifications-db \
-    -e POSTGRES_USER=notifications_user \
-    -e POSTGRES_PASSWORD=YOUR-PASSWORD-HERE \
-    -e POSTGRES_DB=notifications -p 5432:5432 -d postgres:latest
-```
-
-Then build with maven and copy the war file to your TomEE webapps directory
+Build with maven and copy the war file to your TomEE webapps directory:
 
 ```shell
 $ mvn clean package -DskipTests
