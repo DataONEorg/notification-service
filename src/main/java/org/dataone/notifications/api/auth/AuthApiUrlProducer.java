@@ -9,8 +9,12 @@ import org.dataone.notifications.NsConfig;
 import java.net.URI;
 import java.net.URL;
 
+/**
+ * A CDI producer that produces the URL for the authentication API.
+ */
 @ApplicationScoped
 public class AuthApiUrlProducer {
+
     @Produces
     @Dependent
     @Default
