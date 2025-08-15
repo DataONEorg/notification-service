@@ -31,18 +31,18 @@ TOKEN="your-jwt-token-here"
 # Subscribe user authenticated with jwt $TOKEN, to update-notifications for
 # the dataset identified by {pid}
 #
-$ curl --request POST "${BASE_URL}/notifications/datasets/{pid}" \
+$ curl --request POST "${BASE_URL}/notifications/datasetChanges/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 
 # Get a list of subscriptions for user authenticated with jwt $TOKEN:
 #
-$ curl --request GET "${BASE_URL}/notifications/datasets" \
+$ curl --request GET "${BASE_URL}/notifications/datasetChanges" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 
 # Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
 # dataset identified by {pid}
 #
-$ curl --request DELETE "${BASE_URL}/notifications/datasets/{pid}" \
+$ curl --request DELETE "${BASE_URL}/notifications/datasetChanges/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 ```
 

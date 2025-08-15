@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -51,10 +52,10 @@ class ApiClientIT extends JerseyTest {
     private static final String EXPECTED_SUBJECT_5 = "https://orcid.org/0000-1111-3333-5555";
 
     private static final String INVALID_AUTH_HEADER = "Bearer my-naughty-non-valid-token";
-    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasets;
+    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasetChanges;
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
     private static final List<String> EXPECTED_PID_LIST = new ArrayList<>();
-    private static final String DATASETS = "/" + ResourceType.datasets + "/";
+    private static final String DATASETS = "/" + ResourceType.datasetChanges + "/";
 
     private static Resource resource;
     private static PostgreSQLContainer<?> pg;
@@ -101,9 +102,12 @@ class ApiClientIT extends JerseyTest {
         return config.registerInstances(Resource.class, resource);
     }
 
+    final static String datasetChangeResource = String.valueOf(ResourceType.datasetChanges);
+
     @ParameterizedTest
-    @ValueSource(strings = {"datasets"})
-    void post(String resourceType) {
+    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    void post(ResourceType resourceType) {
+
         Response response = doPost(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + EXPECTED_PID,
                                    Response.Status.OK);
         assertJsonContentType(response);
@@ -138,8 +142,9 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"datasets"})
-    void delete(String resourceType) {
+    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    void delete(ResourceType resourceType) {
+        System.out.println("\n\n\nresourceType: " + resourceType + "\n\n\n");
         Response response = doDelete(VALID_AUTH_HEADER_5, "/" + resourceType + "/" + EXPECTED_PID_5,
                                      Response.Status.OK);
         assertJsonContentType(response);
@@ -158,8 +163,8 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"datasets"})
-    void testSubscriptionCRUD(String resourceType) {
+    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    void testSubscriptionCRUD(ResourceType resourceType) {
 
         // actually CRD - currently no need for an update operation
         final String testSubject = "dn=\"uid=test,o=NCEAS,dc=ecoinformatics,dc=org\"";

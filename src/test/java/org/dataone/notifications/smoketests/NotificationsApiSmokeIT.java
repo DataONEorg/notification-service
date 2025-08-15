@@ -3,6 +3,7 @@ package org.dataone.notifications.smoketests;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.dataone.notifications.api.resource.ResourceType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ class NotificationsApiSmokeIT {
                 .contentType(ContentType.JSON)
                 .body("{}")
             .when()
-                .post("/notifications/datasets/{pid}", pid)
+                .post("/notifications/{}/{pid}", ResourceType.datasetChanges, pid)
             .then()
                 .log().ifValidationFails()
                 .statusCode(anyOf(is(200), is(201)))
@@ -92,7 +93,7 @@ class NotificationsApiSmokeIT {
             given()
                 .header("Authorization", "Bearer " + token)
             .when()
-                .delete("/notifications/datasets/{pid}", pid)
+                .delete("/notifications/{}/{pid}", ResourceType.datasetChanges, pid)
             .then()
                 .log().ifValidationFails()
                 .statusCode(anyOf(is(200), is(204)));
@@ -111,7 +112,7 @@ class NotificationsApiSmokeIT {
             given()
                 .header("Authorization", "Bearer " + token)
             .when()
-                .get("/notifications/datasets")
+                .get("/notifications/{}", ResourceType.datasetChanges)
             .then()
                 .log().ifValidationFails()
                 .statusCode(200)

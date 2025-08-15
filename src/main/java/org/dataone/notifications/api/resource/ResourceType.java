@@ -6,6 +6,6 @@ package org.dataone.notifications.api.resource;
  * {@code http://<host-name>:<port>/<context-root>/<REST-uri>/<resource-name> }
  */
 public enum ResourceType {
-    datasets, citations
+    datasetChanges, citations
     //...add more resource names as needed...
 }

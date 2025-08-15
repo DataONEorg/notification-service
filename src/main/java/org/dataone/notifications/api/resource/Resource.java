@@ -51,12 +51,12 @@ public class Resource {
      * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
      * Example:
      * <pre>
-     * $ curl -X POST "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ac10e9" \
+     * $ curl -X POST "http://localhost:8080/notifications/datasetChanges/urn:uuid:3f930da-c3ac10e9" \
      * -H "Authorization: Bearer $TOKEN" \
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource type (eg "datasets"). Automatically populated
+     * @param resourceType the resource type (eg "datasetChanges"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -82,12 +82,12 @@ public class Resource {
     /**
      * GET pids of all existing notification subscriptions for this subject (user). Example:
      * <pre>
-     * $ curl -X GET http://localhost:8080/notifications/datasets \
+     * $ curl -X GET http://localhost:8080/notifications/datasetChanges \
      * -H "Authorization: Bearer $TOKEN" \
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource being queried (eg "datasets"). (Auto-populated)
+     * @param resourceType the resource being queried (eg "datasetChanges"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -114,12 +114,12 @@ public class Resource {
      * Unsubscribe the authenticated subject (user) from the given resource (identified by its pid).
      * Example:
      * <pre>
-     * $ curl -X DELETE "http://localhost:8080/notifications/datasets/urn:uuid:3f930da-c3ad3e9" \
+     * $ curl -X DELETE "http://localhost:8080/notifications/datasetChanges/urn:uuid:3f930da-c3ad3e9" \
      * -H "Authorization: Bearer $TOKEN" \
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource type (eg "datasets"). Automatically populated
+     * @param resourceType the resource type (eg "datasetChanges"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
