@@ -23,7 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * They comprise a small collection of tests, used to verify that the installed application is
  * working as expected, after a deployment or upgrade.
  * Run smoke tests with:
- * $ mvn clean verify -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN"
+ * $ mvn verify -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN"
+ *
+ * http logging output from Rest Assured is set to log level WARN by default. For more-verbose
+ * output, override from the command line, using '-DLOG_LEVEL='; e.g.:
+ *
+ * $ mvn verify mvn -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" -DLOG_LEVEL=debug
  */
 class NotificationsApiSmokeIT {
 
@@ -66,7 +71,7 @@ class NotificationsApiSmokeIT {
                 .contentType(ContentType.JSON)
                 .body("{}")
             .when()
-                .post("/notifications/{}/{pid}", ResourceType.datasetChanges, pid)
+                .post("/notifications/{resource}/{pid}", ResourceType.datasetChanges, pid)
             .then()
                 .log().ifValidationFails()
                 .statusCode(anyOf(is(200), is(201)))
@@ -93,7 +98,7 @@ class NotificationsApiSmokeIT {
             given()
                 .header("Authorization", "Bearer " + token)
             .when()
-                .delete("/notifications/{}/{pid}", ResourceType.datasetChanges, pid)
+                .delete("/notifications/{resource}/{pid}", ResourceType.datasetChanges, pid)
             .then()
                 .log().ifValidationFails()
                 .statusCode(anyOf(is(200), is(204)));
@@ -112,7 +117,7 @@ class NotificationsApiSmokeIT {
             given()
                 .header("Authorization", "Bearer " + token)
             .when()
-                .get("/notifications/{}", ResourceType.datasetChanges)
+                .get("/notifications/{resource}", ResourceType.datasetChanges)
             .then()
                 .log().ifValidationFails()
                 .statusCode(200)
