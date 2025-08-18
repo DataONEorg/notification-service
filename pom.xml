@@ -120,6 +120,13 @@
             <artifactId>log4j-slf4j2-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
+        <!-- Log4j JUL bridge (FlyWay uses JUL) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jul</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <!-- async startup + config reload with a war file -->
             <groupId>org.apache.logging.log4j</groupId>
