@@ -2,14 +2,16 @@
 ## NOTE: Must be run from the root of the project,
 ## otherwise the war file COPY command will not work!
 ##
-FROM tomee:9-jre17-Temurin-ubuntu-webprofile
+FROM tomee:10-jre21-Temurin-ubuntu-webprofile
 
-ARG TAG=1.0.0-SNAPSHOT
+ARG TAG="NO-TAG"
 ARG NS_VERSION=${TAG}
+ARG UID=56700
+ARG GID=56700
 
 WORKDIR /usr/local/tomee
 
-RUN groupadd -g 1000 notifier && useradd -u 1000 -g 1000 notifier
+RUN groupadd -g $GID notifier && useradd -u $UID -g $GID notifier
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -23,11 +25,11 @@ RUN apt-get update \
     telnet            \
     vim
 
-COPY ../target/notification-service-${NS_VERSION}.war ./webapps/notifications.war
+COPY ./target/notification-service-${NS_VERSION}.war ./webapps/notifications.war
 
 RUN chown -R notifier:notifier .
 
-USER 1000
+USER $UID
 
 # metadata
 LABEL org.opencontainers.image.title="Notifications"

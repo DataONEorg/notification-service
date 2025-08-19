@@ -1,0 +1,14 @@
+# Load all files in the "config" directory into a ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-notifications-configfiles
+  labels:
+    {{- include "notifications.labels" . | nindent 4 }}
+{{/*{{ (tpl (.Files.Glob "config/*").AsConfig . ) | indent 4 }}*/}}
+data:
+{{- $files := .Files.Glob "config/*" }}
+{{- range $path, $fileBytes := $files }}
+  {{ base $path }}: |-
+{{ tpl ($fileBytes | toString) $ | nindent 4 }}
+{{- end }}

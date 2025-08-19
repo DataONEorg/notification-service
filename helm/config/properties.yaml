@@ -1,0 +1,13 @@
+ns:
+  auth:
+    api:
+      baseUrl: {{ .Values.ns.auth.baseUrl | default "https://cn-stage.test.dataone.org/cn/v2" }}
+      authenticate: {{ .Values.ns.auth.authenticate | default "/diag/subject" }}
+  database:
+    username: {{ .Values.postgresql.auth.username | default "notifications_user" }}
+    name: {{ .Values.postgresql.auth.database | default "notifications" }}
+    jdbcHost: {{ include "notifications.jdbcHostName" . }}
+    jdbcPort: {{ default "5432" .Values.ns.database.jdbcPort | quote }}
+    ##  See HikariCP configuration options at:
+    ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+    driverClassName: "org.postgresql.Driver"

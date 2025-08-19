@@ -12,12 +12,17 @@ Configuration:
 
   Loggers:
     Root:
-      level: debug
+      level: {{ .Values.ns.logLevel | default "warn" }}
       AppenderRef:
         ref: Console
     Logger:
       - name: org.jboss
-        level: error
+        level: warn
+        additivity: false
+        AppenderRef:
+          ref: Console
+      - name: com.zaxxer.hikari.pool
+        level: warn
         additivity: false
         AppenderRef:
           ref: Console

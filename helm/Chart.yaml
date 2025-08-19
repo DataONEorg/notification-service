@@ -1,0 +1,32 @@
+apiVersion: v2
+name: notifications
+description: |
+  A Helm chart for deploying the dataONE notifications-service in Kubernetes
+  (https://github.com/DataONEorg/notification-service)
+
+# OCI Annotations - see https://github.com/helm/helm/pull/11204
+sources:
+  - https://github.com/DataONEorg/notification-service
+
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.1.0
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+appVersion: "develop"
+
+# Chart dependencies
+dependencies:
+  - name: postgresql
+    repository: https://charts.bitnami.com/bitnami
+    # @param version  --  the bitnami postgresql CHART version, NOT the database version
+    # get full list using:  $  helm search repo bitnami/postgresql --versions
+    #
+    version: 16.7.21    # bitnami chart version 16.7.21 deploys postgres version 17.5.0
+    condition: postgresql.enabled

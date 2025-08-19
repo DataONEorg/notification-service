@@ -1,0 +1,370 @@
+## Default values for notification-service.
+## This is a YAML-formatted file.
+##
+##     * * *   NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",   * * *
+##     * * *         WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME        * * *
+##
+## Make sure you're in the correct k8s context, then:
+##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
+##         oci://ghcr.io/dataone/charts/notification-service --version [version] \
+##             --debug --render-subchart-notes
+##
+
+## @section Global Properties Shared Across Sub-Charts Within This Deployment
+##
+global:
+  ## @param global.passwordsSecret The name of the Secret containing application passwords
+  ## This is the secret deployed using your own private, edited version of `../admin/secrets.yaml`.
+  ##
+  ## (Note the actual key passwordsSecret is not used anywhere; only the yaml anchor/alias
+  ##  &passwordSecretName. IF YOU OVERRIDE THIS VALUE IN ANOTHER VALUES-OVERLAY FILE, YOU ALSO
+  ## NEED TO OVERRIDE THE VALUES THAT USE THIS ANCHOR - search this file for 'passwordSecretName')
+  ##
+  ## IMPORTANT NOTE: make sure you edit this, since IT INCLUDES THE RELEASE NAME! For
+  ## example, if the release name is 'myrelease', the value of name: would be
+  ## 'myrelease-notifications-secrets'.
+  ##
+  passwordsSecret: &passwordSecretName ${RELEASE_NAME}-notifications-secrets
+
+  ## @param global.defaultStorageClass Global default StorageClass for Persistent Volume(s)
+  ##
+  ## Inspect your cluster to see what storageClass is set as default:
+  ##    $  kubectl get storageclass
+  ## ...and then explicitly set defaultStorageClass to match the name of the default storageclass
+  ## (e.g. for Rancher Desktop, use:   defaultStorageClass: local-path)
+  ##
+  defaultStorageClass: local-path
+
+## @section Application-Specific Properties for notification-service
+##
+ns:
+  ## @param ns.logLevel The log level for the notification service.
+  ## (trace, debug, info, warn, error, fatal)
+  logLevel: warn
+
+  auth:
+    api:
+      baseUrl: https://cn.dataone.org/cn/v2
+      authenticate: /diag/subject
+
+  database:
+    ## @param ns.database.jdbcHost Override auto-populated database connection hostname.
+    ## Leave empty to use the default value, which is the name of the postgresql headless service.
+    ##
+    jdbcHost: ""
+
+    ## @param ns.database.jdbcPort The port for the database connection.
+    ## This is used by the application to connect to the database.
+    ##
+    jdbcPort: 5432
+
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: ghcr.io/dataoneorg/notification-service
+  # This sets the pull policy for images.
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+
+## This section builds out the service account more information can be found here:
+##   https://kubernetes.io/docs/concepts/security/service-accounts/ServiceAccount
+## @param serviceAccount.create Should a service account be created to run notifications?
+## @param serviceAccount.annotations Annotations to add to the service account
+## @param serviceAccount.name The name to use for the service account.
+##        If not set, and 'create' is 'true', a name is generated using the 'fullname' template
+##
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ 
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+## This block is for setting up the ingress for more information can be found here:
+## https://kubernetes.io/docs/concepts/services-networking/ingress/
+## Ingress is a collection of rules that allow inbound connections to reach the endpoints defined
+## by a backend. An Ingress can be configured to give services externally-reachable urls, load
+## balance traffic, terminate SSL, offer name based virtual hosting etc.
+##
+ingress:
+  ## @param ingress.enabled Enable or disable the ingress
+  ##
+  enabled: true
+
+  ## @param ingress.className ClassName of the ingress provider in your cluster
+  ##  Inspect available classes in your cluster using:    $ kubectl get ingressclasses
+  ##
+  ## className: "traefik" -- For Rancher Desktop (provided you have traefik enabled:
+  ##     'preferences' -> 'kubernetes' -> 'enable traefik')
+  ## className: "nginx" -- For production, or to use certificates locally. Also:
+  ## - disable traefik ('preferences' -> 'kubernetes' -> uncheck 'enable traefik')
+  ## - install nginx:
+  ##   $  helm upgrade --install ingress-nginx ingress-nginx  \
+  ##        --repo https://kubernetes.github.io/ingress-nginx \
+  ##        --namespace ingress-nginx --create-namespace      \
+  ##        --set controller.allowSnippetAnnotations=true
+  ##
+  className: "nginx"
+
+  ## @param ingress.defaultBackend.enabled enable the optional defaultBackend
+  ## ingress.defaultBackend (optional) default for any requests not matching pre-defined paths
+  ## @param ingress.defaultBackend.enabled enable the optional defaultBackend
+  ## If none of the hosts or paths match the HTTP request in the Ingress objects, the traffic is
+  ## routed to your default backend. Example:
+  ##
+  ##   defaultBackend:
+  ##     enabled: true
+  ##     service:
+  ##       name: myrelease-wordpress
+  ##       port:
+  ##         number: 80
+  ##
+  defaultBackend:
+    enabled: false
+
+  ## @param ingress.annotations Annotations to add to the ingress; e.g. to use cert-manager
+  ## to automatically issue TLS certificates for the ingress hosts, you can add the following:
+  ##
+  ## ingress:
+  ##   annotations:
+  ##     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  ##
+  annotations: {}
+
+  ## @param ingress.hosts List of hosts to be used for the ingress
+  ## Each host must have a path defined, and the pathType must be set to either
+  ## 'ImplementationSpecific', 'Exact', or 'Prefix'; e.g:
+  ##   hosts:
+  ##     - host: &hostname notifications.test.dataone.org
+  ##       paths:
+  ##         - path: /
+  ##           pathType: Prefix
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+
+  ## @param ingress.tls List of TLS configurations for the ingress
+  ## Each TLS configuration must have a secretName defined, and the hosts must match the
+  ## hosts defined in the ingress.hosts section. For example:
+  ##   tls:
+  ##     - hosts:
+  ##         - *hostname
+  ##       secretName: ingress-nginx-tls-cert
+  tls: []
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
+readinessProbe:
+  httpGet:
+    path: /notifications/metrics/ping
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
+
+#This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  # targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+extraVolumes: []
+
+# Additional volumeMounts on the output Deployment definition.
+extraVolumeMounts: []
+
+service:
+  port: 8080
+
+imagePullSecrets: []
+fullnameOverride: ""
+nameOverride: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}
+resources: {}
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with limited
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+#resources:
+#  limits:
+#    cpu: 500m
+#    memory: 512Mi
+#  requests:
+#    cpu: 300m
+#    memory: 128Mi
+
+## @section PostgreSQL Configuration
+postgresql:
+  ## @param postgresql.enabled enable the postgresql sub-chart
+  ## set to false if you want to connect to your own existing postgresql deployment (and ensure
+  ## connection URI is set accordingly).
+  ## Once the postgres container is running, test using:
+  ##   $  kubectl exec -it <postgresql-pod-name> -- psql  -U <username>  -d <databasename>
+  ## (or from a shell in notifications container: psql  -U <username>  -h <pghostname> <databasename>)
+  ##
+  enabled: true
+
+  ## As of 8/25/25, Bitnami charges for secure container images, unless we use the "latest" tag.
+  ## As a stopgap, we reference the legacy images, which are still available for free (but note
+  ## that newer versions will not become available in the future, so we need to find an alternative
+  ## source for images...)
+  ## @param postgresql.global.security.allowInsecureImages Allow non-bitnami-hardened images
+  ## @param postgresql.image.repository source repo for main image
+  ## @param postgresql.volumePermissions.image.repository  source repo for volumePermissions image
+  ## @param postgresql.metrics.image.repository  source repo for metrics image
+  global:
+    security:
+      allowInsecureImages: true
+  image:
+    repository: bitnamilegacy/postgresql
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+  metrics:
+    image:
+      repository: bitnamilegacy/postgres-exporter
+
+  auth:
+    ## @param postgresql.auth.username Username for accessing the database
+    ## For the corresponding password, see ns.database.password in secrets
+    ## (These values are also used by the application to authenticate)
+    ##
+    username: notifications_user
+
+    ## @param postgresql.auth.database The name of the database used by the notification service.
+    ##
+    database: notifications
+
+    ## @param postgresql.auth.existingSecret Secrets location for postgres password
+    ## Typically the existing secrets also used by notifications - see ./admin/secrets.yaml
+    ##
+    existingSecret: *passwordSecretName
+
+    ## @param postgresql.auth.secretKeys.userPasswordKey Identifies database account password
+    ## within existing secrets
+    ##
+    secretKeys:
+      userPasswordKey: NS_DATABASE_PASSWORD
+
+      ## @param postgresql.auth.secretKeys.adminPasswordKey Dummy value - not used (see notes):
+      ## Bitnami expects to find it in our 'existingSecret' secrets location, and fails otherwise
+      ##
+      adminPasswordKey: NS_DATABASE_PASSWORD
+
+  ## @param postgresql.primary.pgHbaConfiguration PostgreSQL Primary client authentication
+  ## configuration; ref: https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html
+  primary:
+    containerSecurityContext:
+      ## @param postgresql.primary.containerSecurityContext.enabled enable containerSecurityContext
+      ##
+      enabled: true
+      ## @param postgresql.primary.containerSecurityContext.runAsUser uid for container to run as
+      ##
+      runAsUser: 56701
+
+    ## postgresql.primary.PodSecurityContext - common securityContext settings at pod level
+    ## for all containers
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    ##
+    podSecurityContext:
+      ## @param postgresql.primary.podSecurityContext.runAsNonRoot pod defaults to run as non-root?
+      ##
+      runAsNonRoot: true
+
+
+## @section Tomcat Configuration
+tomcat:
+  ## @param tomcat.extraCatalinaOpts Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:
+  ## 1. Do not set JMX-related values here, without first checking they're not already defined in
+  ##    tomcat.jmxCatalinaOpts (assuming tomcat.jmxEnabled is true)
+  ## 2. You can also set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead
+  ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
+  ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
+  ##
+  ## (extraCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  extraCatalinaOpts:
+    - -XX:MaxRAMPercentage=75
+
+  ## @param tomcat.jmxEnabled Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.
+  ## When JMX is enabled by setting this to 'true', you can view the JMX metrics using a JMX client
+  ## such as VisualVM or JConsole, connected via port-forwarding to the port set in tomcat.jmxPort
+  ##
+  jmxEnabled: false
+
+  ## @param tomcat.jmxPort The port to use for JMX connections. IMPORTANT: If you change this...
+  ## 1. you must also change the port in the tomcat.jmxCatalinaOpts section, in the following two
+  ##    entries:
+  ##     -Dcom.sun.management.jmxremote.port=9010
+  ##     -Dcom.sun.management.jmxremote.rmi.port=9010
+  ##
+  ## 2. If you plan on using a different port # on localhost, it's easiest to use that same port on
+  ##    the pod, so you're using a single port for both JMX and RMI.(e.g. instead of port
+  ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
+  ##    to localhost:9011)
+  ##
+  ## Note that the JMX port is not (and should not be) exposed outside the cluster. It is therefore
+  ## necessary to use port-forwarding in order to connect.
+  ##
+  jmxPort: 9010
+
+  ## @param tomcat.jmxCatalinaOpts [default: see values.yaml] Tomcat JVM options for enabling JMX
+  ## Use these to change the port, for example, or to enable authentication.
+  ##
+  ## IMPORTANT NOTES:
+  ## 1. If you change the port numbers here, you must also change the value of tomcat.jmxPort to
+  ##    match!
+  ## 2. If you plan on using a different port # on localhost, it's easiest to use that same port on
+  ##    the pod, so you're using a single port for both JMX and RMI.(e.g. instead of port
+  ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
+  ##    to localhost:9011)
+  ##
+  ## (jmxCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  jmxCatalinaOpts:
+    - -Dcom.sun.management.jmxremote
+    - -Dcom.sun.management.jmxremote.port=9010
+    - -Dcom.sun.management.jmxremote.rmi.port=9010
+    - -Dcom.sun.management.jmxremote.local.only=false
+    - -Dcom.sun.management.jmxremote.authenticate=false
+    - -Dcom.sun.management.jmxremote.ssl=false
+    - -Djava.rmi.server.hostname=127.0.0.1

@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "notifications.fullname" . }}
+  labels:
+    {{ include "notifications.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{ include "notifications.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{ include "notifications.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "notifications.serviceAccountName" . }}
+      securityContext:
+        {{ toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{ toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/local/tomee/bin/catalina.sh
+            - run
+          env:
+            - name: NS_PROPERTIES_YAML_PATH
+              value: /etc/dataone/notification-service/properties.yaml
+            - name: CATALINA_OPTS
+              value: {{ join " " .Values.tomcat.extraCatalinaOpts }}
+                      {{- if .Values.tomcat.jmxEnabled }}
+                        {{- if .Values.tomcat.extraCatalinaOpts }}
+                          {{- printf " " }}
+                        {{- end }}
+                        {{- join " " .Values.tomcat.jmxCatalinaOpts }}
+                      {{- end }}{{- printf " " -}}
+                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.yaml
+          envFrom:
+            - secretRef:
+                name: {{ required "missing name for passwords K8s Secret!" .Values.postgresql.auth.existingSecret }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- if .Values.tomcat.jmxEnabled }}
+            - containerPort: {{ .Values.tomcat.jmxPort }}
+              name: jmx
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.extraVolumeMounts }}
+            {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
+            {{- end }}
+            - mountPath: /etc/dataone/notification-service
+              name: {{ .Release.Name }}-config-volume
+              readOnly: true
+      volumes:
+        {{- if .Values.extraVolumes }}
+        {{- tpl (toYaml .Values.extraVolumes) . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Release.Name }}-config-volume
+          configMap:
+            name: {{ .Release.Name }}-notifications-configfiles
+            defaultMode: 0644
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}

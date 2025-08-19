@@ -19,10 +19,13 @@ public class DBConnectionParams {
 
     @Inject
     public DBConnectionParams() {
-        this(NsConfig.getConfig().getString("database.jdbcUrl"),
-            NsConfig.getConfig().getString("database.driverClassName"),
-            NsConfig.getConfig().getString("database.username"),
-            NsConfig.getConfig().getString("database.password"));
+        this(String.format("jdbc:postgresql://%s:%s/%s",
+                NsConfig.getConfig().getString("ns.database.jdbcHost"),
+                NsConfig.getConfig().getString("ns.database.jdbcPort"),
+                NsConfig.getConfig().getString("ns.database.name")),
+            NsConfig.getConfig().getString("ns.database.driverClassName"),
+            NsConfig.getConfig().getString("ns.database.username"),
+            NsConfig.getConfig().getString("ns.database.password"));
     }
 
     public DBConnectionParams(
@@ -32,6 +35,16 @@ public class DBConnectionParams {
         this.driverClassName = driverClassName;
         this.username = username;
         this.password = password;
+        if (password == null || password.isEmpty()) {
+            String msg = """
+            Database password must not be blank!
+            In K8s?   Set the 'NS_DATABASE_PASSWORD' property in the k8s Secret whose
+                      name is set in '.Values.global.passwordsSecret'
+            Non-K8s?  Set the 'ns.database.password' property in properties.yaml, or as
+                      the 'NS_DATABASE_PASSWORD' environment variable.
+            """;
+            throw new IllegalArgumentException(msg);
+        }
     }
 
     public String getJdbcUrl() {

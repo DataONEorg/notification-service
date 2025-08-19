@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 class ResourceTest {
 
     private static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
-    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasets;
+    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasetChanges;
     private static final String EXPECTED_PID = "urn:mypid:12345-67890";
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
     private static final List<String> EXPECTED_PID_LIST = new ArrayList<>();
@@ -64,7 +64,7 @@ class ResourceTest {
             mockDataRepo.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
             EXPECTED_PID_LIST);
         doThrow(new NotAuthorizedException("Access Denied")).when(mockDataRepo)
-            .addSubscription(null, ResourceType.datasets, EXPECTED_PID);
+            .addSubscription(null, ResourceType.datasetChanges, EXPECTED_PID);
         when(mockDataRepo.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
                                               EXPECTED_PID)).thenReturn(EXPECTED_PARAMS_ONEPID);
 
@@ -78,7 +78,7 @@ class ResourceTest {
     void validGetSubscriptions() {
         // HAPPY PATH
         Subscription result = (Subscription) resource.getSubscriptions(VALID_AUTH_HEADER,
-                                                                       ResourceType.datasets);
+                                                                       ResourceType.datasetChanges);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_MULTIPID.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS_MULTIPID.resourceType(), result.resourceType());
@@ -101,7 +101,7 @@ class ResourceTest {
     @Test
     void validSubscribe() {
         Subscription result =
-            (Subscription) resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasets,
+            (Subscription) resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges,
                                               EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_ONEPID.subject(), result.subject());
@@ -113,7 +113,7 @@ class ResourceTest {
     @Test
     void subscribe_missingPid() {
         try {
-            resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasets, null);
+            resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges, null);
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
             assertTrue(e.getMessage().contains("pid"));
@@ -136,7 +136,7 @@ class ResourceTest {
     void subscribe_missingAuthHeader() {
 
         Exception thrown = assertThrows(NotAuthorizedException.class, () -> resource.subscribe(null,
-                                                                                               ResourceType.datasets,
+                                                                                               ResourceType.datasetChanges,
                                                                                                EXPECTED_PID),
                                         "Expected subscribe() to throw NotAuthorizedException");
         assertTrue(thrown.getMessage().contains("401"),
@@ -147,7 +147,7 @@ class ResourceTest {
     void subscribe_unauthorized() {
         Exception thrown = assertThrows(NotAuthorizedException.class,
                                         () -> resource.subscribe(INVALID_AUTH_HEADER,
-                                                                 ResourceType.datasets,
+                                                                 ResourceType.datasetChanges,
                                                                  EXPECTED_PID),
                                         "Expected subscribe() to throw NotAuthorizedException");
         assertTrue(
@@ -158,7 +158,7 @@ class ResourceTest {
     @Test
     void validUnsubscribe() {
         Subscription result =
-            (Subscription) resource.unsubscribe(VALID_AUTH_HEADER, ResourceType.datasets,
+            (Subscription) resource.unsubscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges,
                                                 EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_ONEPID, result);

@@ -1,9 +1,17 @@
-#################################################
-##             TEST properties                 ##
-#################################################
+####################
+##  TEST properties
+####################
 ##
-database:
-  username: notifications_test_user
-  password: notifications_test_password
-  name: notifications_test_db
-  version: 16
+ns:
+  auth:
+    api:
+      baseUrl: https://bogus-cn-host.test.dataone.org/cn/v2
+      authenticate: /diag/subject
+
+  database:
+    username: notifications_test_user
+    password: notifications_test_password
+    name: notifications_test_db
+    test:
+      version: 17
+      camelCaseTestKey: yaml-value-for-testing-only

@@ -1,0 +1,63 @@
+## override values.yaml with values to use for running on the NCEAS dev cluster
+##
+## example:
+##
+##  helm upgrade --install ns --debug -n notifications \
+##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+##                          oci://ghcr.io/dataoneorg/charts/notifications --version [version]
+##
+## (or to install from local helm chart code, replace:
+##  oci://ghcr.io/dataoneorg/charts/notifications --version [version]
+##  with: ./helm)
+##
+## see values.yaml for full documentation on the following parameters
+##
+
+global:
+  ## Use your own release name instead of ns
+  passwordsSecret: &passwordSecretName ns-notify-secrets
+  storageClass: csi-cephfs-sc
+
+ns:
+  logLevel: debug
+  auth:
+    api:
+      baseUrl: https://cn-stage.test.dataone.org/cn/v2
+
+postgresql:
+  auth:
+    existingSecret: *passwordSecretName
+  primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 150m
+        memory: 192Mi
+    persistence:
+      size: 10Gi
+
+tomcat:
+  jmxEnabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 300m
+    memory: 128Mi
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: &hostname notifications.test.dataone.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - *hostname
+      secretName: ingress-nginx-tls-cert

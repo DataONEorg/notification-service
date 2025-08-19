@@ -1,12 +1,20 @@
-database:
-  username: notifications_user
-  ## TODO: move to Secret & env variable
-  password: notifications_password
-  name: notifications
-  version: 16.0
-  #  jdbcUrl: jdbc:postgresql://host.docker.internal:5432/notifications    # for docker-compose
-  jdbcUrl: jdbc:postgresql://localhost:5432/notifications                  # for local development
-
-  ##  See HikariCP configuration options at:
-  ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
-  driverClassName: org.postgresql.Driver
+############################################
+## Properties for NON-K8S deployments
+## (see helm/config/properties.yaml for K8S)
+############################################
+##
+ns:
+  auth:
+    api:
+      baseUrl: https://cn-stage.test.dataone.org/cn/v2
+      authenticate: /diag/subject
+  database:
+    username: notifications_user
+    # Change this to your own password!
+    password: YOUR-PASSWORD-HERE
+    name: notifications
+    jdbcHost: localhost
+    jdbcPort: 5432
+    ##  See HikariCP configuration options at:
+    ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+    driverClassName: org.postgresql.Driver

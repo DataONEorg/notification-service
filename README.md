@@ -1,4 +1,4 @@
-## Notification Service
+# Notification Service
 
 - **Authors**: Last, First (ORCID); ...
 - **License**: [Apache 2](http://opensource.org/licenses/Apache-2.0)
@@ -7,25 +7,74 @@
 - Contact us: support@dataone.org
 - [DataONE discussions](https://github.com/DataONEorg/dataone/discussions)
 
-Notification Service provides a notification system for datasets and portals, to notify both portal
-owners/editors and the community about events such as downloads, views, citations, derived products,
-new datasets added to a portal, reminders to update a portal, etc.
+Notification Service provides a notification system for datasets and portals, to notify both portal owners/editors and the community about events such as downloads, views, citations, derived products, new datasets added to a portal, reminders to update a portal, etc.
 
-DataONE in general, and notification-service in particular, are open source, community projects.
-We [welcome contributions](./CONTRIBUTING.md) in many forms, including code, graphics,
-documentation, bug reports, testing, etc.
+DataONE in general, and notification-service in particular, are open source, community projects. We [welcome contributions](./CONTRIBUTING.md) in many forms, including code, graphics, documentation, bug reports, testing, etc.
 
-Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions) to discuss these
-contributions with us.
+Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions) to discuss these contributions with us.
 
 ## Documentation
 
 Documentation is a work in progress, and can be found here in the README
 
+## API Usage Examples
+
+Example API interactions, using curl:
+
+```shell
+# BASE_URL: the base URL of the notification service instance you're using
+# TOKEN: a valid JWT token from the CN used by the installation under test
+#
+BASE_URL="https://notifications.test.dataone.org"
+TOKEN="your-jwt-token-here"
+
+# Subscribe user authenticated with jwt $TOKEN, to update-notifications for
+# the dataset identified by {pid}
+#
+$ curl --request POST "${BASE_URL}/notifications/datasetChanges/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
+# Get a list of subscriptions for user authenticated with jwt $TOKEN:
+#
+$ curl --request GET "${BASE_URL}/notifications/datasetChanges" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+
+# Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
+# dataset identified by {pid}
+#
+$ curl --request DELETE "${BASE_URL}/notifications/datasetChanges/{pid}" \
+       --header "Authorization: Bearer $TOKEN"  |  jq
+```
+
+> [!TIP]
+> You can get an auth token by logging into a metacat instance that uses the same CN as the installation being tested. For example:
+> - If it's a Production notification service, it should use `https://cn.dataone.org/cn/v2`; get a token from any prod metacat, e.g. [arcticdata.io](https://arcticdata.io/catalog)
+> - If it's a test/development notification service, it will likely use  `https://cn-stage-2.test.dataone.org/cn/v2`; get a token from the [nceas dev metacat](https://dev.nceas.ucsb.edu/data)
+
+## Getting Started - Running `Notification Service` Yourself
+
+The simplest way to try out the notification service is to use the Helm chart to deploy
+in a Kubernetes cluster.
+
+For example, assuming you have installed and started [Rancher Desktop](https://rancherdesktop.io/) and [ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/#quick-start) on your local machine, it's easy to install the latest Helm chart:
+
+```shell
+helm upgrade --install ns --debug -n notifications --create-namespace \
+    -f ./helm/examples/values-dev-cluster-ns-example.yaml \
+    oci://ghcr.io/dataoneorg/charts/notifications
+```
+
+> [!CAUTION]
+> This is a simplified process, for evaluation purposes only, and is not intended for production use, since it uses defaults for the namespace, release name and secret credentials.
+>
+> For production use, you should set credentials appropriately, and may need to override more of the values.yaml settings.
+
+## Developer Guide
+
+This section is for developers who want to build, modify, or test the application, or run it locally on their development machine.
+
 ### Jakarta EE
-Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally
-J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source
-software.
+Notification Service uses the Jakarta EE framework. Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source software.
 
 Here are some useful links for those unfamiliar with Jakarta EE:
 - [Jakarta EE 10](https://jakarta.ee/release/10/)
@@ -37,92 +86,84 @@ Here are some useful links for those unfamiliar with Jakarta EE:
 
 This is a java application, built using the Maven build tool.
 
+> [!NOTE]
+> **Prerequisites:**
+> The build and tests require:
+> 1.  Java 21. It can be downloaded from [Adoptium](https://adoptium.net/temurin/releases?version=21&os=any&arch=any). You can also set Java 21 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
+> 2. [Maven v3.9+](https://maven.apache.org/download.cgi).
+
 ```shell
 $ mvn clean package  [ -DskipTests ]
 ```
 
-### Building the Docker Image
+### Running the Tests
 
-> (Temporary manual step -- This is a workaround until we start pulling config from environment
-> variables.): Edit `src/main/resources/properties.yaml` and change `localhost` to
-> `host.docker.internal` in the `database.jdbcUrl` property:
->  ```yaml
->  database:
->    jdbcUrl: jdbc:postgresql://host.docker.internal:5432/notifications
->   ```
+The tests and their resources all reside in the `src/test/java` directory. They fall into three categories, and it is important to distinguish between them and adhere to their respective conventions:
 
-```shell
-# TAG: the docker image tag string; use a version # for releases, or "DEVELOP" for dev
-# NS_VERSION: the notification-service war version to use; defaults to ${TAG} if
-#             "--build-arg NS_VERSION=..." is omitted
+### Unit Tests
 
-$ docker image build -t ghcr.io/dataoneorg/notification-service:${TAG} \
-                     -f docker/Dockerfile  \
-                     --build-arg NS_VERSION=${NS_VERSION}  .
+Unit tests are intended to test **individual classes and methods**.
 
-# Don't forget the trailing dot!
-```
-For build-debugging purposes, you can also add `--progress=plain` and/or `--no-cache`.
+> [!IMPORTANT]
+> Unit tests must have all their dependencies mocked out. They should **NEVER** require a running instance of the application, or other components like a database.
 
-### Running in Docker
-
-Use `docker compose`, which will start all the required components (Tomcat container & PostgreSQL
-database container)
+Unit tests are named `*Test.java`, and are run using the Maven `test` goal:
 
 ```shell
-$ docker compose up
+mvn clean test
 ```
 
-To attach to the running container:
+### Integration Tests
+
+Integration tests are intended to test **the integration and interactions of multiple classes or modules**.
+
+> [!IMPORTANT]
+> Integration tests should **NEVER** require a running instance of the application (See [Smoke Tests](#smoke-tests)). They may, however, rely on other components (such as a database), which are provided and managed by the test framework. (For example, see [TestUtils::getTestDb](./src/test/java/org/dataone/notifications/util/TestUtils.java), which uses [TestContainers](https://www.testcontainers.org/)). This enables the test suite to be self-contained, so it will run in CI/CD pipelines.
+
+Integration tests are named `*IT.java`, and are run using the Maven `verify` goal (which also runs the unit tests first):
 
 ```shell
-docker container exec  --interactive --tty notification-service-webapp-1 bash
+mvn clean verify
 ```
 
-### Building and Running on a Localhost Webapp Server
+### Smoke Tests
 
-> NOTE: Jakarta EE 10 is supported only by compliant web application servers. Tomcat version 10 is
-> NOT yet
-> fully compliant with Jakarta EE 10, so for the time being, it is recommended to use
-> **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional
-> libraries needed to support Jakarta EE.
+Smoke tests are intended to be **executed against a running instance of the application** (e.g. in production), to verify that it is working as expected, after installation or upgrade.
 
-TomEE can be downloaded from https://tomee.apache.org:
-- Version 9.1 (Webprofile) is a Final Release that is only Jakarta 9 EE compliant, but seems to work
-  OK with the current v10 codebase
-- Version 10.0.0-M2 (Webprofile) is a Milestone Release that is Jakarta EE 10 compliant.
+Smoke tests are named `*SmokeIT.java`, and are run using the Maven `verify` goal, with the following additional command-line args:
+- `-PsmokeTest`: this tells Maven to run only the smoke tests.
+- `-DBASE_URL`: the base URL of the notification service instance you're using
+- `-DTOKEN`: a valid JWT token from the CN used by the installation under test (see [API Usage Examples](#api-usage-examples) for details of how to get a token)
 
-Build with maven and copy the war file to your TomEE webapps directory
+```shell
+# Can set this as an environment variable, to maintain secrecy:
+export TOKEN="your-jwt-token-here"
+
+mvn verify -PsmokeTest -DBASE_URL="https://notifications.test.dataone.org" -DTOKEN="$TOKEN"
+```
+
+### Building and Running on a Localhost Web Application Server
+
+> [!NOTE]
+> **Prerequisites:**
+> In addition to the Java and maven versions listed above, you will need:
+> 1. [Apache TomEE](https://tomee.apache.org) v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
+ Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE.)
+> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script:
+>
+> ```shell
+> ./scripts/docker-run-db.sh
+> ```
+
+Build with maven and copy the war file to your TomEE webapps directory:
 
 ```shell
 $ mvn clean package -DskipTests
 
-$ cp ./target/notification-service-${NS_VERSION}.war $TOMEE_HOME/webapps
+$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps
 ```
-...and (re)start TomEE.
-
-## API Usage Examples
-
-Example API interactions, using curl:
-```shell
-# Subscribe user authenticated with jwt $TOKEN, to update-notifications for
-# the dataset identified by {pid}
-#
-$ curl --request POST "http://localhost:8080/notifications/datasets/{pid}" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-
-# Get a list of subscriptions for user authenticated with jwt $TOKEN:
-#
-$ curl --request GET "http://localhost:8080/notifications/datasets" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-
-# Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
-# dataset identified by {pid}
-#
-$ curl --request DELETE "http://localhost:8080/notifications/datasets/{pid}" \
-       --header "Authorization: Bearer $TOKEN"  |  jq
-```
-
+...and (re)start TomEE. You can then visit the URL:
+http://localhost:8080/notifications/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
 
 ## License
 ```

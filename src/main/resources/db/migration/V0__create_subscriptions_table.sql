@@ -6,3 +6,4 @@ CREATE TABLE subscriptions
     subject       VARCHAR(512),
     pid           VARCHAR(512)
 );
+-- TODO: combination of resource_type, pid and subject should all be unique and non-null
