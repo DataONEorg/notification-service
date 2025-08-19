@@ -35,7 +35,7 @@ public class DBConnectionParams {
         this.driverClassName = driverClassName;
         this.username = username;
         this.password = password;
-        if (password== null || password.isEmpty()) {
+        if (password == null || password.isEmpty()) {
             String msg = """
             Database password must not be blank!
             In K8s?   Set the 'NS_DATABASE_PASSWORD' property in the k8s Secret whose

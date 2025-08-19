@@ -144,7 +144,6 @@ class ApiClientIT extends JerseyTest {
     @ParameterizedTest
     @EnumSource(value = ResourceType.class, names = "datasetChanges")
     void delete(ResourceType resourceType) {
-        System.out.println("\n\n\nresourceType: " + resourceType + "\n\n\n");
         Response response = doDelete(VALID_AUTH_HEADER_5, "/" + resourceType + "/" + EXPECTED_PID_5,
                                      Response.Status.OK);
         assertJsonContentType(response);

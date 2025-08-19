@@ -28,14 +28,14 @@ import static org.mockito.Mockito.when;
 class D1CnAuthUtilTest {
     private static final String VALID_SUBJECT_INFO_XML =
         """
-        <subjectInfo>
+        <ns2:subjectInfo xmlns:ns2="http://ns.dataone.org/service/types/v1">
             <person>
                 <subject>https://orcid.org/0000-1234-5678-999X</subject>
                 <givenName>Jane</givenName>
                 <familyName>Doe</familyName>
                 <verified>true</verified>
             </person>
-        </subjectInfo>
+        </ns2:subjectInfo>
         """;
     private static final String ERROR_XML =
         """
