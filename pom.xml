@@ -15,10 +15,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <flyway.url>jdbc:postgresql://localhost:5432/notifications</flyway.url>
-        <flyway.user>notifications_user</flyway.user>
-        <!-- TODO: move to a secret -->
-        <flyway.password>notifications_password</flyway.password>
         <flyway.version>11.10.3</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <postgresql.version>42.7.7</postgresql.version>
@@ -128,7 +124,7 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <!-- async startup + config reload with a war file -->
+            <!-- async startup and config reload with a war file -->
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-web</artifactId>
             <version>${log4j.version}</version>
@@ -288,22 +284,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <version>10.15.0</version>
-                <configuration>
-                    <url>${flyway.url}</url>
-                    <user>${flyway.user}</user>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.postgresql</groupId>
-                        <artifactId>postgresql</artifactId>
-                        <version>42.7.3</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
