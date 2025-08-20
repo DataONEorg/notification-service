@@ -13,19 +13,6 @@
 ## @section Global Properties Shared Across Sub-Charts Within This Deployment
 ##
 global:
-  ## @param global.passwordsSecret The name of the Secret containing application passwords
-  ## This is the secret deployed using your own private, edited version of `../admin/secrets.yaml`.
-  ##
-  ## (Note the actual key passwordsSecret is not used anywhere; only the yaml anchor/alias
-  ##  &passwordSecretName. IF YOU OVERRIDE THIS VALUE IN ANOTHER VALUES-OVERLAY FILE, YOU ALSO
-  ## NEED TO OVERRIDE THE VALUES THAT USE THIS ANCHOR - search this file for 'passwordSecretName')
-  ##
-  ## IMPORTANT NOTE: make sure you edit this, since IT INCLUDES THE RELEASE NAME! For
-  ## example, if the release name is 'myrelease', the value of name: would be
-  ## 'myrelease-notifications-secrets'.
-  ##
-  passwordsSecret: &passwordSecretName ${RELEASE_NAME}-notifications-secrets
-
   ## @param global.defaultStorageClass Global default StorageClass for Persistent Volume(s)
   ##
   ## Inspect your cluster to see what storageClass is set as default:
@@ -232,82 +219,16 @@ resources: {}
 
 ## @section PostgreSQL Configuration
 postgresql:
-  ## @param postgresql.enabled enable the postgresql sub-chart
-  ## set to false if you want to connect to your own existing postgresql deployment (and ensure
-  ## connection URI is set accordingly).
-  ## Once the postgres container is running, test using:
-  ##   $  kubectl exec -it <postgresql-pod-name> -- psql  -U <username>  -d <databasename>
-  ## (or from a shell in notifications container: psql  -U <username>  -h <pghostname> <databasename>)
-  ##
-  enabled: true
-
-  ## As of 8/25/25, Bitnami charges for secure container images, unless we use the "latest" tag.
-  ## As a stopgap, we reference the legacy images, which are still available for free (but note
-  ## that newer versions will not become available in the future, so we need to find an alternative
-  ## source for images...)
-  ## @param postgresql.global.security.allowInsecureImages Allow non-bitnami-hardened images
-  ## @param postgresql.image.repository source repo for main image
-  ## @param postgresql.volumePermissions.image.repository  source repo for volumePermissions image
-  ## @param postgresql.metrics.image.repository  source repo for metrics image
-  global:
-    security:
-      allowInsecureImages: true
-  image:
-    repository: bitnamilegacy/postgresql
-  volumePermissions:
-    image:
-      repository: bitnamilegacy/os-shell
-  metrics:
-    image:
-      repository: bitnamilegacy/postgres-exporter
-
   auth:
-    ## @param postgresql.auth.username Username for accessing the database
-    ## For the corresponding password, see ns.database.password in secrets
-    ## (These values are also used by the application to authenticate)
-    ##
-    username: notifications_user
-
     ## @param postgresql.auth.database The name of the database used by the notification service.
     ##
     database: notifications
 
     ## @param postgresql.auth.existingSecret Secrets location for postgres password
-    ## Typically the existing secrets also used by notifications - see ./admin/secrets.yaml
+    ## Typically the existing secrets also used by notifications -
+    ## see ./admin/cloudnative_pg_secret.yaml
     ##
-    existingSecret: *passwordSecretName
-
-    ## @param postgresql.auth.secretKeys.userPasswordKey Identifies database account password
-    ## within existing secrets
-    ##
-    secretKeys:
-      userPasswordKey: NS_DATABASE_PASSWORD
-
-      ## @param postgresql.auth.secretKeys.adminPasswordKey Dummy value - not used (see notes):
-      ## Bitnami expects to find it in our 'existingSecret' secrets location, and fails otherwise
-      ##
-      adminPasswordKey: NS_DATABASE_PASSWORD
-
-  ## @param postgresql.primary.pgHbaConfiguration PostgreSQL Primary client authentication
-  ## configuration; ref: https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html
-  primary:
-    containerSecurityContext:
-      ## @param postgresql.primary.containerSecurityContext.enabled enable containerSecurityContext
-      ##
-      enabled: true
-      ## @param postgresql.primary.containerSecurityContext.runAsUser uid for container to run as
-      ##
-      runAsUser: 56701
-
-    ## postgresql.primary.PodSecurityContext - common securityContext settings at pod level
-    ## for all containers
-    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-    ##
-    podSecurityContext:
-      ## @param postgresql.primary.podSecurityContext.runAsNonRoot pod defaults to run as non-root?
-      ##
-      runAsNonRoot: true
-
+    existingSecret: ${RELEASE_NAME}-notify-cnpg
 
 ## @section Tomcat Configuration
 tomcat:

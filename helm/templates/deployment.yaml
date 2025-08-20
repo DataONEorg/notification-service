@@ -51,9 +51,17 @@ spec:
                         {{- join " " .Values.tomcat.jmxCatalinaOpts }}
                       {{- end }}{{- printf " " -}}
                       -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.yaml
-          envFrom:
-            - secretRef:
-                name: {{ required "missing name for passwords K8s Secret!" .Values.postgresql.auth.existingSecret }}
+            - name: NS_DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "missing name for postgres Secret!" .Values.postgresql.auth.existingSecret }}
+                  key: username
+            - name: NS_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "missing name for postgres Secret!" .Values.postgresql.auth.existingSecret }}
+                  key: password
+
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

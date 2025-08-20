@@ -14,8 +14,6 @@
 ##
 
 global:
-  ## Use your own release name instead of ns
-  passwordsSecret: &passwordSecretName ns-notify-secrets
   storageClass: csi-cephfs-sc
 
 ns:
@@ -23,20 +21,12 @@ ns:
   auth:
     api:
       baseUrl: https://cn-stage.test.dataone.org/cn/v2
+  database:
+    jdbcHost: ns-cnpg-rw
 
 postgresql:
   auth:
-    existingSecret: *passwordSecretName
-  primary:
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 150m
-        memory: 192Mi
-    persistence:
-      size: 10Gi
+    existingSecret: ns-notify-cnpg
 
 tomcat:
   jmxEnabled: true

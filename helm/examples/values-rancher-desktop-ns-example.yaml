@@ -11,12 +11,6 @@
 ## see values.yaml for full documentation on the following parameters
 ##
 
-global:
-  ## Note:
-  ## Prerequisite: install "ns-notifications-secrets" from helm/admin/secrets.yaml
-  ## (assumes release name is "ns")
-  passwordsSecret: &passwordSecretName ns-notifications-secrets
-
 ns:
   logLevel: debug
   auth:
@@ -25,7 +19,7 @@ ns:
 
 postgresql:
   auth:
-    existingSecret: *passwordSecretName
+    existingSecret: ns-notify-cnpg
 
 tomcat:
   jmxEnabled: true

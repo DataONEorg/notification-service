@@ -20,13 +20,3 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "develop"
-
-# Chart dependencies
-dependencies:
-  - name: postgresql
-    repository: https://charts.bitnami.com/bitnami
-    # @param version  --  the bitnami postgresql CHART version, NOT the database version
-    # get full list using:  $  helm search repo bitnami/postgresql --versions
-    #
-    version: 16.7.21    # bitnami chart version 16.7.21 deploys postgres version 17.5.0
-    condition: postgresql.enabled

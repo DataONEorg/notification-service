@@ -1,0 +1,26 @@
+## Create a PostgreSQL cluster using the CloudNative-PG operator
+## (https://github.com/cloudnative-pg/cloudnative-pg)
+##
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Release.Name }}-cnpg
+  namespace: {{ .Release.Namespace }}
+spec:
+  instances: 3
+  bootstrap:
+    initdb:
+      database: notifications
+      # TODO: get owner automatically? helper??
+      owner: notifications_user
+      secret:
+        # TODO: get secret name automatically? helper??
+        name: {{ .Values.postgresql.auth.existingSecret }}
+      encoding: UTF8
+      localeProvider: icu
+      icuLocale: en_US
+      localeCType: en_US.UTF-8
+      localeCollate: en_US.UTF-8
+  storage:
+    storageClass: csi-cephfs-sc
+    size: 10Gi
