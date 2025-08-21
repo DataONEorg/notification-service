@@ -69,6 +69,17 @@ Create the jdbc hostname
 {{- .Values.ns.database.jdbcHost }}
 {{- else }}
 {{- $release := .Release.Name }}
-{{- printf "%s-postgresql-hl" $release }}
+{{- printf "%s-cnpg-rw" $release }}
+{{- end }}
+{{- end }}
+
+{{/*
+Construct the postgres secret name
+*/}}
+{{- define "notifications.pgSecretName" -}}
+{{- if .Values.postgresql.auth.existingSecret }}
+{{- tpl .Values.postgresql.auth.existingSecret $ }}
+{{- else }}
+{{- printf "%s-notify-cnpg" .Release.Name }}
 {{- end }}
 {{- end }}

@@ -14,8 +14,7 @@ spec:
       # TODO: get owner automatically? helper??
       owner: notifications_user
       secret:
-        # TODO: get secret name automatically? helper??
-        name: {{ .Values.postgresql.auth.existingSecret }}
+        name: {{ include "notifications.pgSecretName" . }}
       encoding: UTF8
       localeProvider: icu
       icuLocale: en_US

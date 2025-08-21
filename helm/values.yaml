@@ -224,11 +224,11 @@ postgresql:
     ##
     database: notifications
 
-    ## @param postgresql.auth.existingSecret Secrets location for postgres password
-    ## Typically the existing secrets also used by notifications -
-    ## see ./admin/cloudnative_pg_secret.yaml
+    ## @param postgresql.auth.existingSecret Secrets location for Basic Auth username & password
+    ## Leave blank to autopopulate with the existing secret also used by notifications; see
+    ##   ./admin/cloudnative_pg_secret.yaml
     ##
-    existingSecret: ${RELEASE_NAME}-notify-cnpg
+    existingSecret: ""
 
 ## @section Tomcat Configuration
 tomcat:
