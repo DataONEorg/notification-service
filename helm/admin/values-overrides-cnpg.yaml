@@ -1,0 +1,17 @@
+## Create a PostgreSQL cluster using the CloudNative-PG operator
+## (https://github.com/cloudnative-pg/cloudnative-pg)
+##
+
+dbName: notifications
+dbUser: notifications_user
+
+resources:
+  requests:
+    cpu: 1
+    memory: 1Gi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+persistence:
+  size: 10Gi
