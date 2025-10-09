@@ -16,6 +16,7 @@ import javax.xml.parsers.DocumentBuilder;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 @ApplicationScoped
 public class D1CnAuthUtil {
@@ -39,9 +40,9 @@ public class D1CnAuthUtil {
      *
      * @param token the auth token to be used for verifying and retrieving user information.
      * @return the subject string from the authentication response
-     * @throws NotAuthorizedException if the authentication fails (401/403) or token is invalid
+     * @throws NotAuthorizedException  if the authentication fails (401/403) or token is invalid
      * @throws WebApplicationException if there are service connectivity or server issues
-     * @throws ProcessingException if the response format is invalid or unparseable
+     * @throws ProcessingException     if the response format is invalid or unparseable
      */
     public String getSubject(String token) throws NotAuthorizedException {
 
@@ -66,14 +67,18 @@ public class D1CnAuthUtil {
             try (InputStream responseStream = (responseCode >= 200 && responseCode < 400)
                                               ? con.getInputStream() : con.getErrorStream()) {
                 if (responseStream == null) {
-                    logger.error("No response received from authentication API. HTTP code: {}", responseCode);
+                    logger.error(
+                        "No response received from authentication API. HTTP code: {}",
+                        responseCode);
                     if (authError) {
                         throw new NotAuthorizedException("Bearer");
                     } else {
-                        throw new WebApplicationException("Authentication service returned no response",
-                                                          Response.Status.SERVICE_UNAVAILABLE);
+                        throw new WebApplicationException(
+                            "Authentication service returned no response",
+                            Response.Status.SERVICE_UNAVAILABLE);
                     }
                 }
+
 
                 // Parse XML response
                 DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -83,20 +88,25 @@ public class D1CnAuthUtil {
                 try {
                     doc = dBuilder.parse(responseStream);
                 } catch (Exception xmlEx) {
-                    logger.error("Failed to parse authentication API response as XML", xmlEx);
                     if (authError) {
+                        logger.debug(
+                            "Authentication failed, response not parseable as XML; Error: {}; "
+                                + "response: {}", xmlEx.getMessage(),
+                            getResponseBody(responseStream));
                         throw new NotAuthorizedException("Bearer");
                     }
-                    throw new ProcessingException("Malformed XML response from authentication service", xmlEx);
+                    logger.error("Failed to parse authentication API response as XML: {}", getResponseBody(responseStream), xmlEx);
+                    throw new ProcessingException(
+                        "Malformed XML response from authentication service", xmlEx);
                 }
-
                 Element root = doc.getDocumentElement();
                 if (root == null) {
                     logger.error("Authentication API response XML has no root element.");
                     if (authError) {
                         throw new NotAuthorizedException("Bearer");
                     }
-                    throw new ProcessingException("Authentication service returned XML with no root element");
+                    throw new ProcessingException(
+                        "Authentication service returned XML with no root element");
                 }
 
                 // Process subjectInfo response (successful authentication)
@@ -104,13 +114,15 @@ public class D1CnAuthUtil {
                     Element person = (Element) root.getElementsByTagName("person").item(0);
                     if (person == null) {
                         logger.error("No <person> element found in authentication response.");
-                        throw new ProcessingException("Malformed subjectInfo response: missing person element");
+                        throw new ProcessingException(
+                            "Malformed subjectInfo response: missing person element");
                     }
                     String subject = getElementText(person, "subject");
 
                     if (subject == null || subject.isBlank()) {
                         logger.error("Subject missing in authentication subjectInfo response.");
-                        throw new ProcessingException("Malformed subjectInfo response: missing or blank subject");
+                        throw new ProcessingException(
+                            "Malformed subjectInfo response: missing or blank subject");
                     }
                     return subject;
 
@@ -122,20 +134,26 @@ public class D1CnAuthUtil {
 
                 } else {
                     // Unexpected response format
-                    logger.error("Unexpected root element in authentication response: {}", root.getTagName());
+                    logger.error(
+                        "Unexpected root element in authentication response: {}",
+                        root.getTagName());
                     if (authError) {
                         throw new NotAuthorizedException("Bearer");
                     }
-                    throw new ProcessingException("Unexpected response format from authentication service: " + root.getTagName());
+                    throw new ProcessingException(
+                        "Unexpected response format from authentication service: "
+                            + root.getTagName());
                 }
             }
         } catch (java.net.ConnectException ce) {
             logger.error("Failed to connect to authentication server", ce);
-            throw new WebApplicationException("Unable to reach authentication service", ce,
+            throw new WebApplicationException(
+                "Unable to reach authentication service", ce,
                                               Response.Status.SERVICE_UNAVAILABLE);
         } catch (java.net.SocketTimeoutException te) {
             logger.error("Timeout while connecting to authentication server", te);
-            throw new WebApplicationException("Authentication service timeout", te,
+            throw new WebApplicationException(
+                "Authentication service timeout", te,
                                               Response.Status.SERVICE_UNAVAILABLE);
         } catch (NotAuthorizedException e) {
             // Re-throw authentication exceptions as-is
@@ -145,7 +163,8 @@ public class D1CnAuthUtil {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error during authentication request: {}", e.getMessage(), e);
-            throw new WebApplicationException("Authentication service error: " + e.getMessage(), e,
+            throw new WebApplicationException(
+                "Authentication service error: " + e.getMessage(), e,
                                               Response.Status.SERVICE_UNAVAILABLE);
         } finally {
             if (con != null) {
@@ -158,5 +177,15 @@ public class D1CnAuthUtil {
     private static String getElementText(Element parent, String tagName) {
         Element elem = (Element) parent.getElementsByTagName(tagName).item(0);
         return (elem != null) ? elem.getTextContent() : null;
+    }
+
+    private String getResponseBody(InputStream responseStream) {
+        try {
+            byte[] responseBytes = responseStream.readAllBytes();
+            return new String(responseBytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logger.error("Failed to read response", e);
+            return "ERROR: Failed to read response";
+        }
     }
 }
