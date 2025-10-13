@@ -13,8 +13,9 @@ spec:
       {{ include "notifications.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include "notifications.config.checksum" . }}
+      {{- with .Values.podAnnotations }}
         {{ toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -28,12 +29,16 @@ spec:
         {{ toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "notifications.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
         {{ toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
             {{ toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
@@ -51,7 +56,7 @@ spec:
                         {{- join " " .Values.tomcat.jmxCatalinaOpts }}
                       {{- end }}{{- printf " " -}}
                       -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.yaml
-            {{- $pgSecret := include "notifications.pgSecretName" . }}
+            {{- $pgSecret :=  required "ns.database.existingSecret IS REQUIRED" .Values.ns.database.existingSecret }}
             - name: NS_DATABASE_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -62,7 +67,6 @@ spec:
                 secretKeyRef:
                   name: {{ $pgSecret }}
                   key: password
-
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

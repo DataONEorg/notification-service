@@ -1,11 +1,11 @@
 ns:
   auth:
     api:
-      baseUrl: {{ .Values.ns.auth.baseUrl | default "https://cn-stage.test.dataone.org/cn/v2" }}
-      authenticate: {{ .Values.ns.auth.authenticate | default "/diag/subject" }}
+      baseUrl: {{ .Values.ns.auth.api.baseUrl | default "https://cn-sandbox.test.dataone.org/cn/v2" }}
+      authenticate: {{ .Values.ns.auth.api.authenticate | default "/diag/subject" }}
   database:
-    name: {{ .Values.postgresql.auth.database | default "notifications" }}
-    jdbcHost: {{ include "notifications.jdbcHostName" . }}
+    name: {{ .Values.ns.database.dbName | default "notifications" }}
+    jdbcHost: {{ required "ns.database.jdbcHost IS REQUIRED" .Values.ns.database.jdbcHost }}
     jdbcPort: {{ default "5432" .Values.ns.database.jdbcPort | quote }}
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby

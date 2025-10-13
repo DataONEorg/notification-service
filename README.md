@@ -53,13 +53,14 @@ $ curl --request DELETE "${BASE_URL}/notifications/datasetChanges/{pid}" \
 
 ## Getting Started - Running `Notification Service` Yourself
 
-The simplest way to try out the notification service is to use the Helm chart to deploy
-in a Kubernetes cluster.
+> [!NOTE]
+> Notification Service requires a pre-existing PostgreSQL database (deployed either within or outside a Kubernetes cluster). We recommend CloudNative PG. Installing CNPG Operator is beyond the scope of this document, but the process is easy - see the [DataONE K8s Cluster documentation](https://github.com/DataONEorg/k8s-cluster/blob/main/postgres/postgres.md#cloudnativepg-operator-installation). Once the oprator is running, a Postrges cluster can be created using the [dataone-cnpg Helm chart](https://github.com/DataONEorg/dataone-cnpg/pkgs/container/charts%2Fcnpg). Both of these are one-time setup steps.
 
-For example, assuming you have installed and started [Rancher Desktop](https://rancherdesktop.io/) and [ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/#quick-start) on your local machine, it's easy to install the latest Helm chart:
+The simplest way to try out the notification service is to use the Helm chart to deploy
+in a Kubernetes cluster. For example, assuming you are using [Rancher Desktop](https://rancherdesktop.io/), and have installed [ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/#quick-start) and a CNPG cluster on your local machine (see note above), it's easy to install the latest Helm chart:
 
 ```shell
-helm upgrade --install ns --debug -n notifications --create-namespace \
+helm upgrade --install ns --debug -n notify --create-namespace \
     -f ./helm/examples/values-dev-cluster-ns-example.yaml \
     oci://ghcr.io/dataoneorg/charts/notifications
 ```

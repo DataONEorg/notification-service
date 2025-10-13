@@ -35,8 +35,16 @@ ns:
       authenticate: /diag/subject
 
   database:
-    ## @param ns.database.jdbcHost Override auto-populated database connection hostname.
-    ## Leave empty to use the default value, which is the name of the postgresql headless service.
+    ## @param database.database The name of the database used by the notification service.
+    ##
+    dbName: notifications
+
+    ## @param database.existingSecret REQUIRED Basic Auth Secret name for DB username & password
+    ##
+    existingSecret: ""
+
+    ## @param ns.database.jdbcHost (REQUIRED) database connection hostname (postgresql k8s service)
+    ## Typically <cnpg-release-name>-cnpg-rw
     ##
     jdbcHost: ""
 
@@ -44,7 +52,6 @@ ns:
     ## This is used by the application to connect to the database.
     ##
     jdbcPort: 5432
-
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
@@ -216,19 +223,6 @@ resources: {}
 #  requests:
 #    cpu: 300m
 #    memory: 128Mi
-
-## @section PostgreSQL Configuration
-postgresql:
-  auth:
-    ## @param postgresql.auth.database The name of the database used by the notification service.
-    ##
-    database: notifications
-
-    ## @param postgresql.auth.existingSecret Secrets location for Basic Auth username & password
-    ## Leave blank to autopopulate with the existing secret also used by notifications; see
-    ##   ./admin/cloudnative_pg_secret.yaml
-    ##
-    existingSecret: ""
 
 ## @section Tomcat Configuration
 tomcat:

@@ -62,24 +62,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the jdbc hostname
+Create a checksum that reflects changes in the config files.
+Do it here, instead of in deployment.yaml, because helm's ordering of operations means that the
+checksum is performed before the values overrides are inserted into the config files, so the
+checksum doesn't change when those values do.
 */}}
-{{- define "notifications.jdbcHostName" -}}
-{{- if .Values.ns.database.jdbcHost }}
-{{- .Values.ns.database.jdbcHost }}
-{{- else }}
-{{- $release := .Release.Name }}
-{{- printf "%s-cnpg-rw" $release }}
+{{- define "notifications.config.checksum" }}
+{{- $out := "" }}
+{{- range $path, $file := .Files.Glob "config/*" }}
+  {{- $content := toString $file }}
+  {{- $rendered := tpl $content $ }}
+  {{- $out = printf "%s\n%s" $out $rendered }}
 {{- end }}
-{{- end }}
-
-{{/*
-Construct the postgres secret name
-*/}}
-{{- define "notifications.pgSecretName" -}}
-{{- if .Values.postgresql.auth.existingSecret }}
-{{- tpl .Values.postgresql.auth.existingSecret $ }}
-{{- else }}
-{{- printf "%s-notify-cnpg" .Release.Name }}
-{{- end }}
-{{- end }}
+{{- $out | trim | sha256sum -}}
+{{- end -}}
