@@ -68,6 +68,16 @@ class D1CnAuthUtilTest {
             </person>
         </subjectInfo>
         """;
+    private static final String TLS13_POST_HANDSHAKE_ERR_RESPONSE =
+        """
+        <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+        <html><head>
+            <title>403 Forbidden</title>
+        </head><body>
+            <h1>Forbidden</h1>
+            <p>You don't have permission to access this resource.Reason: Cannot perform Post-Handshake Authentication.<br /></p>
+        </body></html>
+        """;
     private static final String XML_WITH_UNEXPECTED_ROOT =
         "<unexpected><content>data</content></unexpected>";
     private static final String ERROR_XML_WITHOUT_DESC = "<error></error>";
@@ -88,6 +98,8 @@ class D1CnAuthUtilTest {
             new ByteArrayInputStream(mockResponseXml.getBytes(StandardCharsets.UTF_8));
         if (httpResponseCode < 401) {
             when(mockConn.getInputStream()).thenReturn(xmlStream);
+        } else {
+            when(mockConn.getErrorStream()).thenReturn(xmlStream);
         }
         return mockConn;
     }
@@ -193,17 +205,33 @@ class D1CnAuthUtilTest {
     }
 
     @Test
+    void getSubject_tls13PostHandshakeAuthError() throws Exception {
+
+        HttpURLConnection mockConn = getMockConnection(403, TLS13_POST_HANDSHAKE_ERR_RESPONSE);
+        URL mockUrl = getMockUrl(mockConn);
+        D1CnAuthUtil util = new D1CnAuthUtil(mockUrl);
+
+
+        NotAuthorizedException exception =
+            assertThrows(NotAuthorizedException.class, () -> util.getSubject("test-token"));
+
+        assertTrue(exception.getMessage().contains("HTTP 401 Unauthorized"),
+                   "Unexpected exception message: " + exception.getMessage());
+        verify(mockConn).disconnect();
+    }
+
+    @Test
     void getSubject_noRootElement() throws Exception {
 
         HttpURLConnection mockConn = getMockConnection(200, "");
         URL mockUrl = getMockUrl(mockConn);
         D1CnAuthUtil util = new D1CnAuthUtil(mockUrl);
 
-        ProcessingException exception =
-            assertThrows(ProcessingException.class, () -> util.getSubject("test-token"));
+        WebApplicationException exception =
+            assertThrows(WebApplicationException.class, () -> util.getSubject("test-token"));
 
         assertTrue(
-            exception.getMessage().contains("Failed to parse authentication service response"),
+            exception.getMessage().contains("Authentication service returned no response"),
             "Unexpected exception message: [" + exception.getMessage() + "]");
         verify(mockConn).disconnect();
     }

@@ -68,7 +68,11 @@ public class D1CnAuthUtil {
 
             try (InputStream responseStream = (responseCode >= 200 && responseCode < 400)
                                               ? con.getInputStream() : con.getErrorStream()) {
-                if (responseStream == null) {
+
+                byte[] responseBytes =
+                    (responseStream == null) ? new byte[0] : responseStream.readAllBytes();
+
+                if (responseStream == null || responseBytes.length == 0) {
                     logger.error(
                         "No response received from authentication API. HTTP code: {}",
                         responseCode);
@@ -81,7 +85,6 @@ public class D1CnAuthUtil {
                     }
                 }
 
-                byte[] responseBytes = responseStream.readAllBytes();
                 String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
                 logger.debug("Authentication API response body: {}", responseBody);
 
