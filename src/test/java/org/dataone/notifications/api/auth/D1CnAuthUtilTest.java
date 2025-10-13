@@ -172,7 +172,8 @@ class D1CnAuthUtilTest {
         ProcessingException exception =
             assertThrows(ProcessingException.class, () -> util.getSubject("test-token"));
 
-        assertTrue(exception.getMessage().contains("Malformed XML response"));
+        assertTrue(
+            exception.getMessage().contains("Failed to parse authentication service response"));
         verify(mockConn).disconnect();
     }
 
@@ -201,7 +202,9 @@ class D1CnAuthUtilTest {
         ProcessingException exception =
             assertThrows(ProcessingException.class, () -> util.getSubject("test-token"));
 
-        assertTrue(exception.getMessage().contains("Malformed XML response"));
+        assertTrue(
+            exception.getMessage().contains("Failed to parse authentication service response"),
+            "Unexpected exception message: [" + exception.getMessage() + "]");
         verify(mockConn).disconnect();
     }
 

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -79,25 +80,28 @@ public class D1CnAuthUtil {
                     }
                 }
 
+                byte[] responseBytes = responseStream.readAllBytes();
+                String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
+                logger.debug("Authentication API response body: {}", responseBody);
 
-                // Parse XML response
                 DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
                 dbFactory.setNamespaceAware(true);
                 DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
                 Document doc;
-                try {
-                    doc = dBuilder.parse(responseStream);
+                try (ByteArrayInputStream xmlStream = new ByteArrayInputStream(responseBytes)) {
+                    doc = dBuilder.parse(xmlStream);
                 } catch (Exception xmlEx) {
                     if (authError) {
                         logger.debug(
-                            "Authentication failed, response not parseable as XML; Error: {}; "
-                                + "response: {}", xmlEx.getMessage(),
-                            getResponseBody(responseStream));
+                            "Authentication failed, response not parseable as XML. Error: {}; "
+                                + "response: {}",
+                            xmlEx.getMessage(), responseBody);
                         throw new NotAuthorizedException("Bearer");
                     }
-                    logger.error("Failed to parse authentication API response as XML: {}", getResponseBody(responseStream), xmlEx);
+                    logger.error(
+                        "Failed to parse authentication service response: {}", responseBody, xmlEx);
                     throw new ProcessingException(
-                        "Malformed XML response from authentication service", xmlEx);
+                        "Failed to parse authentication service response: " + responseBody, xmlEx);
                 }
                 Element root = doc.getDocumentElement();
                 if (root == null) {
@@ -173,19 +177,8 @@ public class D1CnAuthUtil {
         }
     }
 
-
     private static String getElementText(Element parent, String tagName) {
         Element elem = (Element) parent.getElementsByTagName(tagName).item(0);
         return (elem != null) ? elem.getTextContent() : null;
-    }
-
-    private String getResponseBody(InputStream responseStream) {
-        try {
-            byte[] responseBytes = responseStream.readAllBytes();
-            return new String(responseBytes, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            logger.error("Failed to read response", e);
-            return "ERROR: Failed to read response";
-        }
     }
 }
