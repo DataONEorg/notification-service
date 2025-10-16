@@ -6,6 +6,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.dataone.notifications.NsConfig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.slf4j.Logger;
@@ -49,6 +50,9 @@ public class D1CnAuthUtil {
 
         String urlStr = authApiUrl.toString();
         logger.debug("Authentication API URL: {}", urlStr);
+        String userAgent = NsConfig.getConfig()
+            .getString("ns.auth.api.userAgent", "DataONE notification-service/1.0");
+        logger.debug("Authentication API User-Agent: \"{}\"", userAgent);
 
         HttpURLConnection con = null;
         try {
@@ -57,7 +61,7 @@ public class D1CnAuthUtil {
             con.setRequestProperty("Authorization", "Bearer " + token.trim());
             con.setConnectTimeout(5000);
             con.setReadTimeout(5000);
-            con.setRequestProperty("User-Agent", "DataONE notification-service/1.0");
+            con.setRequestProperty("User-Agent", userAgent);
 
             int responseCode = con.getResponseCode();
             logger.debug("Authentication API response code: {}", responseCode);

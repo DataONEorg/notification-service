@@ -3,6 +3,7 @@ ns:
     api:
       baseUrl: {{ .Values.ns.auth.api.baseUrl | default "https://cn-sandbox.test.dataone.org/cn/v2" }}
       authenticate: {{ .Values.ns.auth.api.authenticate | default "/diag/subject" }}
+      userAgent: {{ .Values.ns.auth.api.userAgent | default "DataONE notification-service/1.0" }}
   database:
     name: {{ .Values.ns.database.dbName | default "notifications" }}
     jdbcHost: {{ required "ns.database.jdbcHost IS REQUIRED" .Values.ns.database.jdbcHost }}

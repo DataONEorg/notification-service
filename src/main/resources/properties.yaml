@@ -8,6 +8,7 @@ ns:
     api:
       baseUrl: https://cn-stage.test.dataone.org/cn/v2
       authenticate: /diag/subject
+      userAgent: "DataONE notification-service/1.0"
   database:
     username: notifications_user
     # Change this to your own password!

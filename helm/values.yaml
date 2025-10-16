@@ -29,10 +29,15 @@ ns:
   ## (trace, debug, info, warn, error, fatal)
   logLevel: warn
 
+  ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
+  ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
+  ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
+  ##
   auth:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
+      userAgent: "DataONE notification-service/1.0"
 
   database:
     ## @param database.database The name of the database used by the notification service.
