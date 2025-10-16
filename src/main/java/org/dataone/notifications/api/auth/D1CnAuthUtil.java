@@ -57,7 +57,7 @@ public class D1CnAuthUtil {
             con.setRequestProperty("Authorization", "Bearer " + token.trim());
             con.setConnectTimeout(5000);
             con.setReadTimeout(5000);
-//            con.setRequestProperty("User-Agent", "DataONE notification-service/1.0");
+            con.setRequestProperty("User-Agent", "DataONE notification-service/1.0");
 
             int responseCode = con.getResponseCode();
             logger.debug("Authentication API response code: {}", responseCode);
