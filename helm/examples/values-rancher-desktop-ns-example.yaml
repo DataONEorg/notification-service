@@ -4,30 +4,34 @@
 ##
 ##  helm upgrade --install ns --debug -n notifications --create-namespace \
 ##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-##                          oci://ghcr.io/dataoneorg/charts/notifications
+##                          oci://ghcr.io/dataoneorg/charts/notifications --version [version]
 ##
-## (or to install from local helm chart code, replace: oci://ghcr.io/dataoneorg/charts/notifications
-##  with: ./helm)
+## ...or to install from local helm chart code, replace:
+##   oci://ghcr.io/dataoneorg/charts/notifications --version [version]
+## with:
+##   ./helm
+##
 ## see values.yaml for full documentation on the following parameters
 ##
-
 ns:
   logLevel: debug
   auth:
     api:
-      baseUrl: https://cn-stage.test.dataone.org/cn/v2
+      baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
 
-postgresql:
-  auth:
-    existingSecret: ns-notify-cnpg
+  database:
+    jdbcHost: nsdb-cnpg-rw
+    existingSecret: nsdb-cnpg-app
 
-tomcat:
-  jmxEnabled: true
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 300m
-    memory: 128Mi
+ingress:
+  hosts:
+    - host: notifications.local
+      paths:
+        - path: /
+          pathType: Prefix
+    ## After applying the above, add this entry to /etc/hosts file:
+    ##
+    ##   $ echo "127.0.0.1    notifications.local" | sudo tee -a /etc/hosts
+    ##
+    ## Now you can access the notifications service at:
+    ##   http://notifications.local/notifications/metrics/ping

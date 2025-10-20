@@ -7,11 +7,13 @@ dbUser: notifications_user
 
 resources:
   requests:
-    cpu: 1
-    memory: 1Gi
+    cpu: 250m
+    memory: 256Mi
   limits:
-    cpu: 1
-    memory: 1Gi
+    cpu: 500m
+    memory: 512Mi
 
 persistence:
-  size: 10Gi
+  size: 1Gi
+  ## Set storageClass: "" to use cluster default storageClass (e.g. on Rancher Desktop)
+  storageClass: csi-cephfs-sc

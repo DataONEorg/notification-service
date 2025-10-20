@@ -10,18 +10,6 @@
 ##             --debug --render-subchart-notes
 ##
 
-## @section Global Properties Shared Across Sub-Charts Within This Deployment
-##
-global:
-  ## @param global.defaultStorageClass Global default StorageClass for Persistent Volume(s)
-  ##
-  ## Inspect your cluster to see what storageClass is set as default:
-  ##    $  kubectl get storageclass
-  ## ...and then explicitly set defaultStorageClass to match the name of the default storageclass
-  ## (e.g. for Rancher Desktop, use:   defaultStorageClass: local-path)
-  ##
-  defaultStorageClass: local-path
-
 ## @section Application-Specific Properties for notification-service
 ##
 ns:
@@ -40,11 +28,11 @@ ns:
       userAgent: "DataONE notification-service/1.0"
 
   database:
-    ## @param database.database The name of the database used by the notification service.
+    ## @param ns.database.dbName The name of the database used by the notification service.
     ##
     dbName: notifications
 
-    ## @param database.existingSecret REQUIRED Basic Auth Secret name for DB username & password
+    ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & password
     ##
     existingSecret: ""
 
@@ -142,8 +130,9 @@ ingress:
   defaultBackend:
     enabled: false
 
-  ## @param ingress.annotations Annotations to add to the ingress; e.g. to use cert-manager
-  ## to automatically issue TLS certificates for the ingress hosts, you can add the following:
+  ## @param ingress.annotations [object] Annotations to add to the ingress;
+  ## e.g. to use cert-manager to automatically issue TLS certificates for  the ingress hosts, you
+  ## can add the following:
   ##
   ## ingress:
   ##   annotations:
@@ -180,7 +169,7 @@ ingress:
         return 204;
       }
 
-  ## @param ingress.hosts List of hosts to be used for the ingress
+  ## @param ingress.hosts [Object] List of hosts to be used for the ingress
   ## Each host must have a path defined, and the pathType must be set to either
   ## 'ImplementationSpecific', 'Exact', or 'Prefix'; e.g:
   ##   hosts:

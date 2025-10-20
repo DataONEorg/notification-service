@@ -6,15 +6,13 @@
 ##                          -f ./helm/examples/values-dev-cluster-ns-example.yaml \
 ##                          oci://ghcr.io/dataoneorg/charts/notifications --version [version]
 ##
-## (or to install from local helm chart code, replace:
-##  oci://ghcr.io/dataoneorg/charts/notifications --version [version]
-##  with: ./helm)
+## ...or to install from local helm chart code, replace:
+##   oci://ghcr.io/dataoneorg/charts/notifications --version [version]
+## with:
+##   ./helm
 ##
 ## see values.yaml for full documentation on the following parameters
 ##
-
-global:
-  storageClass: csi-cephfs-sc
 
 ns:
   logLevel: debug
