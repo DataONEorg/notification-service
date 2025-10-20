@@ -2,8 +2,9 @@
 CREATE TABLE subscriptions
 (
     id            SERIAL PRIMARY KEY,
-    resource_type VARCHAR(255),
-    subject       VARCHAR(512),
-    pid           VARCHAR(512)
+    resource_type VARCHAR(255) NOT NULL,
+    subject       VARCHAR(512) NOT NULL,
+    pid           VARCHAR(512) NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_subscription UNIQUE (resource_type, pid, subject)
 );
--- TODO: combination of resource_type, pid and subject should all be unique and non-null
