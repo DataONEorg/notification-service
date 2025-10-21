@@ -5,6 +5,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -56,7 +57,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource type (eg "datasetChanges"). Automatically populated
+     * @param resource the resource type (eg "datasetChanges"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -66,14 +67,14 @@ public class Resource {
     @Produces(MediaType.APPLICATION_JSON)
     public Record subscribe(
         @HeaderParam("Authorization") String authHeader,
-        @PathParam("resource") ResourceType resourceType,
+        @PathParam("resource") String resource,
         @NotNull @PathParam("pid") String pid)
         throws NotAuthorizedException, NotFoundException {
 
-        log.debug("POST /{}/{}", resourceType, pid);
+        log.debug("POST /{}/{}", resource, pid);
 
         validatePid(pid);
-        validateResourceType(resourceType);
+        ResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
         return dataRepository.addSubscription(subject, resourceType, pid);
@@ -87,7 +88,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource being queried (eg "datasetChanges"). (Auto-populated)
+     * @param resource the resource being queried (eg "datasetChanges"). (Auto-populated)
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -96,12 +97,12 @@ public class Resource {
     @Produces(MediaType.APPLICATION_JSON)
     public Record getSubscriptions(
         @HeaderParam("Authorization") String authHeader,
-        @PathParam("resource") ResourceType resourceType)
+        @PathParam("resource") String resource)
         throws NotAuthorizedException {
 
-        log.debug("GET /{}", resourceType);
+        log.debug("GET /{}", resource);
 
-        validateResourceType(resourceType);
+        ResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
 
         List<String> pids = dataRepository.getSubscriptions(subject, resourceType);
@@ -119,7 +120,7 @@ public class Resource {
      * -H "Content-Type: application/json"
      * </pre>
      *
-     * @param resourceType the resource type (eg "datasetChanges"). Automatically populated
+     * @param resource the resource type (eg "datasetChanges"). Automatically populated
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
@@ -129,25 +130,32 @@ public class Resource {
     @Produces(MediaType.APPLICATION_JSON)
     public Record unsubscribe(
         @HeaderParam("Authorization") String authHeader,
-        @NotNull @PathParam("resource") ResourceType resourceType,
+        @PathParam("resource") @NotNull String resource,
         @NotNull @PathParam("pid") String pid)
         throws NotAuthorizedException, NotFoundException {
 
-        log.debug("DELETE /{}/{}", resourceType, pid);
+        log.debug("DELETE /{}/{}", resource, pid);
 
         validatePid(pid);
-        validateResourceType(resourceType);
+        ResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
         return dataRepository.deleteSubscriptions(subject, resourceType, List.of(pid));
     }
 
 
-    private void validateResourceType(ResourceType resourceType) {
-        if (resourceType == null) {
+    private ResourceType validateResourceType(String resource) {
+        if (resource == null) {
             log.error("Missing resource type");
             throw new NotFoundException("Missing resource type");
         }
+        ResourceType resourceType;
+        try {
+            resourceType = ResourceType.fromString(resource);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e.getMessage());
+        }
+        return resourceType;
     }
 
     private void validatePid(String pid) {
