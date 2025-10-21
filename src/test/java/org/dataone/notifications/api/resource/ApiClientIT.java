@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.ArrayList;
@@ -99,20 +98,46 @@ class ApiClientIT extends JerseyTest {
     @Override
     protected Application configure() {
         ResourceConfig config = new ResourceConfig();
-        return config.registerInstances(Resource.class, resource);
+        config.registerInstances(Resource.class, resource);
+        config.register(org.dataone.notifications.api.exception.BadRequestExceptionMapper.class);
+        config.register(org.dataone.notifications.api.exception.PersistenceExceptionMapper.class);
+        return config;
     }
 
-    final static String datasetChangeResource = String.valueOf(ResourceType.datasetChanges);
-
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
     void post(ResourceType resourceType) {
 
-        Response response = doPost(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + EXPECTED_PID,
+        final String UNIQUE_PID = "urn:pid:unique-" + System.currentTimeMillis();
+        Response response = doPost(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + UNIQUE_PID,
                                    Response.Status.OK);
         assertJsonContentType(response);
         String body = getBody(response);
-        assertTrue(body.contains(EXPECTED_PID), "body didn't contain expected PID: " + body);
+        assertTrue(body.contains(UNIQUE_PID), "body didn't contain expected PID: " + body);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
+    void post_nonUnique(ResourceType resourceType) {
+
+        Response response = doPost(VALID_AUTH_HEADER_1, "/" + resourceType + "/" + EXPECTED_PID,
+                                   Response.Status.CONFLICT);
+        assertJsonContentType(response);
+        String body = getBody(response);
+        String expectedMsg = "violates unique constraint";
+        assertTrue(body.contains(expectedMsg), "body didn't contain expected msg: " + body);
+    }
+
+    @Test
+    void post_badResource() {
+
+        final String UNIQUE_PID = "urn:pid:unique-" + System.currentTimeMillis();
+        Response response = doPost(VALID_AUTH_HEADER_1, "/nonValidResourceType/" + UNIQUE_PID,
+                                   Response.Status.BAD_REQUEST);
+        assertJsonContentType(response);
+        String body = getBody(response);
+        String expectedMsg = "Unknown resource type";
+        assertTrue(body.contains(expectedMsg), "body didn't contain expected msg: " + body);
     }
 
     @Test
@@ -142,7 +167,7 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
     void delete(ResourceType resourceType) {
         Response response = doDelete(VALID_AUTH_HEADER_5, "/" + resourceType + "/" + EXPECTED_PID_5,
                                      Response.Status.OK);
@@ -162,7 +187,7 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = "datasetChanges")
+    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
     void testSubscriptionCRUD(ResourceType resourceType) {
 
         // actually CRD - currently no need for an update operation

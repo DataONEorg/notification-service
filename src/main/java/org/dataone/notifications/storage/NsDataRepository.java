@@ -100,7 +100,7 @@ public class NsDataRepository implements DataRepository {
             statement.setString(3, pid);
             statement.executeUpdate();
         } catch (SQLException e) {
-            log.error("Database error: {} adding subscription", e.getMessage());
+            log.error("Database error adding subscription: {}", e.getMessage());
             throw new PersistenceException("Database error adding subscription", e);
         }
         return new Subscription(subject, resourceType, List.of(pid));
