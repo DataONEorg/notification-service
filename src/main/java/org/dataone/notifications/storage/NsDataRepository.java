@@ -3,6 +3,7 @@ package org.dataone.notifications.storage;
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class NsDataRepository implements DataRepository {
                      dbMeta.getDatabaseProductVersion());
         } catch (SQLException e) {
             log.error("* * * * * *  Database connection error: {}  * * * * * *", e.getMessage());
-            throw new RuntimeException(
+            throw new PersistenceException(
                 "DataRepository not initialized: database connection error", e);
         }
 
@@ -79,7 +80,7 @@ public class NsDataRepository implements DataRepository {
             }
         } catch (SQLException e) {
             log.error("Database error: {} retrieving subscriptions", e.getMessage());
-            throw new RuntimeException("Database error retrieving subscriptions", e);
+            throw new PersistenceException("Database error retrieving subscriptions", e);
         }
         return pids;
     }
@@ -100,7 +101,7 @@ public class NsDataRepository implements DataRepository {
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error("Database error: {} adding subscription", e.getMessage());
-            throw new RuntimeException("Database error adding subscription", e);
+            throw new PersistenceException("Database error adding subscription", e);
         }
         return new Subscription(subject, resourceType, List.of(pid));
     }
@@ -131,7 +132,7 @@ public class NsDataRepository implements DataRepository {
             }
         } catch (SQLException e) {
             log.error("Database error: {} deleting subscriptions", e.getMessage());
-            throw new RuntimeException("Database error deleting subscriptions", e);
+            throw new PersistenceException("Database error deleting subscriptions", e);
         }
         return new Subscription(subject, resourceType, deletedPids);
     }
