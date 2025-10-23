@@ -148,8 +148,8 @@ mvn verify -PsmokeTest -DBASE_URL="https://notifications.test.dataone.org" -DTOK
 > [!NOTE]
 > **Prerequisites:**
 > In addition to the Java and maven versions listed above, you will need:
-> 1. [Apache TomEE](https://tomee.apache.org) v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
- Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE.)
+> 1. [Apache TomEE](https://tomee.apache.org) MicroProfile v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
+ Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE. TomEE is available in different "flavors"; choose the `MicroProfile` version.)
 > 2. A running PostgreSQL database. This can easily be started in a container, using the provided script:
 >
 > ```shell
