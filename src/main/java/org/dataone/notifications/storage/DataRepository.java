@@ -17,4 +17,7 @@ public interface DataRepository {
 
     Subscription deleteSubscriptions(
         String subject, ResourceType resourceType, List<String> pidList);
+
+    List<String> getResourceTypesByPid(String subject, String pid)
+        throws NotAuthorizedException, NotFoundException;
 }
