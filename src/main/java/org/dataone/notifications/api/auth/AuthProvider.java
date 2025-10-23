@@ -29,6 +29,7 @@ public interface AuthProvider {
      * method.
      *
      * @param subject the subject of the user
+     * @param resourceType the type of resource being accessed
      * @param pids    a List of pids, identifying the resources to which the user wishes to
      *                subscribe
      * @throws NotAuthorizedException if the user is not authorized
