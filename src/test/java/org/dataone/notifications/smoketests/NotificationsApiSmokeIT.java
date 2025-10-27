@@ -6,7 +6,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Response;
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NotificationsApiSmokeIT {
 
-    private static final String URI_PREFIX = "notifications/v1/subscriptions";
+    private static final String URI_PREFIX = "notifications/v1";
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -61,7 +61,7 @@ class NotificationsApiSmokeIT {
         log.debug("TOKEN: {}...", token.substring(0, 5));
         String url = client.target(baseUrl)
             .path(URI_PREFIX)
-            .path(ResourceType.datasetChanges.name())
+            .path(SubscriptionResourceType.datasetChanges.name())
             .getUri()
             .toString();
         log.debug("Request URL: {}", url);
@@ -75,7 +75,7 @@ class NotificationsApiSmokeIT {
             log.debug("Adding subscription for pid: " + pid);
             Response r = client.target(baseUrl)
                 .path(URI_PREFIX)
-                .path(ResourceType.datasetChanges.name())
+                .path(SubscriptionResourceType.datasetChanges.name())
                 .path(pid)
                 .request()
                 .header("Authorization", "Bearer " + token)
@@ -101,7 +101,7 @@ class NotificationsApiSmokeIT {
             log.debug("Deleting subscription for pid: " + pid);
             Response r = client.target(baseUrl)
                 .path(URI_PREFIX)
-                .path(ResourceType.datasetChanges.name())
+                .path(SubscriptionResourceType.datasetChanges.name())
                 .path(pid)
                 .request()
                 .header("Authorization", "Bearer " + token)
@@ -122,7 +122,7 @@ class NotificationsApiSmokeIT {
     private List<String> getSubscriptions() {
         Response r = client.target(baseUrl)
             .path(URI_PREFIX)
-            .path(ResourceType.datasetChanges.name())
+            .path(SubscriptionResourceType.datasetChanges.name())
             .request()
             .header("Authorization", "Bearer " + token)
             .get();

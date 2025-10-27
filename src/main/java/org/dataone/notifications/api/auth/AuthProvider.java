@@ -1,7 +1,7 @@
 package org.dataone.notifications.api.auth;
 
 import jakarta.ws.rs.NotAuthorizedException;
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 
 import java.util.List;
 import java.util.Set;
@@ -34,6 +34,6 @@ public interface AuthProvider {
      *                subscribe
      * @throws NotAuthorizedException if the user is not authorized
      */
-    Set<String> authorize(String subject, ResourceType resourceType, List<String> pids)
+    Set<String> authorize(String subject, SubscriptionResourceType resourceType, List<String> pids)
         throws NotAuthorizedException;
 }

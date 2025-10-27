@@ -22,10 +22,10 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ResourceTest {
+class SubscriptionResourceTest {
 
     private static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
-    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasetChanges;
+    private static final SubscriptionResourceType EXPECTED_RESOURCE_TYPE = SubscriptionResourceType.datasetChanges;
     private static final String EXPECTED_PID = "urn:mypid:12345-67890";
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
     private static final List<String> EXPECTED_PID_LIST = new ArrayList<>();
@@ -35,7 +35,7 @@ class ResourceTest {
         new Subscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE, EXPECTED_PID_LIST);
     private static final String VALID_AUTH_HEADER = "Bearer my-totally-valid-token";
     private static final String INVALID_AUTH_HEADER = "Bearer my-naughty-non-valid-token";
-    private static Resource resource;
+    private static SubscriptionResource subscriptionResource;
 
 
     @BeforeAll
@@ -55,31 +55,34 @@ class ResourceTest {
         when(mockAuthProvider.authenticate(INVALID_AUTH_HEADER)).thenThrow(
             new NotAuthorizedException("Unauthorized"));
 
-        when(mockAuthProvider.authorize(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
-                                        REQUESTED_PID_LIST)).thenReturn(
+        when(mockAuthProvider.authorize(
+            EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
+            REQUESTED_PID_LIST)).thenReturn(
             new HashSet<>(EXPECTED_PID_LIST));
 
         DataRepository mockDataRepo = mock(NsDataRepository.class);
-        when(
-            mockDataRepo.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
+        when(mockDataRepo.getSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE)).thenReturn(
             EXPECTED_PID_LIST);
         doThrow(new NotAuthorizedException("Access Denied")).when(mockDataRepo)
-            .addSubscription(null, ResourceType.datasetChanges, EXPECTED_PID);
-        when(mockDataRepo.addSubscription(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
-                                              EXPECTED_PID)).thenReturn(EXPECTED_PARAMS_ONEPID);
+            .addSubscription(null, SubscriptionResourceType.datasetChanges, EXPECTED_PID);
+        when(mockDataRepo.addSubscription(
+            EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
+            EXPECTED_PID)).thenReturn(EXPECTED_PARAMS_ONEPID);
 
-        when(mockDataRepo.deleteSubscriptions(EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
-                                                  List.of(EXPECTED_PID))).thenReturn(
+        when(mockDataRepo.deleteSubscriptions(
+            EXPECTED_SUBJECT, EXPECTED_RESOURCE_TYPE,
+            List.of(EXPECTED_PID))).thenReturn(
             EXPECTED_PARAMS_ONEPID);
-        resource = new Resource(mockAuthProvider, mockDataRepo);
+        subscriptionResource = new SubscriptionResource(mockAuthProvider, mockDataRepo);
     }
 
     @Test
     void validGetSubscriptions() {
         // HAPPY PATH
-        Subscription result = (Subscription) resource.getSubscriptions(
-            VALID_AUTH_HEADER,
-            ResourceType.datasetChanges.toString());
+        Subscription result =
+            (Subscription) subscriptionResource.getSubscriptions(
+                VALID_AUTH_HEADER,
+                SubscriptionResourceType.datasetChanges.toString());
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_MULTIPID.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS_MULTIPID.resourceType(), result.resourceType());
@@ -90,20 +93,22 @@ class ResourceTest {
 
     @Test
     void getSubscriptions_missingResourceType() {
-        Exception thrown = assertThrows(NotFoundException.class,
-                                        () -> resource.getSubscriptions(VALID_AUTH_HEADER, null),
-                                        "Expected getSubscriptions() to throw NotFoundException");
+        Exception thrown = assertThrows(
+            NotFoundException.class,
+            () -> subscriptionResource.getSubscriptions(VALID_AUTH_HEADER, null),
+            "Expected getSubscriptions() to throw NotFoundException");
         assertTrue(
-            thrown.getMessage().contains("resource"),
-            "Expected message to contain 'resource', but was: " + thrown.getMessage());
+            thrown.getMessage().contains("Missing resource type"),
+            "Expected message to contain 'Missing resource type', but was: " + thrown.getMessage());
     }
 
 
     @Test
     void validSubscribe() {
-        Subscription result =
-            (Subscription) resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges.toString(),
-                                              EXPECTED_PID);
+        Subscription result = (Subscription) subscriptionResource.subscribe(
+            VALID_AUTH_HEADER,
+            SubscriptionResourceType.datasetChanges.toString(),
+            EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_ONEPID.subject(), result.subject());
         assertEquals(EXPECTED_PARAMS_ONEPID.resourceType(), result.resourceType());
@@ -114,7 +119,8 @@ class ResourceTest {
     @Test
     void subscribe_missingPid() {
         try {
-            resource.subscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges.toString(), null);
+            subscriptionResource.subscribe(
+                VALID_AUTH_HEADER, SubscriptionResourceType.datasetChanges.toString(), null);
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
             assertTrue(e.getMessage().contains("pid"));
@@ -124,33 +130,36 @@ class ResourceTest {
     @Test
     void subscribe_missingResourceType() {
 
-        Exception thrown = assertThrows(NotFoundException.class,
-                                        () -> resource.subscribe(VALID_AUTH_HEADER, null,
-                                                                 EXPECTED_PID),
-                                        "Expected subscribe() to throw NotFoundException");
+        Exception thrown = assertThrows(
+            NotFoundException.class,
+            () -> subscriptionResource.subscribe(VALID_AUTH_HEADER, null, EXPECTED_PID),
+            "Expected subscribe() to throw NotFoundException");
         assertTrue(
-            thrown.getMessage().contains("resource"),
-            "Expected message to contain 'resource', but was: " + thrown.getMessage());
+            thrown.getMessage().contains("Missing resource type"),
+            "Expected message to contain 'Missing resource type', but was: " + thrown.getMessage());
     }
 
     @Test
     void subscribe_missingAuthHeader() {
 
-        Exception thrown = assertThrows(NotAuthorizedException.class, () -> resource.subscribe(null,
-                                                                                               ResourceType.datasetChanges.toString(),
-                                                                                               EXPECTED_PID),
-                                        "Expected subscribe() to throw NotAuthorizedException");
-        assertTrue(thrown.getMessage().contains("401"),
-                   "Expected message to contain '401', but was: " + thrown.getMessage());
+        Exception thrown = assertThrows(
+            NotAuthorizedException.class,
+            () -> subscriptionResource.subscribe(
+                null, SubscriptionResourceType.datasetChanges.toString(), EXPECTED_PID),
+            "Expected subscribe() to throw NotAuthorizedException");
+        assertTrue(
+            thrown.getMessage().contains("401"),
+            "Expected message to contain '401', but was: " + thrown.getMessage());
     }
 
     @Test
     void subscribe_unauthorized() {
-        Exception thrown = assertThrows(NotAuthorizedException.class,
-                                        () -> resource.subscribe(INVALID_AUTH_HEADER,
-                                                                 ResourceType.datasetChanges.toString(),
-                                                                 EXPECTED_PID),
-                                        "Expected subscribe() to throw NotAuthorizedException");
+        Exception thrown = assertThrows(
+            NotAuthorizedException.class, () -> subscriptionResource.subscribe(
+                INVALID_AUTH_HEADER,
+                SubscriptionResourceType.datasetChanges.toString(),
+                EXPECTED_PID),
+            "Expected subscribe() to throw NotAuthorizedException");
         assertTrue(
             thrown.getMessage().contains("Unauthorized"),
             "Expected message to contain 'Unauthorized', but was: " + thrown.getMessage());
@@ -158,9 +167,10 @@ class ResourceTest {
 
     @Test
     void validUnsubscribe() {
-        Subscription result =
-            (Subscription) resource.unsubscribe(VALID_AUTH_HEADER, ResourceType.datasetChanges.toString(),
-                                                EXPECTED_PID);
+        Subscription result = (Subscription) subscriptionResource.unsubscribe(
+            VALID_AUTH_HEADER,
+            SubscriptionResourceType.datasetChanges.toString(),
+            EXPECTED_PID);
         assertNotNull(result);
         assertEquals(EXPECTED_PARAMS_ONEPID, result);
     }

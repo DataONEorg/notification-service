@@ -6,8 +6,8 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
-import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +59,7 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public List<String> getSubscriptions(String subject, ResourceType resourceType)
+    public List<String> getSubscriptions(String subject, SubscriptionResourceType resourceType)
         throws NotAuthorizedException, NotFoundException {
 
         log.debug("Get subscriptions to {} for {}", resourceType, subject);
@@ -86,7 +86,7 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public Subscription addSubscription(String subject, ResourceType resourceType, String pid) {
+    public Subscription addSubscription(String subject, SubscriptionResourceType resourceType, String pid) {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
         validateInput(subject, resourceType, pid);
@@ -108,7 +108,7 @@ public class NsDataRepository implements DataRepository {
 
     @Override
     public Subscription deleteSubscriptions(
-        String subject, ResourceType resourceType, List<String> pidList) {
+        String subject, SubscriptionResourceType resourceType, List<String> pidList) {
 
         log.debug("Delete {} subscriptions for {}, to pids {}", resourceType, subject, pidList);
         validateInput(subject, resourceType);
@@ -177,7 +177,7 @@ public class NsDataRepository implements DataRepository {
         }
     }
 
-    private void validateInput(String subject, ResourceType resourceType, String pid) {
+    private void validateInput(String subject, SubscriptionResourceType resourceType, String pid) {
 
         validateInput(subject, resourceType);
 

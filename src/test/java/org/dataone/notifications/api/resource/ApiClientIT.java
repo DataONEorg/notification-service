@@ -32,13 +32,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for the Resource class, to exercise the CRUD API and database operations. Note
+ * Integration tests for the SubscriptionResource class, to exercise the CRUD API and database operations. Note
  * that AuthProvider is mocked.
  */
 class ApiClientIT extends JerseyTest {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
-    private static final String URI_PREFIX = "/subscriptions/";
+    // the URI segment (if any) between "/notifications/v1/" and the resource type
+    private static final String URI_PREFIX = "/";
     private static final String EXPECTED_PID = "urn:pid:0000-1234-5678-999X";
     private static final String EXPECTED_PID_1A = EXPECTED_PID;
     private static final String EXPECTED_PID_1B = "urn:pid:0000-1111-2222-3333";
@@ -56,11 +57,11 @@ class ApiClientIT extends JerseyTest {
     private static final String EXPECTED_SUBJECT_5 = "https://orcid.org/0000-1111-3333-5555";
 
     private static final String INVALID_AUTH_HEADER = "Bearer my-naughty-non-valid-token";
-    private static final ResourceType EXPECTED_RESOURCE_TYPE = ResourceType.datasetChanges;
+    private static final SubscriptionResourceType EXPECTED_RESOURCE_TYPE = SubscriptionResourceType.datasetChanges;
     private static final List<String> REQUESTED_PID_LIST = new ArrayList<>();
-    private static final String DATASETS = URI_PREFIX + ResourceType.datasetChanges + "/";
+    private static final String DATASETS = URI_PREFIX + SubscriptionResourceType.datasetChanges + "/";
 
-    private static Resource resource;
+    private static SubscriptionResource subscriptionResource;
     private static PostgreSQLContainer<?> pg;
 
     @BeforeAll
@@ -68,7 +69,7 @@ class ApiClientIT extends JerseyTest {
         pg = TestUtils.getTestDb();
         DataRepository dataRepository = TestUtils.getTestDataRepository(pg);
         AuthProvider mockAuthProvider = getAuthProvider();
-        resource = new Resource(mockAuthProvider, dataRepository);
+        subscriptionResource = new SubscriptionResource(mockAuthProvider, dataRepository);
     }
 
     @AfterAll
@@ -103,7 +104,7 @@ class ApiClientIT extends JerseyTest {
     @Override
     protected Application configure() {
         ResourceConfig config = new ResourceConfig();
-        config.registerInstances(Resource.class, resource);
+        config.registerInstances(SubscriptionResource.class, subscriptionResource);
         config.register(org.dataone.notifications.api.ApiConfigV1.class);
         config.register(org.dataone.notifications.api.exception.BadRequestExceptionMapper.class);
         config.register(org.dataone.notifications.api.exception.PersistenceExceptionMapper.class);
@@ -111,8 +112,8 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
-    void post(ResourceType resourceType) {
+    @EnumSource(value = SubscriptionResourceType.class, names = {"datasetChanges", "citations"})
+    void post(SubscriptionResourceType resourceType) {
         final String UNIQUE_PID = "urn:pid:unique-" + System.currentTimeMillis();
         Response response = doPost(VALID_AUTH_HEADER_1, URI_PREFIX +  resourceType + "/" + UNIQUE_PID,
                                    Response.Status.OK);
@@ -122,8 +123,8 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
-    void post_nonUnique(ResourceType resourceType) {
+    @EnumSource(value = SubscriptionResourceType.class, names = {"datasetChanges", "citations"})
+    void post_nonUnique(SubscriptionResourceType resourceType) {
         Response response = doPost(VALID_AUTH_HEADER_1, URI_PREFIX +  resourceType + "/" + EXPECTED_PID,
                                    Response.Status.CONFLICT);
         assertJsonContentType(response);
@@ -140,7 +141,7 @@ class ApiClientIT extends JerseyTest {
             Response.Status.BAD_REQUEST);
         assertJsonContentType(response);
         String body = getBody(response);
-        String expectedMsg = "Unknown resource type";
+        String expectedMsg = "Unknown SubscriptionResourceType";
         assertTrue(body.contains(expectedMsg), "body didn't contain expected msg: " + body);
     }
 
@@ -171,8 +172,8 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
-    void delete(ResourceType resourceType) {
+    @EnumSource(value = SubscriptionResourceType.class, names = {"datasetChanges", "citations"})
+    void delete(SubscriptionResourceType resourceType) {
         Response response = doDelete(VALID_AUTH_HEADER_5, URI_PREFIX +  resourceType + "/" + EXPECTED_PID_5,
                                      Response.Status.OK);
         assertJsonContentType(response);
@@ -191,8 +192,8 @@ class ApiClientIT extends JerseyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ResourceType.class, names = {"datasetChanges", "citations"})
-    void testSubscriptionCRUD(ResourceType resourceType) {
+    @EnumSource(value = SubscriptionResourceType.class, names = {"datasetChanges", "citations"})
+    void testSubscriptionCRUD(SubscriptionResourceType resourceType) {
 
         // actually CRD - currently no need for an update operation
         final String testPid1 = "urn:node:1_my_api_client_test_pid_1";
