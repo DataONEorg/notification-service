@@ -2,7 +2,7 @@ package org.dataone.notifications.api.auth;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +52,7 @@ class NsAuthProviderTest {
         Set<String> expectedPids = Set.of("pid1", "pid2", "pid3");
 
         Set<String> actualPids =
-            authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasetChanges, requested_pids);
+            authProvider.authorize(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges, requested_pids);
         assertEquals(expectedPids, actualPids);
     }
 
@@ -62,14 +62,14 @@ class NsAuthProviderTest {
         List<String> requested_pids = List.of("pid1", "pid2");
         assertThrows(
             NotAuthorizedException.class,
-            () -> authProvider.authorize(subject, ResourceType.datasetChanges, requested_pids));
+            () -> authProvider.authorize(subject, SubscriptionResourceType.datasetChanges, requested_pids));
     }
 
     @Test
     void authorizeNullPids() {
         assertThrows(
             NotFoundException.class,
-            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasetChanges, null));
+            () -> authProvider.authorize(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges, null));
     }
 
     @Test
@@ -77,6 +77,6 @@ class NsAuthProviderTest {
         List<String> empty_pids_list = List.of();
         assertThrows(
             NotFoundException.class,
-            () -> authProvider.authorize(EXPECTED_SUBJECT, ResourceType.datasetChanges, empty_pids_list));
+            () -> authProvider.authorize(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges, empty_pids_list));
     }
 }

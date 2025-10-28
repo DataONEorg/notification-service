@@ -5,7 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +54,7 @@ public class NsAuthProvider implements AuthProvider {
      // TODO: DO WE EVEN NEED THIS? OK to subscribe to something you don't have access to? Actual
      //       viewing will be blocked if user tries to follow link
     @Override
-    public Set<String> authorize(String subject, ResourceType resourceType, List<String> pids)
+    public Set<String> authorize(String subject, SubscriptionResourceType resourceType, List<String> pids)
         throws NotAuthorizedException {
 
         if (isBlank(subject)) {

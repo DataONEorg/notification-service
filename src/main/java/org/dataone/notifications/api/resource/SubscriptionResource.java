@@ -31,19 +31,19 @@ import java.util.List;
 @Default
 @RequestScoped
 @Path("/{resource}")
-public class Resource {
+public class SubscriptionResource {
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final AuthProvider authProvider;
     private final DataRepository dataRepository;
 
-    public Resource() {
+    public SubscriptionResource() {
         throw new IllegalStateException(
-            "Resource not initialized: missing AuthService & DataRepository");
+            "SubscriptionResource not initialized: missing AuthService & DataRepository");
     }
 
     @Inject
-    public Resource(AuthProvider authProvider, DataRepository dataRepository) {
-        log.debug("@Injected AuthService & DataRepository into Resource");
+    public SubscriptionResource(AuthProvider authProvider, DataRepository dataRepository) {
+        log.debug("@Injected AuthService & DataRepository into SubscriptionResource");
         this.authProvider = authProvider;
         this.dataRepository = dataRepository;
     }
@@ -74,7 +74,7 @@ public class Resource {
         log.debug("POST /{}/{}", resource, pid);
 
         validatePid(pid);
-        ResourceType resourceType = validateResourceType(resource);
+        SubscriptionResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
         return dataRepository.addSubscription(subject, resourceType, pid);
@@ -102,7 +102,7 @@ public class Resource {
 
         log.debug("GET /{}", resource);
 
-        ResourceType resourceType = validateResourceType(resource);
+        SubscriptionResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
 
         List<String> pids = dataRepository.getSubscriptions(subject, resourceType);
@@ -137,21 +137,21 @@ public class Resource {
         log.debug("DELETE /{}/{}", resource, pid);
 
         validatePid(pid);
-        ResourceType resourceType = validateResourceType(resource);
+        SubscriptionResourceType resourceType = validateResourceType(resource);
         String subject = authProvider.authenticate(authHeader);
         authProvider.authorize(subject, resourceType, List.of(pid));
         return dataRepository.deleteSubscriptions(subject, resourceType, List.of(pid));
     }
 
 
-    private ResourceType validateResourceType(String resource) {
+    private SubscriptionResourceType validateResourceType(String resource) {
         if (resource == null) {
             log.error("Missing resource type");
             throw new NotFoundException("Missing resource type");
         }
-        ResourceType resourceType;
+        SubscriptionResourceType resourceType;
         try {
-            resourceType = ResourceType.fromString(resource);
+            resourceType = SubscriptionResourceType.fromString(resource);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e.getMessage());
         }

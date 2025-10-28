@@ -6,8 +6,8 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
-import org.dataone.notifications.api.resource.ResourceType;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +59,7 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public List<String> getSubscriptions(String subject, ResourceType resourceType)
+    public List<String> getSubscriptions(String subject, SubscriptionResourceType resourceType)
         throws NotAuthorizedException, NotFoundException {
 
         log.debug("Get subscriptions to {} for {}", resourceType, subject);
@@ -86,7 +86,7 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public Subscription addSubscription(String subject, ResourceType resourceType, String pid) {
+    public Subscription addSubscription(String subject, SubscriptionResourceType resourceType, String pid) {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
         validateInput(subject, resourceType, pid);
@@ -108,7 +108,7 @@ public class NsDataRepository implements DataRepository {
 
     @Override
     public Subscription deleteSubscriptions(
-        String subject, ResourceType resourceType, List<String> pidList) {
+        String subject, SubscriptionResourceType resourceType, List<String> pidList) {
 
         log.debug("Delete {} subscriptions for {}, to pids {}", resourceType, subject, pidList);
         validateInput(subject, resourceType);
@@ -137,18 +137,47 @@ public class NsDataRepository implements DataRepository {
         return new Subscription(subject, resourceType, deletedPids);
     }
 
-    private void validateInput(String subject, ResourceType resourceType) {
+    @Override
+    public List<String> getResourceTypesByPid(String subject, String pid)
+        throws NotAuthorizedException, NotFoundException {
+
+        log.debug("Get ResourceTypes subscribed to with pid {} by user {}", pid, subject);
+        validateInput(pid, subject);
+
+        List<String> pids = new ArrayList<>();
+
+        String sql = "SELECT DISTINCT resource_type FROM subscriptions WHERE pid=? AND subject=?";
+
+        List<String> resourceTypes = new ArrayList<>();
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, pid);
+            statement.setString(2, subject);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    resourceTypes.add(resultSet.getString("resource_type"));
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Database error: {} retrieving resource types", e.getMessage());
+            throw new PersistenceException("Database error retrieving resource types", e);
+        }
+        return resourceTypes;
+    }
+
+    private void validateInput(String subject, Object resource) {
         if (StringUtils.isBlank(subject)) {
             log.error("Subject is null or empty");
             throw new NotAuthorizedException("Subject is null or empty");
         }
-        if (resourceType == null) {
-            log.error("ResourceType is null");
-            throw new NotFoundException("ResourceType is null");
+        if (resource == null) {
+            log.error("resource is null");
+            throw new NotFoundException("resource is null");
         }
     }
 
-    private void validateInput(String subject, ResourceType resourceType, String pid) {
+    private void validateInput(String subject, SubscriptionResourceType resourceType, String pid) {
 
         validateInput(subject, resourceType);
 

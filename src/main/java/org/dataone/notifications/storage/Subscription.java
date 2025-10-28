@@ -1,6 +1,6 @@
 package org.dataone.notifications.storage;
 
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 
 import java.util.List;
 
@@ -17,6 +17,6 @@ import java.util.List;
  * @param resourceIds  An array of zero or more {@code pids} of the given {@code resourceType}, to
  *                     which this {@code subject} is subscribed
  */
-public record Subscription(String subject, Enum<ResourceType> resourceType,
+public record Subscription(String subject, Enum<SubscriptionResourceType> resourceType,
                            List<String> resourceIds) {
 }

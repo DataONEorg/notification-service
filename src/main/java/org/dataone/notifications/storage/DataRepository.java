@@ -2,7 +2,7 @@ package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.ResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 
 import java.util.List;
 
@@ -10,11 +10,14 @@ import java.util.List;
  * Interface for CRUD operations on the data store.
  */
 public interface DataRepository {
-    List<String> getSubscriptions(String subject, ResourceType resourceType)
+    List<String> getSubscriptions(String subject, SubscriptionResourceType resourceType)
         throws NotAuthorizedException, NotFoundException;
 
-    Subscription addSubscription(String subject, ResourceType resourceType, String pid);
+    Subscription addSubscription(String subject, SubscriptionResourceType resourceType, String pid);
 
     Subscription deleteSubscriptions(
-        String subject, ResourceType resourceType, List<String> pidList);
+        String subject, SubscriptionResourceType resourceType, List<String> pidList);
+
+    List<String> getResourceTypesByPid(String subject, String pid)
+        throws NotAuthorizedException, NotFoundException;
 }
