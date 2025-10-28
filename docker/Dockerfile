@@ -2,7 +2,7 @@
 ## NOTE: Must be run from the root of the project,
 ## otherwise the war file COPY command will not work!
 ##
-FROM tomee:10-jre21-Temurin-ubuntu-webprofile
+FROM tomee:10-jre21-Temurin-ubuntu-microprofile
 
 ARG TAG="NO-TAG"
 ARG NS_VERSION=${TAG}
