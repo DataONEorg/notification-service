@@ -47,7 +47,7 @@ ns:
     jdbcPort: 5432
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
-replicaCount: 1
+replicaCount: 2
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
@@ -192,7 +192,42 @@ ingress:
   ##       secretName: ingress-nginx-tls-cert
   tls: []
 
+## Startup Probe
+## Liveness and readiness probes are disabled until the startupProbe passes.
+## If the startupProbe fails more than 'failureThreshold' times, the container is restarted.
+##
+## @param startupProbe.enabled Enable readinessProbe for notifications container
+## @param startupProbe.enabled Enable startupProbe for the notifications container
+## @param startupProbe.httpGet.path The url path to probe during startup
+## @param startupProbe.httpGet.port The containerPort to probe
+## @param startupProbe.successThreshold Min consecutive successes for probe to be successful
+## @param startupProbe.failureThreshold No. of consecutive failures before the container restarted
+## @param startupProbe.periodSeconds Interval (in seconds) between startup checks
+## @param startupProbe.timeoutSeconds Timeout (in seconds) for each startup check
+##
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 8080
+  successThreshold: 1
+  failureThreshold: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+## Liveness Probe
+## Periodic probe of container service liveness. If the probe fails, container will be restarted
+##
+## @param livenessProbe.enabled Enable livenessProbe for notifications container
+## @param livenessProbe.httpGet.path The url path to probe.
+## @param livenessProbe.httpGet.port The named containerPort to probe
+## @param livenessProbe.periodSeconds Period seconds for readinessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param livenessProbe.successThreshold Min consecutive successes for probe to be successful
+## @param livenessProbe.failureThreshold No. consecutive failures before container marked unhealthy
+##
 livenessProbe:
+  enabled: true
   httpGet:
     path: /
     port: http
@@ -201,21 +236,37 @@ livenessProbe:
   timeoutSeconds: 5
   failureThreshold: 10
   successThreshold: 1
+
+## Readiness Probe
+## Periodic probe of container service readiness. If the probe fails, container will be removed
+## from service endpoints (but will not be restarted unless livenessProbe fails)
+##
+## @param readinessProbe.enabled Enable readinessProbe for notifications container
+## @param readinessProbe.httpGet.path The url path to probe.
+## @param readinessProbe.httpGet.port The named containerPort to probe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.successThreshold Min consecutive successes for probe to be successful
+## @param readinessProbe.failureThreshold No. consecutive failures before container marked unhealthy
+##
 readinessProbe:
+  enabled: true
   httpGet:
     path: /notifications/v1/metrics/ping
     port: http
-  initialDelaySeconds: 20
+  initialDelaySeconds: 5
   periodSeconds: 5
   timeoutSeconds: 5
   failureThreshold: 10
   successThreshold: 1
 
-#This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
+# NOT YET USED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
+# This section is for setting up autoscaling. More information can be found here:
+# https://kubernetes.io/docs/concepts/workloads/autoscaling/
+#autoscaling:
+#  enabled: false
+#  minReplicas: 1
+#  maxReplicas: 10
   # targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
