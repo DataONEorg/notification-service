@@ -203,7 +203,7 @@ livenessProbe:
   successThreshold: 1
 readinessProbe:
   httpGet:
-    path: /notifications/metrics/ping
+    path: /notifications/v1/metrics/ping
     port: http
   initialDelaySeconds: 20
   periodSeconds: 5
