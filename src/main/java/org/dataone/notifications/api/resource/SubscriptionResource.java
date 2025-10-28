@@ -17,6 +17,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.slf4j.Logger;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.storage.DataRepository;
@@ -49,38 +55,6 @@ public class SubscriptionResource {
     }
 
     /**
-     * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
-     * Example:
-     * <pre>
-     * $ curl -X POST "http://localhost:8080/notifications/datasetChanges/urn:uuid:3f930da-c3ac10e9" \
-     * -H "Authorization: Bearer $TOKEN" \
-     * -H "Content-Type: application/json"
-     * </pre>
-     *
-     * @param resource the resource type (eg "datasetChanges"). Automatically populated
-     * @return Record containing name-value pairs that will be automatically converted to the type
-     *     defined in {@code @Produces}
-     */
-    @POST
-    @Path("/{pid}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Record subscribe(
-        @HeaderParam("Authorization") String authHeader,
-        @PathParam("resource") String resource,
-        @NotNull @PathParam("pid") String pid)
-        throws NotAuthorizedException, NotFoundException {
-
-        log.debug("POST /{}/{}", resource, pid);
-
-        validatePid(pid);
-        SubscriptionResourceType resourceType = validateResourceType(resource);
-        String subject = authProvider.authenticate(authHeader);
-        authProvider.authorize(subject, resourceType, List.of(pid));
-        return dataRepository.addSubscription(subject, resourceType, pid);
-    }
-
-    /**
      * GET pids of all existing notification subscriptions for this subject (user). Example:
      * <pre>
      * $ curl -X GET http://localhost:8080/notifications/datasetChanges \
@@ -92,6 +66,20 @@ public class SubscriptionResource {
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
+    @Operation(summary = "Get subscribed PIDs by resource type",
+        description = "For the given resource type, return all PIDs to which the subject is "
+            + "subscribed.")
+    @Parameter(name = "Authorization", description = "Bearer token (e.g. 'Bearer <token>')",
+        required = true, in = ParameterIn.HEADER, schema = @Schema(implementation = String.class))
+    @Parameter(name = "resource", description = "Resource type", required = true,
+        in = ParameterIn.PATH, schema = @Schema(implementation = SubscriptionResourceType.class))
+    @APIResponse(responseCode = "200", description = "A list of PIDs.",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            schema = @Schema(implementation = Subscription.class)))
+    @APIResponse(responseCode = "400", description = "Unknown SubscriptionResourceType.")
+    @APIResponse(responseCode = "401",
+        description = "Authorization information is missing or invalid.")
+    //
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -112,6 +100,53 @@ public class SubscriptionResource {
     }
 
     /**
+     * Subscribe the authenticated subject (user) to the given resource (identified by its pid).
+     * Example:
+     * <pre>
+     * $ curl -X POST "http://localhost:8080/notifications/datasetChanges/urn:uuid:3f930da-c3ac10e9" \
+     * -H "Authorization: Bearer $TOKEN" \
+     * -H "Content-Type: application/json"
+     * </pre>
+     *
+     * @param resource the resource type (eg "datasetChanges"). Automatically populated
+     * @return Record containing name-value pairs that will be automatically converted to the type
+     *     defined in {@code @Produces}
+     */
+    @Operation(summary = "Subscribe to resource type by PID",
+        description = "Subscribe the subject to the given resource type, for the given PID.")
+    @Parameter(name = "Authorization", description = "Bearer token (e.g. 'Bearer <token>')",
+        required = true, in = ParameterIn.HEADER, schema = @Schema(implementation = String.class))
+    @Parameter(name = "resource", description = "Resource type", required = true,
+        in = ParameterIn.PATH, schema = @Schema(implementation = SubscriptionResourceType.class))
+    @Parameter(name = "pid", description = "PID", required = true, in = ParameterIn.PATH,
+        schema = @Schema(implementation = String.class))
+    @APIResponse(responseCode = "200", description = "Subscription record.",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            schema = @Schema(implementation = Subscription.class)))
+    @APIResponse(responseCode = "400", description = "Unknown SubscriptionResourceType.")
+    @APIResponse(responseCode = "401",
+        description = "Authorization information is missing or invalid.")
+    //
+    @POST
+    @Path("/{pid}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Record subscribe(
+        @HeaderParam("Authorization") String authHeader,
+        @PathParam("resource") String resource,
+        @NotNull @PathParam("pid") String pid)
+        throws NotAuthorizedException, NotFoundException {
+
+        log.debug("POST /{}/{}", resource, pid);
+
+        validatePid(pid);
+        SubscriptionResourceType resourceType = validateResourceType(resource);
+        String subject = authProvider.authenticate(authHeader);
+        authProvider.authorize(subject, resourceType, List.of(pid));
+        return dataRepository.addSubscription(subject, resourceType, pid);
+    }
+
+    /**
      * Unsubscribe the authenticated subject (user) from the given resource (identified by its pid).
      * Example:
      * <pre>
@@ -124,6 +159,21 @@ public class SubscriptionResource {
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
+    @Operation(summary = "Unsubscribe from resource type by PID",
+        description = "Unsubscribe the subject from the given resource type, for the given PID.")
+    @Parameter(name = "Authorization", description = "Bearer token (e.g. 'Bearer <token>')",
+        required = true, in = ParameterIn.HEADER, schema = @Schema(implementation = String.class))
+    @Parameter(name = "resource", description = "Resource type", required = true,
+        in = ParameterIn.PATH, schema = @Schema(implementation = SubscriptionResourceType.class))
+    @Parameter(name = "pid", description = "PID", required = true, in = ParameterIn.PATH,
+        schema = @Schema(implementation = String.class))
+    @APIResponse(responseCode = "200", description = "Removed subscriptions.",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            schema = @Schema(implementation = Subscription.class)))
+    @APIResponse(responseCode = "400", description = "Unknown SubscriptionResourceType.")
+    @APIResponse(responseCode = "401",
+        description = "Authorization information is missing or invalid.")
+    //
     @DELETE
     @Path("/{pid}")
     @Consumes(MediaType.APPLICATION_JSON)

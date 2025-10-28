@@ -15,8 +15,10 @@ import jakarta.ws.rs.core.MediaType;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.storage.DataRepository;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +53,7 @@ public class PidResource {
 
     /**
      * Get the list of resource types (e.g., 'datasetChanges' etc.) that have active subscriptions
-     * for a given PID. This requires the user to have read access to the PID.
-     * Example:
+     * for a given PID. This requires the user to have read access to the PID. Example:
      * <pre>
      * $ curl -X GET "http://localhost:8080/notifications/v1/pid/urn:uuid:3f930da-c3ac10e9" \
      * -H "Authorization: Bearer $TOKEN" \
@@ -60,21 +61,22 @@ public class PidResource {
      * </pre>
      *
      * @param authHeader The authorization header ("Authorization: Bearer $TOKEN").
-     * @param pid The persistent identifier (PID) of the resource to query.
+     * @param pid        The persistent identifier (PID) of the resource to query.
      * @return Record containing name-value pairs that will be automatically converted to the type
      *     defined in {@code @Produces}
      */
-    @Operation(
-        summary = "Get subscribed resource types by PID",
-        description = "Retrieves a list of resource types for which the given PID has an active subscription."
-    )
-    @APIResponse(
-        responseCode = "200",
-        description = "A list of resource type names.",
+    @Operation(summary = "Get subscribed resource types by PID",
+        description = "For the given PID, return all resource types to which the subject is "
+            + "subscribed.")
+    @Parameter(name = "Authorization", description = "Bearer token (e.g. 'Bearer <token>')",
+        required = true, in = ParameterIn.HEADER, schema = @Schema(implementation = String.class))
+    @Parameter(name = "pid", description = "PID", required = true, in = ParameterIn.PATH,
+        schema = @Schema(implementation = String.class))
+    @APIResponse(responseCode = "200", description = "A list of resource type names.",
         content = @Content(mediaType = MediaType.APPLICATION_JSON,
-            schema = @Schema(implementation = List.class))
-    )
-    @APIResponse(responseCode = "401", description = "Authorization information is missing or invalid.")
+            schema = @Schema(implementation = List.class)))
+    @APIResponse(responseCode = "401",
+        description = "Authorization information is missing or invalid.")
     @APIResponse(responseCode = "404", description = "PID is missing, empty, or not found.")
     //
     @GET
