@@ -24,6 +24,15 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for the embedded RabbitMQ Cluster Operator Deployment.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec)
+*/}}
+{{- define "notifications.rmq.fullname" -}}
+{{- $name := default "rmq" .Values.rabbitmq.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Release.Name $name }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "notifications.chart" -}}
