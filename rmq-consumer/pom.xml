@@ -12,16 +12,15 @@
     <artifactId>rmq-consumer</artifactId>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
     </properties>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>org.dataone.notification-service</groupId>-->
-<!--            <artifactId>notification-service</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.dataone.notification-service</groupId>
+            <artifactId>ns-web-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>

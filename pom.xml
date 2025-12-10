@@ -11,6 +11,7 @@
     <name>DataONE Notification Service Project</name>
     <url>https://github.com/DataONEorg/notification-service</url>
     <modules>
+        <module>ns-web-api</module>
         <module>rmq-consumer</module>
     </modules>
 
@@ -36,11 +37,6 @@
         -->
         <argLine/>
     </properties>
-
-    <modules>
-        <module>ns-api</module>
-        <module>rmq-consumer</module>
-    </modules>
 
 <!--    <build>-->
 <!--        <finalName>${project.artifactId}-${project.version}</finalName>-->

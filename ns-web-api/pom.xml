@@ -2,24 +2,25 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.dataone.notification-service</groupId>
+        <artifactId>notification-service-project</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
 
     <groupId>org.dataone.notification-service</groupId>
-    <artifactId>notification-service</artifactId>
+    <artifactId>ns-web-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>DataONE Notification Service API WebApp</name>
+    <name>DataONE Notification Service Web API</name>
     <url>https://github.com/DataONEorg/notification-service</url>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
         <tomee.version>10.1.1</tomee.version>
         <flyway.version>11.10.3</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <postgresql.version>42.7.7</postgresql.version>
-        <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
         <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
         <jersey.version>3.1.10</jersey.version>
         <jackson.version>2.19.2</jackson.version>
@@ -28,6 +29,7 @@
         <failsafe.version>3.3.1</failsafe.version>
         <junit-jupiter-version>5.13.3</junit-jupiter-version>
         <mockito-version>5.18.0</mockito-version>
+        <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
         <!--
         The following empty argLine is required by Mockito; see:
         https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
