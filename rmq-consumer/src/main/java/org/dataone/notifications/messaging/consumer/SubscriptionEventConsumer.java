@@ -1,7 +1,7 @@
 package org.dataone.notifications.messaging.consumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.JsonNode;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
@@ -26,7 +26,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private final RabbitMqProperties properties;
     private final RabbitMqConnectionManager connectionManager;
     private final SubscriptionMessageProcessor processor;
-    private final ObjectMapper mapper = new ObjectMapper();
+//    private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "subscription-event-consumer");
@@ -93,19 +93,20 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     private SubscriptionEvent deserialize(Delivery delivery) throws IOException {
         String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-        JsonNode node = mapper.readTree(body);
-        String resourceType = getRequiredText(node, "resourceType");
-        String pid = getRequiredText(node, "pid");
-        return SubscriptionEvent.from(resourceType, pid);
+//        JsonNode node = mapper.readTree(body);
+//        String resourceType = getRequiredText(node, "resourceType");
+//        String pid = getRequiredText(node, "pid");
+//        return SubscriptionEvent.from(resourceType, pid);
+        throw new IOException();
     }
 
-    private String getRequiredText(JsonNode node, String field) {
-        JsonNode value = node.get(field);
-        if (value == null || value.asText().isBlank()) {
-            throw new IllegalArgumentException("Missing value for field: " + field);
-        }
-        return value.asText();
-    }
+//    private String getRequiredText(JsonNode node, String field) {
+//        JsonNode value = node.get(field);
+//        if (value == null || value.asText().isBlank()) {
+//            throw new IllegalArgumentException("Missing value for field: " + field);
+//        }
+//        return value.asText();
+//    }
 
     public void stop() {
         if (!running.compareAndSet(true, false)) {

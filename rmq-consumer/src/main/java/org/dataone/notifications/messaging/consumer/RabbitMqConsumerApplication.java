@@ -1,7 +1,5 @@
 package org.dataone.notifications.messaging.consumer;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.messaging.config.RabbitMqConnectionManager;
 import org.dataone.notifications.messaging.config.RabbitMqProperties;
@@ -17,7 +15,6 @@ public class RabbitMqConsumerApplication {
 
     private SubscriptionEventConsumer consumer;
 
-    @PostConstruct
     public void start() {
         RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
         SubscriptionMessageProcessor processor = new SubscriptionMessageProcessor();
@@ -27,7 +24,6 @@ public class RabbitMqConsumerApplication {
         log.info("Subscription consumer started");
     }
 
-    @PreDestroy
     public void stop() {
         if (consumer != null) {
             log.info("Stopping subscription consumer");

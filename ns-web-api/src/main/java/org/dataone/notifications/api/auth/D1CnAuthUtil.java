@@ -51,7 +51,7 @@ public class D1CnAuthUtil {
         String urlStr = authApiUrl.toString();
         logger.debug("Authentication API URL: {}", urlStr);
         String userAgent = NsConfig.getConfig()
-            .getString("ns.auth.api.userAgent", "DataONE notifications/1.0");
+            .getString("ns.auth.api.userAgent", "DataONE notification-service/1.0");
         logger.debug("Authentication API User-Agent: \"{}\"", userAgent);
 
         HttpURLConnection con = null;

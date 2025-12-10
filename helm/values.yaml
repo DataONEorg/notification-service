@@ -1,4 +1,4 @@
-## Default values for notifications.
+## Default values for notification-service.
 ## This is a YAML-formatted file.
 ##
 ##     * * *   NOTE: SOME VALUES INCLUDE THE PLACEHOLDER "${RELEASE_NAME}",   * * *
@@ -6,11 +6,11 @@
 ##
 ## Make sure you're in the correct k8s context, then:
 ##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
-##         oci://ghcr.io/dataone/charts/notifications --version [version] \
+##         oci://ghcr.io/dataone/charts/notification-service --version [version] \
 ##             --debug --render-subchart-notes
 ##
 
-## @section Application-Specific Properties for notifications
+## @section Application-Specific Properties for notification-service
 ##
 ns:
   ## @param ns.logLevel The log level for the notification service.
@@ -25,7 +25,7 @@ ns:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
-      userAgent: "DataONE notifications/1.0"
+      userAgent: "DataONE notification-service/1.0"
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
@@ -49,7 +49,7 @@ ns:
 replicaCount: 1
 
 image:
-  repository: ghcr.io/dataoneorg/notifications
+  repository: ghcr.io/dataoneorg/notification-service
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

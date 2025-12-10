@@ -18,7 +18,7 @@
     <dependencies>
         <dependency>
             <groupId>org.dataone.notification-service</groupId>
-            <artifactId>ns-web-api</artifactId>
+            <artifactId>ns-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

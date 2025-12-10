@@ -11,6 +11,7 @@
     <name>DataONE Notification Service Project</name>
     <url>https://github.com/DataONEorg/notification-service</url>
     <modules>
+        <module>ns-common</module>
         <module>ns-web-api</module>
         <module>rmq-consumer</module>
     </modules>
@@ -18,14 +19,6 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tomee.version>10.1.1</tomee.version>
-        <flyway.version>11.10.3</flyway.version>
-        <hikaricp.version>6.3.0</hikaricp.version>
-        <postgresql.version>42.7.7</postgresql.version>
-        <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
-        <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
-        <jersey.version>3.1.10</jersey.version>
-        <jackson.version>2.19.2</jackson.version>
         <log4j.version>2.25.1</log4j.version>
         <surefire.version>3.5.3</surefire.version>
         <failsafe.version>3.3.1</failsafe.version>
@@ -38,133 +31,211 @@
         <argLine/>
     </properties>
 
-<!--    <build>-->
-<!--        <finalName>${project.artifactId}-${project.version}</finalName>-->
-<!--        <plugins>-->
+    <dependencyManagement>
+        <dependencies>
+            <!--
+            Begin Apache Commons vulnerability fixes.
+            Latest version of commons-configuration2 depends on vulnerable version of
+            commons-compress and commons-lang3, so overriding those here. Can remove when
+            commons-configuration2 updates its dependencies.
+            -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.28.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.18.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>2.12.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--
+            End Apache Commons vulnerability fix.
+            -->
+        </dependencies>
+    </dependencyManagement>
 
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-compiler-plugin</artifactId>-->
-<!--                <version>3.14.0</version>-->
-<!--                <configuration>-->
-<!--                    <release>${maven.compiler.release}</release>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-war-plugin</artifactId>-->
-<!--                <version>3.4.0</version>-->
-<!--                <configuration>-->
-<!--                    <failOnMissingWebXml>false</failOnMissingWebXml>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-dependency-plugin</artifactId>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <goals>-->
-<!--                            <goal>properties</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-surefire-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>-->
-<!--                </configuration>-->
-<!--                <version>${surefire.version}</version>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-failsafe-plugin</artifactId>-->
-<!--                <version>${failsafe.version}</version>-->
-<!--                <executions>-->
-<!--                    &lt;!&ndash; Default: run all ITs except SmokeIT &ndash;&gt;-->
-<!--                    <execution>-->
-<!--                        <id>it</id>-->
-<!--                        <phase>integration-test</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>integration-test</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <includes>-->
-<!--                                <include>**/*IT.java</include>-->
-<!--                            </includes>-->
-<!--                            <excludes>-->
-<!--                                <exclude>**/*SmokeIT.java</exclude>-->
-<!--                            </excludes>-->
-<!--                            <useModulePath>false</useModulePath>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-<!--                    <execution>-->
-<!--                        <id>verify</id>-->
-<!--                        <phase>verify</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>verify</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-<!--        </plugins>-->
-<!--    </build>-->
+    <dependencies>
+        <!--
+        Begin Apache Commons vulnerability fixes.
+        Latest version of commons-configuration2 depends on vulnerable version of
+        commons-compress and commons-lang3, so overriding those here. Can remove when
+        commons-configuration2 updates its dependencies.
+        -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.12.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--
+        End Apache Commons vulnerability fix.
+        -->
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <!-- SLF4J → Log4j2 binding -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+    </dependencies>
 
-    <profiles>
-        <profile>
-            <id>smokeTest</id>
-            <build>
-                <plugins>
-                    <!-- Skip unit tests (Surefire) only in this profile -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${surefire.version}</version>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
+                <version>${surefire.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${failsafe.version}</version>
+                <executions>
+                    <!-- Default: run all ITs except SmokeIT -->
+                    <execution>
+                        <id>it</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*SmokeIT.java</exclude>
+                            </excludes>
+                            <useModulePath>false</useModulePath>
                         </configuration>
-                    </plugin>
-                    <!-- run only *SmokeIT integration tests in this profile -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${failsafe.version}</version>
-                        <executions>
-                            <execution>
-                                <id>it</id>
-                                <phase>none</phase>
-                            </execution>
-                            <execution>
-                                <id>smoke-it</id>
-                                <phase>integration-test</phase>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                </goals>
-                                <configuration>
-                                    <includes>
-                                        <include>**/*SmokeIT.java</include>
-                                    </includes>
-                                    <systemPropertyVariables>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <BASE_URL>${env.BASE_URL}</BASE_URL>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <TOKEN>${env.TOKEN}</TOKEN>
-                                    </systemPropertyVariables>
-                                    <useModulePath>false</useModulePath>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>verify</id>
-                                <phase>verify</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <properties>
-                <it.tags>smokeTest</it.tags>
-            </properties>
-        </profile>
-    </profiles>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--    <profiles>-->
+    <!--        <profile>-->
+    <!--            <id>smokeTest</id>-->
+    <!--            <build>-->
+    <!--                <plugins>-->
+    <!--                    &lt;!&ndash; Skip unit tests (Surefire) only in this profile &ndash;&gt;-->
+    <!--                    <plugin>-->
+    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+    <!--                        <artifactId>maven-surefire-plugin</artifactId>-->
+    <!--                        <version>${surefire.version}</version>-->
+    <!--                        <configuration>-->
+    <!--                            <skipTests>true</skipTests>-->
+    <!--                        </configuration>-->
+    <!--                    </plugin>-->
+    <!--                    &lt;!&ndash; run only *SmokeIT integration tests in this profile &ndash;&gt;-->
+    <!--                    <plugin>-->
+    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+    <!--                        <artifactId>maven-failsafe-plugin</artifactId>-->
+    <!--                        <version>${failsafe.version}</version>-->
+    <!--                        <executions>-->
+    <!--                            <execution>-->
+    <!--                                <id>it</id>-->
+    <!--                                <phase>none</phase>-->
+    <!--                            </execution>-->
+    <!--                            <execution>-->
+    <!--                                <id>smoke-it</id>-->
+    <!--                                <phase>integration-test</phase>-->
+    <!--                                <goals>-->
+    <!--                                    <goal>integration-test</goal>-->
+    <!--                                </goals>-->
+    <!--                                <configuration>-->
+    <!--                                    <includes>-->
+    <!--                                        <include>**/*SmokeIT.java</include>-->
+    <!--                                    </includes>-->
+    <!--                                    <systemPropertyVariables>-->
+    <!--                                        &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
+    <!--                                        <BASE_URL>${env.BASE_URL}</BASE_URL>-->
+    <!--                                        &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
+    <!--                                        <TOKEN>${env.TOKEN}</TOKEN>-->
+    <!--                                    </systemPropertyVariables>-->
+    <!--                                    <useModulePath>false</useModulePath>-->
+    <!--                                </configuration>-->
+    <!--                            </execution>-->
+    <!--                            <execution>-->
+    <!--                                <id>verify</id>-->
+    <!--                                <phase>verify</phase>-->
+    <!--                            </execution>-->
+    <!--                        </executions>-->
+    <!--                    </plugin>-->
+    <!--                </plugins>-->
+    <!--            </build>-->
+    <!--            <properties>-->
+    <!--                <it.tags>smokeTest</it.tags>-->
+    <!--            </properties>-->
+    <!--        </profile>-->
+    <!--    </profiles>-->
 </project>
