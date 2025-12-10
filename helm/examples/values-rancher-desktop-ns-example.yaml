@@ -35,3 +35,45 @@ ingress:
     ##
     ## Now you can access the notifications service at:
     ##   http://notifications.local/notifications/metrics/ping
+
+# to add
+rabbitmq:
+  host: ns-rmq-4-1-3
+  port: 5672
+  username: default_user_oH3nQSTlAJFDabamw4u
+  password: oQFSI9eM9rJ43p2E_K6YkxwrRu6aTkqh
+  virtualHost: /
+  queueName: notification.subscription.events
+  prefetchCount: 25
+  connectionName: notifications-consumer
+  requeueOnError: true
+
+## To rename/repurpose
+idxworker:
+  ## @param idxworker.rabbitmqHostname RMQ host to be called by indexer. Leave blank to autopopulate
+  ## from the bundled rabbitmq operator installation (if rabbitmq.enabled)
+  ##
+  rabbitmqHostname: ""
+
+  ## @param idxworker.rabbitmqHostPort RMQ port to be called by indexer. (Doesn't set rmq's port!)
+  ## Only tells the indexer which port to use in the connection string.
+  ##
+  rabbitmqHostPort: "5672"
+
+  ## @param idxworker.rabbitmqUsername The username needed for rabbitmq access. Leave blank to autopopulate
+  ## from 'idxworker.rabbitmqSecret'
+  ##
+  rabbitmqUsername: ""
+
+  ## @param idxworker.rabbitmqSecret Secret holding rmq credentials. Leave blank to autopopulate
+  ## from the bundled rabbitmq operator installation (if rabbitmq.enabled)
+  ##
+  rabbitmqSecret: ""
+
+  ## @param idxworker.rabbitmqUserKey key associated with rabbitmq username in existing secret
+  ##
+  rabbitmqUserKey: "username"
+
+  ## @param idxworker.rabbitmqPasswordKey key associated with rabbitmq password in existing secret
+  ##
+  rabbitmqPasswordKey: "password"

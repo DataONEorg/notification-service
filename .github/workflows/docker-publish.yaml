@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.7.0
         with:
-          images: ghcr.io/${{ github.repository_owner }}/notification-service
+          images: ghcr.io/${{ github.repository_owner }}/notifications
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.18.0
         with:
