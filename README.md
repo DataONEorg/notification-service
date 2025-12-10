@@ -161,7 +161,7 @@ Build with maven and copy the war file to your TomEE webapps directory:
 ```shell
 $ mvn clean package -DskipTests
 
-$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps
+$ cp ./target/notifications-[VERSION].war $TOMEE_HOME/webapps
 ```
 ...and (re)start TomEE. You can then visit the URL:
 http://localhost:8080/notifications/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).

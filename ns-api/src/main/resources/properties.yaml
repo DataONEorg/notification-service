@@ -19,3 +19,15 @@ ns:
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
     driverClassName: org.postgresql.Driver
+  messaging:
+    rabbitmq:
+      enabled: true
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+      virtualHost: /
+      queueName: notification.subscription.events
+      prefetchCount: 25
+      connectionName: notification-service-consumer
+      requeueOnError: false

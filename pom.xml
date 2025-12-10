@@ -10,6 +10,9 @@
 
     <name>DataONE Notification Service Project</name>
     <url>https://github.com/DataONEorg/notification-service</url>
+    <modules>
+        <module>rmq-consumer</module>
+    </modules>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
