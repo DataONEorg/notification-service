@@ -11,15 +11,11 @@
 
     <artifactId>rmq-consumer</artifactId>
 
-    <properties>
-        <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.dataone.notification-service</groupId>
             <artifactId>ns-common</artifactId>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq</groupId>

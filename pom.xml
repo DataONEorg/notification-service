@@ -16,6 +16,17 @@
         <module>rmq-consumer</module>
     </modules>
 
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>dataone.org</id>
+            <url>https://maven.dataone.org</url>
+        </repository>
+    </repositories>
+
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,6 +40,15 @@
         https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
         -->
         <argLine/>
+        <tomee.version>10.1.1</tomee.version>
+        <flyway.version>11.10.3</flyway.version>
+        <hikaricp.version>6.3.0</hikaricp.version>
+        <postgresql.version>42.7.7</postgresql.version>
+        <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
+        <jersey.version>3.1.10</jersey.version>
+        <jackson.version>2.19.2</jackson.version>
+        <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
+        <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
     </properties>
 
     <dependencyManagement>
@@ -182,60 +202,62 @@
         </plugins>
     </build>
 
-    <!--    <profiles>-->
-    <!--        <profile>-->
-    <!--            <id>smokeTest</id>-->
-    <!--            <build>-->
-    <!--                <plugins>-->
-    <!--                    &lt;!&ndash; Skip unit tests (Surefire) only in this profile &ndash;&gt;-->
-    <!--                    <plugin>-->
-    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
-    <!--                        <artifactId>maven-surefire-plugin</artifactId>-->
-    <!--                        <version>${surefire.version}</version>-->
-    <!--                        <configuration>-->
-    <!--                            <skipTests>true</skipTests>-->
-    <!--                        </configuration>-->
-    <!--                    </plugin>-->
-    <!--                    &lt;!&ndash; run only *SmokeIT integration tests in this profile &ndash;&gt;-->
-    <!--                    <plugin>-->
-    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
-    <!--                        <artifactId>maven-failsafe-plugin</artifactId>-->
-    <!--                        <version>${failsafe.version}</version>-->
-    <!--                        <executions>-->
-    <!--                            <execution>-->
-    <!--                                <id>it</id>-->
-    <!--                                <phase>none</phase>-->
-    <!--                            </execution>-->
-    <!--                            <execution>-->
-    <!--                                <id>smoke-it</id>-->
-    <!--                                <phase>integration-test</phase>-->
-    <!--                                <goals>-->
-    <!--                                    <goal>integration-test</goal>-->
-    <!--                                </goals>-->
-    <!--                                <configuration>-->
-    <!--                                    <includes>-->
-    <!--                                        <include>**/*SmokeIT.java</include>-->
-    <!--                                    </includes>-->
-    <!--                                    <systemPropertyVariables>-->
-    <!--                                        &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
-    <!--                                        <BASE_URL>${env.BASE_URL}</BASE_URL>-->
-    <!--                                        &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
-    <!--                                        <TOKEN>${env.TOKEN}</TOKEN>-->
-    <!--                                    </systemPropertyVariables>-->
-    <!--                                    <useModulePath>false</useModulePath>-->
-    <!--                                </configuration>-->
-    <!--                            </execution>-->
-    <!--                            <execution>-->
-    <!--                                <id>verify</id>-->
-    <!--                                <phase>verify</phase>-->
-    <!--                            </execution>-->
-    <!--                        </executions>-->
-    <!--                    </plugin>-->
-    <!--                </plugins>-->
-    <!--            </build>-->
-    <!--            <properties>-->
-    <!--                <it.tags>smokeTest</it.tags>-->
-    <!--            </properties>-->
-    <!--        </profile>-->
-    <!--    </profiles>-->
+    <!-- Consolidated smokeTest profile moved from child module -->
+    <profiles>
+        <profile>
+            <id>smokeTest</id>
+            <build>
+                <plugins>
+                    <!-- Skip unit tests (Surefire) only in this profile -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                        </configuration>
+                    </plugin>
+                    <!-- run only *SmokeIT integration tests in this profile -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${failsafe.version}</version>
+                        <executions>
+                            <execution>
+                                <id>it</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>smoke-it</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/*SmokeIT.java</include>
+                                    </includes>
+                                    <systemPropertyVariables>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <BASE_URL>${env.BASE_URL}</BASE_URL>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <TOKEN>${env.TOKEN}</TOKEN>
+                                    </systemPropertyVariables>
+                                    <useModulePath>false</useModulePath>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>verify</id>
+                                <phase>verify</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <it.tags>smokeTest</it.tags>
+            </properties>
+        </profile>
+    </profiles>
 </project>
