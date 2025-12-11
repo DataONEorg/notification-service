@@ -20,7 +20,6 @@
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>${rabbitmq-client.version}</version>
         </dependency>
     </dependencies>
 </project>
