@@ -30,25 +30,25 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <log4j.version>2.25.1</log4j.version>
-        <surefire.version>3.5.3</surefire.version>
-        <failsafe.version>3.3.1</failsafe.version>
-        <junit-jupiter-version>5.13.3</junit-jupiter-version>
-        <mockito-version>5.18.0</mockito-version>
-        <!--
-        The following empty argLine is required by Mockito; see:
-        https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
-        -->
-        <argLine/>
         <tomee.version>10.1.1</tomee.version>
         <flyway.version>11.10.3</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <postgresql.version>42.7.7</postgresql.version>
         <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
+        <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
+        <log4j.version>2.25.1</log4j.version>
+        <surefire.version>3.5.3</surefire.version>
+        <failsafe.version>3.3.1</failsafe.version>
+        <junit-jupiter-version>5.13.3</junit-jupiter-version>
+        <mockito-version>5.18.0</mockito-version>
         <jersey.version>3.1.10</jersey.version>
         <jackson.version>2.19.2</jackson.version>
         <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
-        <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
+        <!--
+        The following empty argLine is required by Mockito; see:
+        https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+        -->
+        <argLine/>
     </properties>
 
     <dependencyManagement>
@@ -84,6 +84,9 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!--
+            End Apache Commons vulnerability fixes.
+            -->
 
             <!-- Project-wide managed dependency versions -->
             <dependency>
@@ -260,11 +263,57 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.14.0</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.7.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>properties</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                    <configuration>
+                        <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${failsafe.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.0</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
                 </configuration>
@@ -272,7 +321,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -291,12 +339,10 @@
                 <configuration>
                     <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
                 </configuration>
-                <version>${surefire.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${failsafe.version}</version>
                 <executions>
                     <!-- Default: run all ITs except SmokeIT -->
                     <execution>
