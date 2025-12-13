@@ -11,16 +11,3 @@ ns:
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
     driverClassName: "org.postgresql.Driver"
-
-rabbitmq:
-  enabled: {{ .Values.rabbitmq.enabled | default true }}
-## NEED TO DEFINE:
-  host: {{ required "rabbitmq.host IS REQUIRED" .Values.rabbitmq.host }}
-  port: {{ default 5672 .Values.rabbitmq.port | quote }}
-  username: {{ required "rabbitmq.username IS REQUIRED" .Values.rabbitmq.username }}
-  password: {{ required "rabbitmq.password IS REQUIRED" .Values.rabbitmq.password }}
-  virtualHost: {{ default "/" .Values.rabbitmq.virtualHost | quote }}
-  queueName: {{ required "rabbitmq.queueName IS REQUIRED" .Values.rabbitmq.queueName }}
-  prefetchCount: {{ default 25 .Values.rabbitmq.prefetchCount | quote }}
-  connectionName: {{ default "notifications-consumer" .Values.rabbitmq.connectionName | quote }}
-  requeueOnError: {{ default false .Values.rabbitmq.requeueOnError | quote }}

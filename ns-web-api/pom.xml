@@ -32,18 +32,7 @@
             <artifactId>snakeyaml</artifactId>
             <version>2.4</version>
         </dependency>
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-            <version>1.11.0</version>
-            <!-- Vulnerability in version 1.9.2 from commons-collections: excluding it here -->
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-collections</groupId>
-                    <artifactId>commons-collections</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!-- commons-beanutils provided by ns-common; removed local duplicate -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

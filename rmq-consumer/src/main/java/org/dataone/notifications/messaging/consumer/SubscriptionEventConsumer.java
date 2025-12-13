@@ -3,15 +3,17 @@ package org.dataone.notifications.messaging.consumer;
 //import com.fasterxml.jackson.databind.JsonNode;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.dataone.notifications.messaging.SubscriptionEvent;
-import org.dataone.notifications.messaging.config.RabbitMqConnectionManager;
 import org.dataone.notifications.messaging.config.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +26,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionEventConsumer.class);
 
     private final RabbitMqProperties properties;
-    private final RabbitMqConnectionManager connectionManager;
+    // inlined connection management that was previously in RabbitMqConnectionManager
+    private Connection connection;
+    private Channel channel;
     private final SubscriptionMessageProcessor processor;
 //    private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -36,10 +40,8 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     public SubscriptionEventConsumer(
         RabbitMqProperties properties,
-        RabbitMqConnectionManager connectionManager,
         SubscriptionMessageProcessor processor) {
         this.properties = properties;
-        this.connectionManager = connectionManager;
         this.processor = processor;
     }
 
@@ -53,7 +55,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private void consumeLoop() {
         log.info("Starting RabbitMQ consumer loop for queue {}", properties.queueName());
         while (running.get()) {
-            try (Channel channel = connectionManager.newChannel()) {
+            try (Channel channel = newChannel()) {
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
                 while (running.get() && channel.isOpen()) {
@@ -85,9 +87,8 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             processor.process(event);
             channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("Failed to process message, requeue={}", properties.requeueOnError(), e);
-            boolean requeue = properties.requeueOnError();
-            channel.basicNack(tag, false, requeue);
+            log.error("Failed to process message, requeueing", e);
+            channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
         }
     }
 
@@ -118,6 +119,87 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     @Override
     public void close() {
-        connectionManager.close();
+        shutdown();
+    }
+
+    /**
+     * Create and return a new channel, lazily creating the connection if needed.
+     */
+    private synchronized Channel newChannel() throws IOException, TimeoutException {
+        if (connection == null || !connection.isOpen()) {
+            connection = createConnection();
+        }
+        Channel ch = connection.createChannel();
+        ch.basicQos(properties.prefetchCount());
+        return ch;
+    }
+
+    private synchronized Channel getChannel() throws IOException, TimeoutException {
+        if (channel != null && channel.isOpen()) {
+            return channel;
+        }
+        if (connection == null || !connection.isOpen()) {
+            connection = createConnection();
+        }
+        channel = connection.createChannel();
+        channel.basicQos(properties.prefetchCount());
+        return channel;
+    }
+
+    private Connection createConnection() throws IOException, TimeoutException {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(properties.host());
+        factory.setPort(properties.port());
+        factory.setUsername(properties.username());
+        factory.setPassword(properties.password());
+        factory.setVirtualHost(properties.virtualHost());
+        factory.setAutomaticRecoveryEnabled(true);
+        factory.setNetworkRecoveryInterval(5000);
+        factory.setRequestedHeartbeat(30);
+        log.info("Connecting to RabbitMQ {}:{} vhost={} queue={}",
+            properties.host(), properties.port(), properties.virtualHost(), properties.queueName());
+        return factory.newConnection();
+    }
+
+    public synchronized void shutdown() {
+        try {
+            if (channel != null) {
+                channel.close();
+            }
+        } catch (Exception e) {
+            log.warn("Error closing RabbitMQ channel", e);
+        } finally {
+            channel = null;
+        }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (Exception e) {
+            log.warn("Error closing RabbitMQ connection", e);
+        } finally {
+            connection = null;
+        }
+    }
+
+    /**
+     * Quick check whether an active connection exists.
+     */
+    public synchronized boolean isConnected() {
+        return connection != null && connection.isOpen();
+    }
+
+    /**
+     * Attempt to open and immediately close a channel to verify connectivity.
+     */
+    public synchronized boolean checkConnection() {
+        try {
+            Channel ch = newChannel();
+            try { ch.close(); } catch (Exception ignored) {}
+            return true;
+        } catch (Exception e) {
+            log.warn("RabbitMQ connectivity check failed: {}", e.getMessage());
+            return false;
+        }
     }
 }

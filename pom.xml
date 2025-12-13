@@ -49,6 +49,7 @@
         https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
         -->
         <argLine/>
+        <!-- no mockito.javaagent property - javaagent usage removed to simplify config -->
     </properties>
 
     <dependencyManagement>
@@ -213,7 +214,6 @@
                 <artifactId>log4j-web</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
-
             <!-- end project-wide managed dependency versions -->
         </dependencies>
     </dependencyManagement>
@@ -297,9 +297,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire.version}</version>
-                    <configuration>
-                        <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
-                    </configuration>
+                    <!-- No argLine injection here; keep plugin defaults to avoid passing javaagent -->
                 </plugin>
 
                 <plugin>
@@ -336,9 +334,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
-                </configuration>
+                <!-- No argLine injection here; keep plugin defaults to avoid passing javaagent -->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -386,7 +382,6 @@
                         <version>${surefire.version}</version>
                         <configuration>
                             <skipTests>true</skipTests>
-                            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
                         </configuration>
                     </plugin>
                     <!-- run only *SmokeIT integration tests in this profile -->

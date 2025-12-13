@@ -26,5 +26,3 @@ ns:
       virtualHost: /
       queueName: notification.subscription.events.test
       prefetchCount: 5
-      connectionName: notification-service-consumer-test
-      requeueOnError: true

@@ -28,7 +28,7 @@ Create a default fully qualified app name for the embedded RabbitMQ Cluster Oper
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec)
 */}}
 {{- define "notifications.rmq.fullname" -}}
-{{- $name := default "rmq" .Values.rabbitmq.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- $name := default "rmq" .Values.rmqOperator.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- printf "%s-%s" .Release.Name $name }}
 {{- end }}
 
