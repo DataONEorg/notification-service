@@ -9,7 +9,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>rmq-consumer</artifactId>
+    <artifactId>ns-consumer</artifactId>
 
     <properties>
         <jib.to.image>ghcr.io/dataoneorg/notifications-consumer</jib.to.image>

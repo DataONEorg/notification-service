@@ -13,7 +13,7 @@
     <modules>
         <module>ns-common</module>
         <module>ns-web-api</module>
-        <module>rmq-consumer</module>
+        <module>ns-consumer</module>
     </modules>
 
     <repositories>

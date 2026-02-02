@@ -60,7 +60,7 @@ jobs:
       version: ${{ needs.maven-build.outputs.version }}
 
   jib-publish-consumer:
-    uses: ./.github/workflows/ci-rmq-consumer.yml
+    uses: ./.github/workflows/ci-ns-consumer.yml
     needs: [detect-changes]
     # Don't need to run jib-publish-consumer if these are helm-only changes or a helm-only tag
     if: needs.detect-changes.outputs.non_helm_changed == 'true' &&
