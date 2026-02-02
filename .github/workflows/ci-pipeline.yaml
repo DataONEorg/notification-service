@@ -56,7 +56,6 @@ jobs:
     if: needs.detect-changes.outputs.non_helm_changed == 'true' &&
       (github.ref_name == 'develop' || (startsWith(github.ref, 'refs/tags/') && 
       !startsWith(github.ref, 'refs/tags/chart-')))
-
     with:
       version: ${{ needs.maven-build.outputs.version }}
 
@@ -67,6 +66,8 @@ jobs:
     if: needs.detect-changes.outputs.non_helm_changed == 'true' &&
       (github.ref_name == 'develop' || (startsWith(github.ref, 'refs/tags/') && 
       !startsWith(github.ref, 'refs/tags/chart-')))
+    permissions:
+      actions: read
 
   helm-publish:
     uses: ./.github/workflows/helm-publish.yaml
