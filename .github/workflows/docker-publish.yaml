@@ -32,14 +32,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5.7.0
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/notification-service
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/Dockerfile
+          file: docker/Dockerfile-web-api
           platforms: linux/amd64,linux/arm64
           build-args: TAG=${{ inputs.version }}
           push: ${{ github.event_name != 'pull_request' }}

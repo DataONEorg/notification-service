@@ -1,0 +1,36 @@
+#FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-jammy
+
+ARG TAG="NO-TAG"
+ARG NS_VERSION=${TAG}
+ARG UID=56700
+ARG GID=56700
+
+WORKDIR /tmp
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    bash              \
+    curl              \
+    iputils-ping      \
+    lsof              \
+    procps            \
+    telnet            \
+    vim
+
+RUN groupadd -g $GID notifier && useradd -u $UID -g $GID notifier
+
+VOLUME /tmp
+ARG JAR_FILE=ns-consumer/target/ns-consumer-${NS_VERSION}.jar
+COPY ${JAR_FILE} consumer.jar
+
+RUN chown -R notifier:notifier .
+
+USER $UID
+
+# metadata
+LABEL org.opencontainers.image.title="Notifications-Consumer"
+LABEL org.opencontainers.image.version=${TAG}
+LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notification-consumer"
+
+ENTRYPOINT ["java","-jar","consumer.jar"]
