@@ -26,13 +26,13 @@ public record RabbitMqProperties(
     public static RabbitMqProperties from(Configuration config) {
         Objects.requireNonNull(config, "config cannot be null");
         return new RabbitMqProperties(
-            requireNonBlank(config, "rmqConnection.host"),
-            config.getInt("rmqConnection.port", 5672),
-            requireNonBlank(config, "rmqConnection.username"),
-            requireNonBlank(config, "rmqConnection.password"),
-            config.getString("rmqConnection.virtualHost", "/"),
-            requireNonBlank(config, "rmqConnection.queueName"),
-            Math.max(1, config.getInt("rmqConnection.prefetchCount", 25))
+            requireNonBlank(config, "ns.messaging.rabbitmq.host"),
+            config.getInt("ns.messaging.rabbitmq.port", 5672),
+            requireNonBlank(config, "ns.messaging.rabbitmq.username"),
+            requireNonBlank(config, "ns.messaging.rabbitmq.password"),
+            config.getString("ns.messaging.rabbitmq.virtualHost", "/"),
+            requireNonBlank(config, "ns.messaging.rabbitmq.queueName"),
+            Math.max(1, config.getInt("ns.messaging.rabbitmq.prefetchCount", 25))
         );
     }
 
