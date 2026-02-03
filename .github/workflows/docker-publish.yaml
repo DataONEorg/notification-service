@@ -36,7 +36,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/notification-service
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6.18.0
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile

@@ -25,7 +25,7 @@ RUN apt-get update \
     telnet            \
     vim
 
-COPY ./target/notification-service-${NS_VERSION}.war ./webapps/notifications.war
+COPY ./ns-web-api/target/ns-web-api-${NS_VERSION}.war ./webapps/notifications.war
 
 RUN chown -R notifier:notifier .
 
