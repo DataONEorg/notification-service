@@ -158,25 +158,25 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.7.0</version>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
-                        <id>unpack-shared-resources</id>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
+                        <id>copy-shared-resources</id>
                         <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.dataone.notification-service</groupId>
-                                    <artifactId>ns-common</artifactId>
-                                    <version>${project.version}</version>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <includes>properties.yaml</includes>
-                                </artifactItem>
-                            </artifactItems>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../ns-common/src/main/resources</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
