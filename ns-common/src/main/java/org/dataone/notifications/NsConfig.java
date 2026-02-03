@@ -4,8 +4,8 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.configuration2.YAMLConfiguration;
-import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,11 +63,18 @@ public class NsConfig {
 
         YAMLConfiguration defaultYamlConfig;
         try {
-            // Get default YAML config from src/resources/properties.yaml, so we can get a list of
-            // all the expected ns.camelCase.keys...
-            defaultYamlConfig = new FileBasedConfigurationBuilder<>(YAMLConfiguration.class)
-                .configure(new Parameters().fileBased().setFileName(DEFAULT_CONFIG_FILE))
-                .getConfiguration();
+            // First try to load default YAML from classpath (ns-common resources). If present,
+            // use its URL; otherwise fall back to a file-based lookup of DEFAULT_CONFIG_FILE.
+            java.net.URL resourceUrl = NsConfig.class.getClassLoader().getResource(DEFAULT_CONFIG_FILE);
+            if (resourceUrl != null) {
+                defaultYamlConfig = new FileBasedConfigurationBuilder<>(YAMLConfiguration.class)
+                    .configure(new Parameters().fileBased().setURL(resourceUrl))
+                    .getConfiguration();
+            } else {
+                defaultYamlConfig = new FileBasedConfigurationBuilder<>(YAMLConfiguration.class)
+                    .configure(new Parameters().fileBased().setFileName(DEFAULT_CONFIG_FILE))
+                    .getConfiguration();
+            }
         } catch (ConfigurationException e) {
             throw new RuntimeException(
                 "Can't load config properties from default config file: " + DEFAULT_CONFIG_FILE

@@ -16,3 +16,13 @@ ns:
     test:
       version: 17
       camelCaseTestKey: yaml-value-for-testing-only
+  messaging:
+    rabbitmq:
+      enabled: false
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+      virtualHost: /
+      queueName: notification.subscription.events.test
+      prefetchCount: 5
