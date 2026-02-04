@@ -50,7 +50,7 @@ jobs:
     if: needs.detect-changes.outputs.non_helm_changed == 'true'
 
   docker-publish-web-api:
-    uses: ./github/workflows/docker-publish-web-api.yaml
+    uses: ./.github/workflows/docker-publish-web-api.yaml
     needs: [maven-build, detect-changes]
     # Don't need to run docker-publish if these are helm-only changes or a helm-only tag
     if: needs.detect-changes.outputs.non_helm_changed == 'true' &&
