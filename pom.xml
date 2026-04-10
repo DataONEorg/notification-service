@@ -43,7 +43,7 @@
         <mockito-version>5.18.0</mockito-version>
         <jersey.version>3.1.10</jersey.version>
         <jackson.version>2.19.2</jackson.version>
-        <testcontainers-postgres.version>1.21.3</testcontainers-postgres.version>
+        <testcontainers-postgres.version>1.21.4</testcontainers-postgres.version>
         <!--
         The following empty argLine is required by Mockito; see:
         https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
