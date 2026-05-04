@@ -1,0 +1,34 @@
+### RabbitMQ Cluster Configuration
+## --------------------------------------
+## This manifest deploys a RabbitMQ cluster using the RabbitMQ Cluster Operator.
+## See:
+##   https://www.rabbitmq.com/kubernetes/operator/using-operator
+##   https://www.rabbitmq.com/docs/production-checklist
+##   https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples/production-ready
+
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: {{ include "notifications.rmq.fullname" . }}
+  labels:
+    app: rabbitmq
+spec:
+  replicas: {{ .Values.rmq.rmqOperator.replicaCount }}
+  resources:
+    {{ toYaml .Values.rmq.rmqOperator.resources | nindent 4 }}
+  rabbitmq:
+    {{- if .Values.rmq.rmqOperator.envConfig }}
+    envConfig: |
+      {{- range $k, $v := .Values.rmq.rmqOperator.envConfig }}
+      {{ $k }}={{ $v | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.rmq.rmqOperator.additionalConfig }}
+    additionalConfig: |
+      {{- range $k, $v := .Values.rmq.rmqOperator.additionalConfig }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+    {{- end }}
+  persistence:
+    storageClassName: {{ .Values.rmq.rmqOperator.persistence.storageClassName }}
+    storage: {{ .Values.rmq.rmqOperator.persistence.size }}

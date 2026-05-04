@@ -24,6 +24,7 @@ ns:
     existingSecret: nsdb-cnpg-app
 
 ingress:
+  enabled: false
   hosts:
     - host: notifications.local
       paths:
@@ -43,3 +44,8 @@ rmqConnection:
   virtualHost: /
   queueName: notification.subscription.events
   prefetchCount: 25
+
+rmq:
+  rmqOperator:
+    persistence:
+      storageClassName: local-path

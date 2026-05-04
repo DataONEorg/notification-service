@@ -1,0 +1,68 @@
+{{- $full := include "nsconsumer.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $full }}
+  labels:
+    {{- include "nsconsumer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.nsconsumer.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notifications
+      app.kubernetes.io/instance: notification-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notifications
+        app.kubernetes.io/instance: notification-service
+    spec:
+      serviceAccountName: {{ if .Values.nsconsumer.serviceAccount.create }}{{ include "nsconsumer.fullname" . }}-rmq-sa{{ else }}{{ .Values.nsconsumer.serviceAccount.name }}{{ end }}
+      containers:
+        - name: nsconsumer
+          image: "{{ .Values.nsconsumer.image.repository }}:{{ default .Chart.AppVersion .Values.nsconsumer.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.nsconsumer.resources | nindent 12 }}
+          env:
+            - name: RABBITMQ_HOST
+              value: {{ printf "%s.%s.svc.cluster.local" (include "nsconsumer.fullname" .) (default "default" .Release.Namespace) | quote }}
+              {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
+              {{- if not $secretName }}
+              {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
+              {{- end }}
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.rmq.rmqConnection.rmqUserKey }}
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- if .Values.nsconsumer.readinessProbe.enabled }}
+          readinessProbe:
+            {{- omit .Values.nsconsumer.readinessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      
