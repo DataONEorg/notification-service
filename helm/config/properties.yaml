@@ -11,9 +11,11 @@ ns:
     ##  See HikariCP configuration options at:
     ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
     driverClassName: "org.postgresql.Driver"
-rmqConnection:
-  host: {{ required "rmq.rmqConnection.hostname IS REQUIRED" .Values.rmq.rmqConnection.hostname }}
-  port: {{ default 5672 .Values.rmq.rmqConnection.port | quote }}
-  virtualHost: {{ default "/" .Values.rmq.rmqConnection.virtualHost | quote }}
-  queueName: {{ required "rmq.rmqConnection.queueName IS REQUIRED" .Values.rmq.rmqConnection.queueName }}
-  prefetchCount: {{ default 25 .Values.rmq.rmqConnection.prefetchCount | quote }}
+  messaging:
+    rabbitmq:
+      enabled: true
+      host: {{ required "rmq.rmqConnection.hostname IS REQUIRED" .Values.rmq.rmqConnection.hostname }}
+      port: {{ default 5672 .Values.rmq.rmqConnection.port | quote }}
+      virtualHost: {{ default "/" .Values.rmq.rmqConnection.virtualHost | quote }}
+      queueName: {{ required "rmq.rmqConnection.queueName IS REQUIRED" .Values.rmq.rmqConnection.queueName }}
+      prefetchCount: {{ default 25 .Values.rmq.rmqConnection.prefetchCount | quote }}

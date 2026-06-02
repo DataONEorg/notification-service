@@ -30,7 +30,7 @@ ns:
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
     ##
-    dbName: notifications
+    dbName: notificationdb
 
     ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & password
     ##
@@ -361,6 +361,7 @@ tomcat:
 nsconsumer:
   replicaCount: 1
   nameOverride: "nsconsumer"
+  fullNameOverride: "notification-service-consumer"
   image:
     repository: ghcr.io/dataoneorg/nsconsumer
     tag: ""
@@ -375,7 +376,7 @@ nsconsumer:
       memory: 128Mi
 
   serviceAccount:
-    create: true
+    create: false
     name: ""
 
   autoscaling:
@@ -386,12 +387,23 @@ nsconsumer:
     targetMemoryUtilizationPercentage: 80
 
   readinessProbe:
+    enabled: true
     exec:
       command:
         - /bin/sh
         - -c
-        - test $(($(date +%s) - $(stat -c %Y {{$probePath}}))) -lt {{$threshold}}
-    initialDelaySeconds: 10
+        - find /tmp/rmq-consumer-readiness -mmin -0.5 | grep .
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+  
+  livenessProbe:
+    exec:
+      command:
+      - /bin/sh
+      - -c
+      - if [ -f /tmp/rmq-consumer-readiness ] && [ "$(find /tmp/rmq-consumer-readiness -mmin -0.5)" ]; then echo "healthy"; else echo "unhealthy"; fi
+    initialDelaySeconds: 90
     periodSeconds: 10
     timeoutSeconds: 5
 
@@ -418,7 +430,7 @@ rmq:
     ##
     port: "5672"
 
-    virtualHost: "/"
+    virtualHost: "notification-service"
 
     queueName: "dataone.notifications"
 

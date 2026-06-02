@@ -22,10 +22,10 @@ ns:
   messaging:
     rabbitmq:
       enabled: true
-      host: localhost
+      host: ns-host
       port: 5672
       username: guest
       password: guest
-      virtualHost: /
+      virtualHost: notification-service
       queueName: notification.subscription.events
       prefetchCount: 25

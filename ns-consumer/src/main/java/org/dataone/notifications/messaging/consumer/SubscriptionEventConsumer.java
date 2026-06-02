@@ -47,29 +47,49 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     public void start() {
         if (!running.compareAndSet(false, true)) {
+            log.info("Consumer is already running, start() call ignored");
             return;
         }
+        log.info("Starting SubscriptionEventConsumer for queue {}", properties.queueName());
         executor.submit(this::consumeLoop);
     }
 
     private void consumeLoop() {
         log.info("Starting RabbitMQ consumer loop for queue {}", properties.queueName());
+        if(running != null) {
+            log.info("running is not null");
+            if(running.get()) {
+                log.info("running is true");
+            } else {
+                log.info("running is false");
+            }
+        }else {
+            log.info("running is null");
+        }
         while (running.get()) {
             try (Channel channel = newChannel()) {
+                log.info("Connected to RabbitMQ, consuming from queue {}", properties.queueName());
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
+                if(channel.isOpen()){
+                    log.info("Channel is open and consuming messages...");
+                } else {
+                    log.warn("Channel is not open after starting consumer");
+                }
                 while (running.get() && channel.isOpen()) {
+                    log.info("Waiting for messages on queue {}...", properties.queueName());
                     Thread.sleep(1000);
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("Consumer thread interrupted");
+                log.info("Consumer thread interrupted");
                 return;
             } catch (Exception e) {
                 if (!running.get()) {
+                    log.info("Consumer stopped in generic catch, exiting consume loop");
                     return;
                 }
-                log.error("Queue consumption failed, retrying in 5s", e);
+                log.info("Queue consumption failed, retrying in 5s", e);
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {
@@ -78,6 +98,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
                 }
             }
         }
+        log.info("running is false, exiting consume loop");
     }
 
     private void handleDelivery(Channel channel, Delivery delivery) throws IOException {
@@ -127,8 +148,10 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      */
     private synchronized Channel newChannel() throws IOException, TimeoutException {
         if (connection == null || !connection.isOpen()) {
+            log.info("Creating new RabbitMQ connection in newChannel");
             connection = createConnection();
         }
+        log.info("About to create channel");
         Channel ch = connection.createChannel();
         ch.basicQos(properties.prefetchCount());
         return ch;
@@ -139,6 +162,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             return channel;
         }
         if (connection == null || !connection.isOpen()) {
+            log.info("Creating new RabbitMQ connection in getChannel");
             connection = createConnection();
         }
         channel = connection.createChannel();
@@ -147,18 +171,30 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     }
 
     private Connection createConnection() throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(properties.host());
-        factory.setPort(properties.port());
-        factory.setUsername(properties.username());
-        factory.setPassword(properties.password());
-        factory.setVirtualHost(properties.virtualHost());
-        factory.setAutomaticRecoveryEnabled(true);
-        factory.setNetworkRecoveryInterval(5000);
-        factory.setRequestedHeartbeat(30);
-        log.info("Connecting to RabbitMQ {}:{} vhost={} queue={}",
-            properties.host(), properties.port(), properties.virtualHost(), properties.queueName());
-        return factory.newConnection();
+        try{
+            log.info("Creating connection factory");
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost(properties.host());
+            factory.setPort(properties.port());
+            factory.setUsername(System.getenv("RABBITMQ_USERNAME") != null ? System.getenv("RABBITMQ_USERNAME") : properties.username());
+            factory.setPassword(System.getenv("RABBITMQ_PASSWORD") != null ? System.getenv("RABBITMQ_PASSWORD") : properties.password());
+            factory.setVirtualHost(properties.virtualHost());
+            factory.setAutomaticRecoveryEnabled(true);
+            factory.setNetworkRecoveryInterval(5000);
+            factory.setRequestedHeartbeat(30);
+            log.info("Attempting to create RabbitMQ connection to {}:{} with virtual host '{}'", properties.host(), properties.port(), properties.virtualHost());
+            return factory.newConnection(); 
+        }catch(IOException e){
+            log.info("IOException in createConnection: {}", e.getMessage());
+            throw e;
+        }catch(TimeoutException e){
+            log.info("TimeoutException in createConnection: {}", e.getMessage());
+            throw e;
+        }catch(Exception e){
+            log.info("Unexpected Exception in createConnection: {}", e.getMessage());
+            throw new RuntimeException("Failed to create RabbitMQ connection", e);
+        }
+           
     }
 
     public synchronized void shutdown() {
@@ -186,6 +222,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
+        log.info("Checking connection status: connection={}, connection.isOpen={}", connection, connection != null ? connection.isOpen() : "n/a");
         return connection != null && connection.isOpen();
     }
 

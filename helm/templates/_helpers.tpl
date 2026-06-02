@@ -71,6 +71,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Create the name of the service account to use
+*/}}
+{{- define "nsconsumer.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "nsconsumer.fullname" .) .Values.nsconsumer.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.nsconsumer.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create a checksum that reflects changes in the config files.
 Do it here, instead of in deployment.yaml, because helm's ordering of operations means that the
 checksum is performed before the values overrides are inserted into the config files, so the
@@ -98,8 +109,8 @@ checksum doesn't change when those values do.
 Create name for nsconsumer
 */}}
 {{- define "nsconsumer.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- "nsconsumer" .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- if .Values.nsconsumer.fullNameOverride }}
+{{- .Values.nsconsumer.fullNameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default "nsconsumer" .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}

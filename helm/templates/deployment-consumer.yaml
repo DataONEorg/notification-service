@@ -13,24 +13,29 @@ spec:
       app.kubernetes.io/instance: notification-service
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include "notifications.config.checksum" . }}
+      {{- with .Values.podAnnotations }}
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         app.kubernetes.io/name: notifications
         app.kubernetes.io/instance: notification-service
     spec:
-      serviceAccountName: {{ if .Values.nsconsumer.serviceAccount.create }}{{ include "nsconsumer.fullname" . }}-rmq-sa{{ else }}{{ .Values.nsconsumer.serviceAccount.name }}{{ end }}
+      serviceAccountName: {{ include "nsconsumer.serviceAccountName" . }}
       containers:
         - name: nsconsumer
           image: "{{ .Values.nsconsumer.image.repository }}:{{ default .Chart.AppVersion .Values.nsconsumer.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.nsconsumer.image.pullPolicy }}
           resources:
             {{- toYaml .Values.nsconsumer.resources | nindent 12 }}
           env:
-            - name: RABBITMQ_HOST
-              value: {{ printf "%s.%s.svc.cluster.local" (include "nsconsumer.fullname" .) (default "default" .Release.Namespace) | quote }}
-              {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
-              {{- if not $secretName }}
-              {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
-              {{- end }}
+            - name: NS_PROPERTIES_YAML_PATH
+              value: /etc/dataone/notification-service/properties.yaml
+            {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
+            {{- if not $secretName }}
+            {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
+            {{- end }}
             - name: RABBITMQ_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -49,10 +54,29 @@ spec:
           readinessProbe:
             {{- omit .Values.nsconsumer.readinessProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.livenessProbe.enabled }}
+          {{- if .Values.nsconsumer.livenessProbe.enabled }}
           livenessProbe:
-            {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
+            {{- omit .Values.nsconsumer.livenessProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            {{- if .Values.extraVolumeMounts }}
+            {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
+            {{- end }}
+            - mountPath: /etc/dataone/notification-service
+              name: {{ .Release.Name }}-config-volume
+              readOnly: true
+      initContainers:
+        - name: wait-for-rmq
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .Values.rmq.rmqConnection.hostname }} {{ .Values.rmq.rmqConnection.port }}; do echo waiting for RabbitMQ; sleep 5; done;']
+      volumes:
+        {{- if .Values.extraVolumes }}
+        {{- tpl (toYaml .Values.extraVolumes) . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Release.Name }}-config-volume
+          configMap:
+            name: {{ .Release.Name }}-notifications-configfiles
+            defaultMode: 0644
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}

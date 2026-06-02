@@ -17,7 +17,7 @@ Configuration:
         ref: Console
     Logger:
       - name: org.jboss
-        level: error
+        level: debug
         additivity: false
         AppenderRef:
           ref: Console

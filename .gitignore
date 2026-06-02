@@ -164,3 +164,4 @@ cython_debug/
 helm/charts
 helm/Chart.lock
 
+.vscode/settings.json
