@@ -1,7 +1,7 @@
 package org.dataone.notifications.messaging.consumer;
 
-//import com.fasterxml.jackson.databind.JsonNode;
-//import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -30,11 +30,11 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private Connection connection;
     private Channel channel;
     private final SubscriptionMessageProcessor processor;
-//    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "subscription-event-consumer");
-        t.setDaemon(true);
+        t.setDaemon(false);
         return t;
     });
 
@@ -47,7 +47,6 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     public void start() {
         if (!running.compareAndSet(false, true)) {
-            log.info("Consumer is already running, start() call ignored");
             return;
         }
         log.info("Starting SubscriptionEventConsumer for queue {}", properties.queueName());
@@ -56,19 +55,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     private void consumeLoop() {
         log.info("Starting RabbitMQ consumer loop for queue {}", properties.queueName());
-        if(running != null) {
-            log.info("running is not null");
-            if(running.get()) {
-                log.info("running is true");
-            } else {
-                log.info("running is false");
-            }
-        }else {
-            log.info("running is null");
-        }
         while (running.get()) {
             try (Channel channel = newChannel()) {
-                log.info("Connected to RabbitMQ, consuming from queue {}", properties.queueName());
+                log.info("Created channel to RabbitMQ, consuming from queue {}", properties.queueName());
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
                 if(channel.isOpen()){
@@ -77,19 +66,17 @@ public class SubscriptionEventConsumer implements AutoCloseable {
                     log.warn("Channel is not open after starting consumer");
                 }
                 while (running.get() && channel.isOpen()) {
-                    log.info("Waiting for messages on queue {}...", properties.queueName());
                     Thread.sleep(1000);
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.info("Consumer thread interrupted");
+                log.warn("Consumer thread interrupted: {}", ie.getMessage());
                 return;
             } catch (Exception e) {
                 if (!running.get()) {
-                    log.info("Consumer stopped in generic catch, exiting consume loop");
                     return;
                 }
-                log.info("Queue consumption failed, retrying in 5s", e);
+                log.error("Queue consumption failed, retrying in 5s", e);
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {
@@ -98,7 +85,6 @@ public class SubscriptionEventConsumer implements AutoCloseable {
                 }
             }
         }
-        log.info("running is false, exiting consume loop");
     }
 
     private void handleDelivery(Channel channel, Delivery delivery) throws IOException {
@@ -108,27 +94,35 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             processor.process(event);
             channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("Failed to process message, requeueing", e);
-            channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            log.error("Failed to process message. Failed messages are not requeued. ", e);
+            // Disabling the requeue here to avoid bad messages holding up the 
+            // queue forever. In the future, we could add a dead letter queue. 
+            //channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            channel.basicAck(tag, false);
         }
     }
 
     private SubscriptionEvent deserialize(Delivery delivery) throws IOException {
-        String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-//        JsonNode node = mapper.readTree(body);
-//        String resourceType = getRequiredText(node, "resourceType");
-//        String pid = getRequiredText(node, "pid");
-//        return SubscriptionEvent.from(resourceType, pid);
-        throw new IOException();
+        try{
+            String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            log.info("Message received: {}", body);
+            JsonNode node = mapper.readTree(body);
+            String resourceType = getRequiredText(node, "resourceType");
+            String pid = getRequiredText(node, "pid");
+            return SubscriptionEvent.from(resourceType, pid);
+        }catch(Exception e){
+            log.info("Error deserializing message: {}", e.getMessage());
+            throw new IOException();
+        }
     }
 
-//    private String getRequiredText(JsonNode node, String field) {
-//        JsonNode value = node.get(field);
-//        if (value == null || value.asText().isBlank()) {
-//            throw new IllegalArgumentException("Missing value for field: " + field);
-//        }
-//        return value.asText();
-//    }
+    private String getRequiredText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.asText().isBlank()) {
+            throw new IllegalArgumentException("Missing value for field: " + field);
+        }
+        return value.asText();
+    }
 
     public void stop() {
         if (!running.compareAndSet(true, false)) {
@@ -148,11 +142,10 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      */
     private synchronized Channel newChannel() throws IOException, TimeoutException {
         if (connection == null || !connection.isOpen()) {
-            log.info("Creating new RabbitMQ connection in newChannel");
             connection = createConnection();
         }
-        log.info("About to create channel");
         Channel ch = connection.createChannel();
+        ch.queueDeclare(properties.queueName(), true, false, false, null);
         ch.basicQos(properties.prefetchCount());
         return ch;
     }
@@ -162,10 +155,10 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             return channel;
         }
         if (connection == null || !connection.isOpen()) {
-            log.info("Creating new RabbitMQ connection in getChannel");
             connection = createConnection();
         }
         channel = connection.createChannel();
+        channel.queueDeclare(properties.queueName(), true, false, false, null);
         channel.basicQos(properties.prefetchCount());
         return channel;
     }

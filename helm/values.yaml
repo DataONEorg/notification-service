@@ -392,17 +392,18 @@ nsconsumer:
       command:
         - /bin/sh
         - -c
-        - test $(($(date +%s) - $(stat -c %Y {{$probePath}}))) -lt {{$threshold}}
+        - test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30
     initialDelaySeconds: 60
     periodSeconds: 10
     timeoutSeconds: 5
   
   livenessProbe:
+    enabled: true
     exec:
       command:
       - /bin/sh
       - -c
-      - test $(($(date +%s) - $(stat -c %Y {{$probePath}}))) -lt {{$threshold}}
+      - test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30
     initialDelaySeconds: 90
     periodSeconds: 10
     timeoutSeconds: 5
@@ -430,7 +431,7 @@ rmq:
     ##
     port: "5672"
 
-    virtualHost: "notification-service"
+    virtualHost: "/"
 
     queueName: "dataone.notifications"
 

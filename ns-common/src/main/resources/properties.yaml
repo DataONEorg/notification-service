@@ -26,6 +26,6 @@ ns:
       port: 5672
       username: guest
       password: guest
-      virtualHost: notification-service
+      virtualHost: /
       queueName: notification.subscription.events
       prefetchCount: 25

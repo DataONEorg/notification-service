@@ -34,7 +34,6 @@ public class NsConfig {
      */
     public static synchronized void reload() {
         CompositeConfiguration composite = new CompositeConfiguration();
-        log.info("reloading config");
         YAMLConfiguration externalYamlConfig = null;
         String extConfigFilePath = System.getenv(EXT_CFG_FILE_ENV_VAR);
         if (extConfigFilePath == null || extConfigFilePath.trim().isEmpty()) {
@@ -99,22 +98,6 @@ public class NsConfig {
         
         // Finally add default YAML config (lowest precedence)
         composite.addConfiguration(defaultYamlConfig);
-        /*try{
-            String rmq_user = System.getenv("RABBITMQ_USERNAME");
-            String rmq_pass = System.getenv("RABBITMQ_PASSWORD");
-            if(rmq_user != null && !rmq_user.trim().isEmpty()){
-                log.info("Overriding RabbitMQ username from environment variable RABBITMQ_USERNAME: {}", rmq_user);
-                composite.setProperty("ns.messaging.rabbitmq.username", rmq_user);
-            }
-            if(rmq_pass != null && !rmq_pass.trim().isEmpty()){
-                log.info("Overriding RabbitMQ password from environment variable RABBITMQ_PASSWORD");
-                composite.setProperty("ns.messaging.rabbitmq.password", rmq_pass);
-            }
-            log.info("composite: {}", composite.getString("ns.messaging.rabbitmq.username"));
-        }catch(Exception e){
-            log.warn("Error accessing environment variables for logging: {}", e.getMessage());
-            throw e;
-        }*/
         config = composite;
         log.debug("CONFIGURATION AT STARTUP: \n{}", getAsString(config));
     }

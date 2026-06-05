@@ -43,7 +43,7 @@ rmq:
     existingSecret: "notification-service-rmq-4-1-3-default-user"
     hostname: notification-service-rmq-4-1-3
     port: "5672"
-    virtualHost: notification-service
+    virtualHost: /
     queueName: notification.subscription.events
     rmqUserKey: username
     rmqPasswordKey: password

@@ -42,15 +42,9 @@ public class RabbitMqConsumerMain {
     public static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received, stopping consumer");
-            try{
-                Thread.sleep(100000);
-            }catch(Exception e){
-                log.info("Sleep was interrupted", e);
-            }
             stopHealthProbe();
             log.info("Stopped Health Probe");
             if (consumer != null) {
-                log.info("About to stop consumer");
                 consumer.stop();
             }
         }));
@@ -69,7 +63,7 @@ public class RabbitMqConsumerMain {
             try {
                 return isConnected();
             } catch (Throwable t) {
-                log.info("Health poller threw: {}", t.getMessage());
+                log.error("Health poller threw: {}", t.getMessage());
                 return false;
             }
         }, pollInterval);
@@ -80,12 +74,11 @@ public class RabbitMqConsumerMain {
             // Ensure health server has a recent poll
             refreshHealthNow();
         } catch (Exception e) {
-            log.info("Failed to start RabbitMQ consumer", e);
+            log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
             stopHealthProbe();
             if (consumer != null) {
                 consumer.stop();
             }
-            log.info("About to call system exit");
             System.exit(1);
         }
         log.info("RabbitMQ consumer main thread exiting, consumer and health probe should keep running");
