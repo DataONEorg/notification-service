@@ -363,9 +363,9 @@ nsconsumer:
   nameOverride: "nsconsumer"
   fullNameOverride: "notification-service-consumer"
   image:
-    repository: notification-consumer
+    repository: ghcr.io/dataoneorg/nsconsumer
     tag: feature-15
-    pullPolicy: Never
+    pullPolicy: IfNotPresent
 
   resources:
     limits:
