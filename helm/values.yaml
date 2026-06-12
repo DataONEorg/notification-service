@@ -379,13 +379,6 @@ nsconsumer:
     create: false
     name: ""
 
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 50
-    targetMemoryUtilizationPercentage: 80
-
   readinessProbe:
     enabled: true
     exec:
