@@ -22,7 +22,7 @@ ns:
   messaging:
     rabbitmq:
       enabled: true
-      host: ns-host
+      host: localhost
       port: 5672
       username: guest
       password: guest
