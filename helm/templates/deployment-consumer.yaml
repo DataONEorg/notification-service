@@ -65,10 +65,6 @@ spec:
             - mountPath: /etc/dataone/notification-service
               name: {{ .Release.Name }}-config-volume
               readOnly: true
-      initContainers:
-        - name: wait-for-rmq
-          image: busybox:latest
-          command: ['sh', '-c', 'until nc -z {{ .Values.rmq.rmqConnection.hostname }} {{ .Values.rmq.rmqConnection.port }}; do echo waiting for RabbitMQ; sleep 5; done;']
       volumes:
         {{- if .Values.extraVolumes }}
         {{- tpl (toYaml .Values.extraVolumes) . | nindent 8 }}

@@ -51,3 +51,9 @@ rmq:
   rmqOperator:
     persistence:
       storageClassName: local-path
+
+nsconsumer:
+  image:
+    repository: notification-consumer
+    tag: feature-15
+    pullPolicy: Never
