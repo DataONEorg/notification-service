@@ -46,7 +46,7 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
-            {{- range $k, $v := .Values.env }}
+            {{- range $k, $v := .Values.nsconsumer.extraEnvVars }}
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}

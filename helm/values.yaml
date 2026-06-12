@@ -283,8 +283,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 resources: {}
-# Logging / env map
-env: {}
+
 # We usually recommend not to specify default resources and to leave this as a conscious
 # choice for the user. This also increases chances charts run on environments with limited
 # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -400,6 +399,10 @@ nsconsumer:
     initialDelaySeconds: 90
     periodSeconds: 10
     timeoutSeconds: 5
+
+  # @param extraEnvVars Optional additional env vars to be added to the container.
+  # Format: { EXAMPLE_ENV_VAR: "example_value", ANOTHER_ENV_VAR: "another_value" }
+  extraEnvVars: {}
 
 ## @section RabbitMQ Connection Configuration
 ## (This section does NOT affect the RabbitMQ Operator installation itself.)
