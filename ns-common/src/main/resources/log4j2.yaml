@@ -12,12 +12,12 @@ Configuration:
 
   Loggers:
     Root:
-      level: debug
+      level: error
       AppenderRef:
         ref: Console
     Logger:
       - name: org.jboss
-        level: debug
+        level: error
         additivity: false
         AppenderRef:
           ref: Console
