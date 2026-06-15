@@ -49,15 +49,18 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting SubscriptionEventConsumer for queue {}", properties.queueName());
+        log.info("Starting SubscriptionEventConsumer for queue {}", 
+            properties.queueName());
         executor.submit(this::consumeLoop);
     }
 
     private void consumeLoop() {
-        log.info("Starting RabbitMQ consumer loop for queue {}", properties.queueName());
+        log.info("Starting RabbitMQ consumer loop for queue {}", 
+            properties.queueName());
         while (running.get()) {
             try (Channel channel = newChannel()) {
-                log.info("Created channel to RabbitMQ, consuming from queue {}", properties.queueName());
+                log.info("Created channel to RabbitMQ, consuming from queue {}", 
+                    properties.queueName());
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
                 if(channel.isOpen()){
@@ -175,7 +178,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             factory.setAutomaticRecoveryEnabled(true);
             factory.setNetworkRecoveryInterval(5000);
             factory.setRequestedHeartbeat(30);
-            log.info("Attempting to create RabbitMQ connection to {}:{} with virtual host '{}'", properties.host(), properties.port(), properties.virtualHost());
+            log.info("Attempting to create RabbitMQ connection to " +
+                " {}:{} with virtual host '{}'", 
+                properties.host(), properties.port(), properties.virtualHost());
             return factory.newConnection(); 
         }catch(IOException e){
             log.info("IOException in createConnection: {}", e.getMessage());
@@ -215,7 +220,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
-        log.info("Checking connection status: connection={}, connection.isOpen={}", connection, connection != null ? connection.isOpen() : "n/a");
+        log.info("Checking connection status: " + 
+            " connection={}, connection.isOpen={}", 
+            connection, connection != null ? connection.isOpen() : "n/a");
         return connection != null && connection.isOpen();
     }
 

@@ -81,16 +81,18 @@ public class NsConfig {
                 "Can't load config properties from default config file: " + DEFAULT_CONFIG_FILE
                     + "; Error: " + e.getMessage(), e);
         }
-        
+
         // First add any environment variables to config, as highest precedence
         composite.addConfiguration(new MapConfiguration(getEnvOverrides(defaultYamlConfig)));
 
         // Then add external YAML overrides, if they exist
         log.info("External config file path: {}", extConfigFilePath);
         if (externalYamlConfig != null) {
-            log.info("External config file loaded successfully from path {}. Adding to configuration with precedence over defaults.",
+            log.info("External config file loaded successfully from " + 
+            "path {}. Adding to configuration with precedence over defaults.",
                 extConfigFilePath);
-            log.info("EXTERNAL CONFIGURATION VALUES: \n{}", getAsString(externalYamlConfig));
+            log.info("EXTERNAL CONFIGURATION VALUES: \n{}", 
+                getAsString(externalYamlConfig));
             composite.addConfiguration(externalYamlConfig);
         }else{
             log.info("No external config file loaded. Skipping addition to configuration.");
