@@ -95,7 +95,7 @@ public class NsConfig {
         }else{
             log.info("No external config file loaded. Skipping addition to configuration.");
         }
-        
+
         // Finally add default YAML config (lowest precedence)
         composite.addConfiguration(defaultYamlConfig);
         config = composite;
