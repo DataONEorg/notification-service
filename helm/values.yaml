@@ -401,7 +401,10 @@ nsconsumer:
     timeoutSeconds: 5
 
   # @param extraEnvVars Optional additional env vars to be added to the container.
-  # Format: { EXAMPLE_ENV_VAR: "example_value", ANOTHER_ENV_VAR: "another_value" }
+  # Format: 
+  # extraEnvVars: 
+  #   EXAMPLE_ENV_VAR: "example_value_1"
+  #   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
 ## @section RabbitMQ Connection Configuration
