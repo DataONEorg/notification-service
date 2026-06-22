@@ -86,7 +86,7 @@ public class RabbitMqConsumerMain {
 
     // Expose the same checks previously provided by RabbitMqConsumerApplication
     private static boolean isConnected() {
-        log.info("Connection status: consumer={}, consumer.isConnected={}", consumer, consumer != null ? consumer.isConnected() : "n/a");
+        log.debug("Connection status: consumer={}, consumer.isConnected={}", consumer, consumer != null ? consumer.isConnected() : "n/a");
         return consumer != null && consumer.isConnected();
     }
 

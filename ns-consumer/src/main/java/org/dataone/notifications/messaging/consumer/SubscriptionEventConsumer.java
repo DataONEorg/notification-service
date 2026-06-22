@@ -220,7 +220,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
-        log.info("Checking connection status: " + 
+        log.debug("Checking connection status: " + 
             " connection={}, connection.isOpen={}", 
             connection, connection != null ? connection.isOpen() : "n/a");
         return connection != null && connection.isOpen();
