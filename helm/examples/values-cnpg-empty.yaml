@@ -1,0 +1,14 @@
+dbName: notificationdb
+#dbUser: defaults to dbName if blank
+
+resources:
+  requests:
+    cpu: 1
+    memory: 1Gi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+persistence:
+  size: 1Gi
+  storageClass: local-path

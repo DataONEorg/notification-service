@@ -43,6 +43,7 @@ public class RabbitMqConsumerMain {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received, stopping consumer");
             stopHealthProbe();
+            log.info("Stopped Health Probe");
             if (consumer != null) {
                 consumer.stop();
             }
@@ -53,35 +54,39 @@ public class RabbitMqConsumerMain {
         final SubscriptionMessageProcessor processor = new SubscriptionMessageProcessor();
         consumer = new SubscriptionEventConsumer(props, processor);
 
-        int pollInterval = 5;
+        int pollInterval = 15;
         String probeFile = "/tmp/rmq-consumer-readiness";
 
         // start file-based health probe (uses a cheap isConnected check)
         startHealthProbe(probeFile, () -> {
+            log.info("Starting health probe");
             try {
                 return isConnected();
             } catch (Throwable t) {
-                log.warn("Health poller threw: {}", t.getMessage());
+                log.error("Health poller threw: {}", t.getMessage());
                 return false;
             }
         }, pollInterval);
 
         try {
             consumer.start();
+            log.info("Consumer started");
             // Ensure health server has a recent poll
             refreshHealthNow();
         } catch (Exception e) {
-            log.error("Failed to start RabbitMQ consumer", e);
+            log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
             stopHealthProbe();
             if (consumer != null) {
                 consumer.stop();
             }
             System.exit(1);
         }
+        log.info("RabbitMQ consumer main thread exiting, consumer and health probe should keep running");
     }
 
     // Expose the same checks previously provided by RabbitMqConsumerApplication
     private static boolean isConnected() {
+        log.debug("Connection status: consumer={}, consumer.isConnected={}", consumer, consumer != null ? consumer.isConnected() : "n/a");
         return consumer != null && consumer.isConnected();
     }
 
@@ -155,21 +160,27 @@ public class RabbitMqConsumerMain {
      * Force an immediate health refresh (public for tests).
      */
     public static void refreshHealthNow() {
-        if (healthPoller == null) return;
+        log.info("Refreshing health status now");
+        if (healthPoller == null){
+            log.info("Health poller not initialized, skipping refresh");
+            return;
+        }
         try {
             boolean newStatus = healthPoller.getAsBoolean();
             healthStatus.set(newStatus);
             if (newStatus) {
+                log.info("Updating health file to {}", newStatus);
                 writeProbeFile();
             }
             log.debug("Health refreshNow updated status={}", newStatus);
         } catch (Exception e) {
-            log.warn("Health refreshNow threw exception: {}", e.getMessage());
+            log.info("Health refreshNow threw exception: {}", e.getMessage());
             healthStatus.set(false);
         }
     }
 
     private static void writeProbeFile() {
+        log.info("writing to probe file");
         if (healthProbeFile == null) return;
         try {
             String content = Long.toString(Instant.now().getEpochSecond());
@@ -177,6 +188,7 @@ public class RabbitMqConsumerMain {
             Files.write(tmp, content.getBytes(StandardCharsets.UTF_8));
             Files.move(tmp, healthProbeFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
+            log.info("falling  back to non atomic write");
             // fallback to non-atomic write
             try {
                 Files.write(healthProbeFile, Long.toString(Instant.now().getEpochSecond()).getBytes(StandardCharsets.UTF_8));

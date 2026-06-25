@@ -1,0 +1,88 @@
+{{- $full := include "nsconsumer.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $full }}
+  labels:
+    {{- include "nsconsumer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.nsconsumer.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "notifications.name" .}}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "notifications.config.checksum" . }}
+      {{- with .Values.podAnnotations }}
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: notifications
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "nsconsumer.serviceAccountName" . }}
+      containers:
+        - name: nsconsumer
+          image: "{{ .Values.nsconsumer.image.repository }}:{{ default .Chart.AppVersion .Values.nsconsumer.image.tag }}"
+          imagePullPolicy: {{ .Values.nsconsumer.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.nsconsumer.resources | nindent 12 }}
+          env:
+            - name: NS_PROPERTIES_YAML_PATH
+              value: /etc/dataone/notification-service/properties.yaml
+            {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
+            {{- if not $secretName }}
+            {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
+            {{- end }}
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.rmq.rmqConnection.rmqUserKey }}
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
+            {{- range $k, $v := .Values.nsconsumer.extraEnvVars }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- if .Values.nsconsumer.readinessProbe.enabled }}
+          readinessProbe:
+            {{- omit .Values.nsconsumer.readinessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.nsconsumer.livenessProbe.enabled }}
+          livenessProbe:
+            {{- omit .Values.nsconsumer.livenessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.extraVolumeMounts }}
+            {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
+            {{- end }}
+            - mountPath: /etc/dataone/notification-service
+              name: {{ .Release.Name }}-config-volume
+              readOnly: true
+      volumes:
+        {{- if .Values.extraVolumes }}
+        {{- tpl (toYaml .Values.extraVolumes) . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Release.Name }}-config-volume
+          configMap:
+            name: {{ .Release.Name }}-notifications-configfiles
+            defaultMode: 0644
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      

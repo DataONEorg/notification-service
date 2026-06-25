@@ -12,7 +12,7 @@ Configuration:
 
   Loggers:
     Root:
-      level: debug
+      level: error
       AppenderRef:
         ref: Console
     Logger:

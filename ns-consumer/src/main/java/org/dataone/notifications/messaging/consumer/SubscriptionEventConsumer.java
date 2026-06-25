@@ -1,7 +1,7 @@
 package org.dataone.notifications.messaging.consumer;
 
-//import com.fasterxml.jackson.databind.JsonNode;
-//import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -30,11 +30,11 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private Connection connection;
     private Channel channel;
     private final SubscriptionMessageProcessor processor;
-//    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "subscription-event-consumer");
-        t.setDaemon(true);
+        t.setDaemon(false);
         return t;
     });
 
@@ -49,21 +49,31 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
+        log.info("Starting SubscriptionEventConsumer for queue {}", 
+            properties.queueName());
         executor.submit(this::consumeLoop);
     }
 
     private void consumeLoop() {
-        log.info("Starting RabbitMQ consumer loop for queue {}", properties.queueName());
+        log.info("Starting RabbitMQ consumer loop for queue {}", 
+            properties.queueName());
         while (running.get()) {
             try (Channel channel = newChannel()) {
+                log.info("Created channel to RabbitMQ, consuming from queue {}", 
+                    properties.queueName());
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
+                if(channel.isOpen()){
+                    log.info("Channel is open and consuming messages...");
+                } else {
+                    log.warn("Channel is not open after starting consumer");
+                }
                 while (running.get() && channel.isOpen()) {
                     Thread.sleep(1000);
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("Consumer thread interrupted");
+                log.warn("Consumer thread interrupted: {}", ie.getMessage());
                 return;
             } catch (Exception e) {
                 if (!running.get()) {
@@ -87,27 +97,35 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             processor.process(event);
             channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("Failed to process message, requeueing", e);
-            channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            log.error("Failed to process message. Failed messages are not requeued. ", e);
+            // Disabling the requeue here to avoid bad messages holding up the 
+            // queue forever. In the future, we could add a dead letter queue. 
+            //channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            channel.basicAck(tag, false);
         }
     }
 
     private SubscriptionEvent deserialize(Delivery delivery) throws IOException {
-        String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-//        JsonNode node = mapper.readTree(body);
-//        String resourceType = getRequiredText(node, "resourceType");
-//        String pid = getRequiredText(node, "pid");
-//        return SubscriptionEvent.from(resourceType, pid);
-        throw new IOException();
+        try{
+            String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            log.info("Message received: {}", body);
+            JsonNode node = mapper.readTree(body);
+            String resourceType = getRequiredText(node, "resourceType");
+            String pid = getRequiredText(node, "pid");
+            return SubscriptionEvent.from(resourceType, pid);
+        }catch(Exception e){
+            log.info("Error deserializing message: {}", e.getMessage());
+            throw new IOException();
+        }
     }
 
-//    private String getRequiredText(JsonNode node, String field) {
-//        JsonNode value = node.get(field);
-//        if (value == null || value.asText().isBlank()) {
-//            throw new IllegalArgumentException("Missing value for field: " + field);
-//        }
-//        return value.asText();
-//    }
+    private String getRequiredText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.asText().isBlank()) {
+            throw new IllegalArgumentException("Missing value for field: " + field);
+        }
+        return value.asText();
+    }
 
     public void stop() {
         if (!running.compareAndSet(true, false)) {
@@ -130,6 +148,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             connection = createConnection();
         }
         Channel ch = connection.createChannel();
+        ch.queueDeclare(properties.queueName(), true, false, false, null);
         ch.basicQos(properties.prefetchCount());
         return ch;
     }
@@ -142,23 +161,38 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             connection = createConnection();
         }
         channel = connection.createChannel();
+        channel.queueDeclare(properties.queueName(), true, false, false, null);
         channel.basicQos(properties.prefetchCount());
         return channel;
     }
 
     private Connection createConnection() throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(properties.host());
-        factory.setPort(properties.port());
-        factory.setUsername(properties.username());
-        factory.setPassword(properties.password());
-        factory.setVirtualHost(properties.virtualHost());
-        factory.setAutomaticRecoveryEnabled(true);
-        factory.setNetworkRecoveryInterval(5000);
-        factory.setRequestedHeartbeat(30);
-        log.info("Connecting to RabbitMQ {}:{} vhost={} queue={}",
-            properties.host(), properties.port(), properties.virtualHost(), properties.queueName());
-        return factory.newConnection();
+        try{
+            log.info("Creating connection factory");
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost(properties.host());
+            factory.setPort(properties.port());
+            factory.setUsername(System.getenv("RABBITMQ_USERNAME") != null ? System.getenv("RABBITMQ_USERNAME") : properties.username());
+            factory.setPassword(System.getenv("RABBITMQ_PASSWORD") != null ? System.getenv("RABBITMQ_PASSWORD") : properties.password());
+            factory.setVirtualHost(properties.virtualHost());
+            factory.setAutomaticRecoveryEnabled(true);
+            factory.setNetworkRecoveryInterval(5000);
+            factory.setRequestedHeartbeat(30);
+            log.info("Attempting to create RabbitMQ connection to " +
+                " {}:{} with virtual host '{}'", 
+                properties.host(), properties.port(), properties.virtualHost());
+            return factory.newConnection(); 
+        }catch(IOException e){
+            log.info("IOException in createConnection: {}", e.getMessage());
+            throw e;
+        }catch(TimeoutException e){
+            log.info("TimeoutException in createConnection: {}", e.getMessage());
+            throw e;
+        }catch(Exception e){
+            log.info("Unexpected Exception in createConnection: {}", e.getMessage());
+            throw new RuntimeException("Failed to create RabbitMQ connection", e);
+        }
+           
     }
 
     public synchronized void shutdown() {
@@ -186,6 +220,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
+        log.debug("Checking connection status: " + 
+            " connection={}, connection.isOpen={}", 
+            connection, connection != null ? connection.isOpen() : "n/a");
         return connection != null && connection.isOpen();
     }
 

@@ -34,7 +34,6 @@ public class NsConfig {
      */
     public static synchronized void reload() {
         CompositeConfiguration composite = new CompositeConfiguration();
-
         YAMLConfiguration externalYamlConfig = null;
         String extConfigFilePath = System.getenv(EXT_CFG_FILE_ENV_VAR);
         if (extConfigFilePath == null || extConfigFilePath.trim().isEmpty()) {
@@ -55,6 +54,8 @@ public class NsConfig {
                     .configure(new Parameters().fileBased().setFileName(extConfigFilePath))
                     .getConfiguration();
             } catch (ConfigurationException e) {
+                log.info("Failed to load external config file from path {}: {}; Using defaults from {} instead",
+                    extConfigFilePath, e.getMessage(), DEFAULT_CONFIG_FILE);
                 throw new RuntimeException(
                     "Can't load config properties from external config file: "
                         + EXTERNAL_CONFIG_FILE + "; Error: " + e.getMessage(), e);
@@ -85,13 +86,20 @@ public class NsConfig {
         composite.addConfiguration(new MapConfiguration(getEnvOverrides(defaultYamlConfig)));
 
         // Then add external YAML overrides, if they exist
+        log.info("External config file path: {}", extConfigFilePath);
         if (externalYamlConfig != null) {
+            log.info("External config file loaded successfully from " + 
+            "path {}. Adding to configuration with precedence over defaults.",
+                extConfigFilePath);
+            log.info("EXTERNAL CONFIGURATION VALUES: \n{}", 
+                getAsString(externalYamlConfig));
             composite.addConfiguration(externalYamlConfig);
+        }else{
+            log.info("No external config file loaded. Skipping addition to configuration.");
         }
 
         // Finally add default YAML config (lowest precedence)
         composite.addConfiguration(defaultYamlConfig);
-
         config = composite;
         log.debug("CONFIGURATION AT STARTUP: \n{}", getAsString(config));
     }

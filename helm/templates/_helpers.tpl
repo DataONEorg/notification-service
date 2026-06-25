@@ -28,7 +28,7 @@ Create a default fully qualified app name for the embedded RabbitMQ Cluster Oper
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec)
 */}}
 {{- define "notifications.rmq.fullname" -}}
-{{- $name := default "rmq" .Values.rmqOperator.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- $name := default "rmq" .Values.rmq.rmqOperator.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- printf "%s-%s" .Release.Name $name }}
 {{- end }}
 
@@ -71,6 +71,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Create the name of the service account to use
+*/}}
+{{- define "nsconsumer.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "nsconsumer.fullname" .) .Values.nsconsumer.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.nsconsumer.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create a checksum that reflects changes in the config files.
 Do it here, instead of in deployment.yaml, because helm's ordering of operations means that the
 checksum is performed before the values overrides are inserted into the config files, so the
@@ -85,3 +96,39 @@ checksum doesn't change when those values do.
 {{- end }}
 {{- $out | trim | sha256sum -}}
 {{- end -}}
+
+{{- define "nsconsumer.name" -}}
+{{- default "nsconsumer" .Values.nsconsumer.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "nsconsumer.instance" -}}
+{{- printf "%s-%s" .Values.nsconsumer.nameOverride .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create name for nsconsumer
+*/}}
+{{- define "nsconsumer.fullname" -}}
+{{- if .Values.nsconsumer.fullNameOverride }}
+{{- .Values.nsconsumer.fullNameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default "nsconsumer" .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "nsconsumer.labels" -}}
+helm.sh/chart: {{ include "notifications.chart" . }}
+{{ include "notifications.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}

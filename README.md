@@ -50,6 +50,7 @@ $ curl --request DELETE "${BASE_URL}/notifications/datasetChanges/{pid}" \
 > You can get an auth token by logging into a metacat instance that uses the same CN as the installation being tested. For example:
 > - If it's a Production notification service, it should use `https://cn.dataone.org/cn/v2`; get a token from any prod metacat, e.g. [arcticdata.io](https://arcticdata.io/catalog)
 > - If it's a test/development notification service, it will likely use  `https://cn-stage-2.test.dataone.org/cn/v2`; get a token from the [nceas dev metacat](https://dev.nceas.ucsb.edu/data)
+> - If you are deploying via the values-rancher-desktop-ns-example.yaml file, the auth link is 'https://cn-sandbox.test.dataone.org/cn/v2'; get a token from [cn-sandbox](https://search-sandbox.test.dataone.org/)
 
 ## Getting Started - Running `Notification Service` Yourself
 

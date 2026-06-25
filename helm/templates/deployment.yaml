@@ -10,7 +10,8 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{ include "notifications.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "notifications.name" .}}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
@@ -19,10 +20,12 @@ spec:
         {{ toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{ include "notifications.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{ toYaml . | nindent 8 }}
-        {{- end }}
+        app.kubernetes.io/name: notifications
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        #{{ include "notifications.labels" . | nindent 8 }}
+        #{{- with .Values.podLabels }}
+        #{{ toYaml . | nindent 8 }}
+        #{{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

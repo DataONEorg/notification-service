@@ -24,6 +24,7 @@ ns:
     existingSecret: nsdb-cnpg-app
 
 ingress:
+  enabled: false
   hosts:
     - host: notifications.local
       paths:
@@ -37,9 +38,22 @@ ingress:
     ##   http://notifications.local/notifications/metrics/ping
 
 # to add
-rmqConnection:
-  host: ns-rmq-4-1-3
-  port: 5672
-  virtualHost: /
-  queueName: notification.subscription.events
-  prefetchCount: 25
+rmq:
+  rmqConnection:
+    existingSecret: "notification-service-rmq-4-1-3-default-user"
+    hostname: notification-service-rmq-4-1-3
+    port: "5672"
+    virtualHost: /
+    queueName: notification.subscription.events
+    rmqUserKey: username
+    rmqPasswordKey: password
+    prefetchCount: 25
+  rmqOperator:
+    persistence:
+      storageClassName: local-path
+
+nsconsumer:
+  image:
+    repository: notification-consumer
+    tag: feature-15
+    pullPolicy: Never
