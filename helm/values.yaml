@@ -276,6 +276,10 @@ extraVolumeMounts: []
 service:
   port: 8080
 
+nsMessagesService:
+  port: 8081
+  type: ClusterIP
+
 imagePullSecrets: []
 fullnameOverride: ""
 nameOverride: ""

@@ -166,6 +166,31 @@ public class NsDataRepository implements DataRepository {
         return resourceTypes;
     }
 
+    @Override
+    public List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws  NotFoundException {
+        log.debug("Get subscriptions to {} for pid {}", type, pid);
+        validateInput(pid, type);
+
+        List<Subscription> subscriptions = new ArrayList<>();
+
+        String sql = "SELECT subject FROM subscriptions WHERE resource_type=? AND pid=?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, type.toString());
+            statement.setString(2, pid);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    subscriptions.add(new Subscription(resultSet.getString("subject"), type, List.of(pid)));
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Database error: {} retrieving subscriptions", e.getMessage());
+            throw new PersistenceException("Database error retrieving subscriptions", e);
+        }
+        return subscriptions;
+    }
+
     private void validateInput(String subject, Object resource) {
         if (StringUtils.isBlank(subject)) {
             log.error("Subject is null or empty");

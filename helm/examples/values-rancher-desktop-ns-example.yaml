@@ -22,7 +22,10 @@ ns:
   database:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app
-
+image: 
+    repository: notification-web-api
+    tag: feature-15
+    pullPolicy: Never
 ingress:
   enabled: false
   hosts:
@@ -30,6 +33,12 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+        - path: /notifications/v1/eventhandler
+          pathType: Prefix
+          backend: 
+            serviceName: defaultBackend
+            servicePort: 80
+
     ## After applying the above, add this entry to /etc/hosts file:
     ##
     ##   $ echo "127.0.0.1    notifications.local" | sudo tee -a /etc/hosts

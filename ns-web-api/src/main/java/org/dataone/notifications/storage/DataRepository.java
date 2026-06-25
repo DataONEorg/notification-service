@@ -20,4 +20,6 @@ public interface DataRepository {
 
     List<String> getResourceTypesByPid(String subject, String pid)
         throws NotAuthorizedException, NotFoundException;
+
+    List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws NotAuthorizedException, NotFoundException;
 }
