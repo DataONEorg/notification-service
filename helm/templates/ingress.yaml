@@ -43,5 +43,12 @@ spec:
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}
+          - path: /notifications/v1/eventhandler
+            pathType: Prefix
+            backend:
+              service:
+                name: null-service
+                port:
+                  number: 80
     {{- end }}
 {{- end }}

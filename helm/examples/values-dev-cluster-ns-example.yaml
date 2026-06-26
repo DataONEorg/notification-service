@@ -24,7 +24,10 @@ ns:
   database:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app
-
+image: 
+    repository: ghcr.io/dataoneorg/notification-service
+    tag: feature-5-eventhandler
+    pullPolicy: Always
 tomcat:
   jmxEnabled: true
 
@@ -48,3 +51,9 @@ ingress:
     - hosts:
         - *hostname
       secretName: ingress-nginx-tls-cert
+
+nsconsumer:
+  image:
+    repository: ghcr.io/dataoneorg/notification-consumer
+    tag: feature-5-eventhandler
+    pullPolicy: Always

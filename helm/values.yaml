@@ -30,7 +30,7 @@ ns:
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
     ##
-    dbName: notificationdb
+    dbName: notifications
 
     ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & password
     ##
@@ -422,13 +422,13 @@ rmq:
     ## @param rmqConnection.existingSecret Secret holding rmq credentials. Leave blank to autopopulate
     ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
     ##
-    existingSecret: "notification-service-rmq-4-1-3-default-user" # optional: if not using credentials in the default operator-generated secret
+    existingSecret: "ns-rmq-4-1-3-default-user" # optional: if not using credentials in the default operator-generated secret
     # TODO: autopopulate if not provided
 
     ## @param rmqConnection.hostname RMQ host to be called by indexer. Leave blank to autopopulate
     ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
     ##
-    hostname: "notification-service-rmq-4-1-3" # TODO: autopopulate if not provided
+    hostname: "ns-rmq-4-1-3" # TODO: autopopulate if not provided
 
     ## @param rmqConnection.port RMQ port to be called by consumer
     ##
