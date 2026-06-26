@@ -179,6 +179,11 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+        - path: /notifications/v1/eventhandler
+          pathType: Prefix
+          backend: 
+            serviceName: null-service
+            servicePort: 80
 
   ## @param ingress.tls List of TLS configurations for the ingress
   ## Each TLS configuration must have a secretName defined, and the hosts must match the

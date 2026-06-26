@@ -34,21 +34,16 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            {{- with .pathType }}
-            pathType: {{ . }}
-            {{- end }}
+            pathType: {{ .pathType}}
             backend:
               service:
+                {{- if .backend }}
+                name: {{ .backend.serviceName }}
+                {{- else }}
                 name: {{ include "notifications.fullname" $ }}
+                {{- end }}
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}
-          - path: /notifications/v1/eventhandler
-            pathType: Prefix
-            backend:
-              service:
-                name: null-service
-                port:
-                  number: 80
     {{- end }}
 {{- end }}
