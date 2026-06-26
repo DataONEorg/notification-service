@@ -47,12 +47,19 @@ public class EventHandler {
         @QueryParam("resource") String resource, 
         @QueryParam("pid") String pid
     ){
-        log.debug("Received request to send event for resource type: {}", resource);
+        log.debug("Received request to send event for resource type: {}",
+            resource);
         SubscriptionResourceType resourceType = validateResourceType(resource);
         validatePid(pid);
-        List<Subscription> subscriptions = dataRepository.getSubscriptionsByPid(pid, resourceType);
-        log.debug("Sending event for resource type: {} and pid: {} to {} subscriptions", resourceType, pid, subscriptions.size());
-        return new PingResponse("Received event for resource type: " + resourceType + " and pid: " + pid + ". Sent to " + subscriptions.size() + " subscriptions.");
+        List<Subscription> subscriptions = 
+            dataRepository.getSubscriptionsByPid(pid, resourceType);
+        log.debug(
+            "Sending event for resource type: {} and pid: {} to {} subscriptions", 
+            resourceType, pid, subscriptions.size());
+        return new PingResponse(
+            "Received event for resource type: "
+             + resourceType + " and pid: " + pid + ". Sent to " 
+             + subscriptions.size() + " subscriptions.");
     }
 
     @GET

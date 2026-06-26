@@ -15,7 +15,8 @@ import java.io.IOException;
  */
 public class SubscriptionMessageProcessor {
 
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionMessageProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(
+        SubscriptionMessageProcessor.class);
 
     public void process(SubscriptionEvent event) {
         log.info("Processing subscription event: resourceType={}, pid={}",
@@ -24,14 +25,16 @@ public class SubscriptionMessageProcessor {
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://ns-messages:8081/notifications/v1/eventhandler/send?resource=" +
+                .uri(URI.create(
+                    "http://ns-messages:8081/notifications/v1/eventhandler/send?resource=" +
                 event.resourceType() + "&pid=" + 
                 event.pid()))
                 .header("Accept", "application/json")
                 .GET() // Default method, included for clarity
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, 
+                HttpResponse.BodyHandlers.ofString());
 
             System.out.println("Status Code: " + response.statusCode());
             System.out.println("Response Body: " + response.body());
