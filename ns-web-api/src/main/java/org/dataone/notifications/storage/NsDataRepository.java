@@ -167,7 +167,8 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws  NotFoundException {
+    public List<Subscription> getSubscriptionsByPid(String pid, 
+        SubscriptionResourceType type) throws  NotFoundException {
         log.debug("Get subscriptions to {} for pid {}", type, pid);
         validateInput(pid, type);
 
@@ -181,12 +182,16 @@ public class NsDataRepository implements DataRepository {
             statement.setString(2, pid);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    subscriptions.add(new Subscription(resultSet.getString("subject"), type, List.of(pid)));
+                    subscriptions.add(new Subscription(
+                        resultSet.getString("subject"), 
+                        type, List.of(pid)));
                 }
             }
         } catch (SQLException e) {
-            log.error("Database error: {} retrieving subscriptions", e.getMessage());
-            throw new PersistenceException("Database error retrieving subscriptions", e);
+            log.error("Database error: {} retrieving subscriptions", 
+                e.getMessage());
+            throw new PersistenceException(
+                "Database error retrieving subscriptions", e);
         }
         return subscriptions;
     }
@@ -202,7 +207,8 @@ public class NsDataRepository implements DataRepository {
         }
     }
 
-    private void validateInput(String subject, SubscriptionResourceType resourceType, String pid) {
+    private void validateInput(String subject, 
+        SubscriptionResourceType resourceType, String pid) {
 
         validateInput(subject, resourceType);
 
