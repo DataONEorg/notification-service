@@ -29,7 +29,8 @@ public class SubscriptionMessageProcessor {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
-                    "http://" + messagesHost+ ":" + messagesPort + "/notifications/v1/eventhandler/send?resource=" +
+                    "http://" + messagesHost+ ":" + messagesPort 
+                    + "/notifications/v1/eventhandler/send?resource=" +
                 event.resourceType() + "&pid=" + 
                 event.pid()))
                 .header("Accept", "application/json")
