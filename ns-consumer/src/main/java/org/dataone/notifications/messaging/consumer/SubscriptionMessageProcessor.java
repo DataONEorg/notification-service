@@ -22,11 +22,14 @@ public class SubscriptionMessageProcessor {
         log.info("Processing subscription event: resourceType={}, pid={}",
             event.resourceType(), event.pid());
         
+        String messagesHost = System.getenv("NS_MESSAGES_HOST");
+        String messagesPort = System.getenv("NS_MESSAGES_PORT");
+
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
-                    "http://ns-messages:8081/notifications/v1/eventhandler/send?resource=" +
+                    "http://" + messagesHost+ ":" + messagesPort + "/notifications/v1/eventhandler/send?resource=" +
                 event.resourceType() + "&pid=" + 
                 event.pid()))
                 .header("Accept", "application/json")

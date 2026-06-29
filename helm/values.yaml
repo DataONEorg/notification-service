@@ -282,6 +282,7 @@ service:
   port: 8080
 
 nsMessagesService:
+  name: ns-messages
   port: 8081
   type: ClusterIP
 
@@ -368,8 +369,8 @@ tomcat:
 # Default values for nsconsumer subchart
 nsconsumer:
   replicaCount: 1
-  nameOverride: "nsconsumer"
-  fullNameOverride: "notification-service-consumer"
+  nameOverride: ""
+  fullNameOverride: ""
   image:
     repository: ghcr.io/dataoneorg/nsconsumer
     tag: feature-15

@@ -46,6 +46,10 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
+            - name: NS_MESSAGES_HOST
+              value: {{ .Values.nsMessagesService.name }}
+            - name: NS_MESSAGES_PORT
+              value: {{ .Values.nsMessagesService.port | quote }}
             {{- range $k, $v := .Values.nsconsumer.extraEnvVars }}
             - name: {{ $k }}
               value: {{ $v | quote }}

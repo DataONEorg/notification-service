@@ -112,7 +112,7 @@ Create name for nsconsumer
 {{- if .Values.nsconsumer.fullNameOverride }}
 {{- .Values.nsconsumer.fullNameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default "nsconsumer" .Chart.Name .Values.nameOverride }}
+{{- $name := default "consumer" .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
