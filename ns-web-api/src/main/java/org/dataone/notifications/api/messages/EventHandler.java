@@ -26,7 +26,7 @@ import java.util.List;
 
 
 @RequestScoped
-@Path("/eventhandler")
+@Path("/private/eventhandler")
 public class EventHandler {
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataRepository dataRepository;
@@ -43,7 +43,7 @@ public class EventHandler {
         this.emailUtil = new EmailUtil();
     }
 
-    @GET
+    @POST
     @Path("/send")
     @Produces(MediaType.APPLICATION_JSON)
     public Record send(

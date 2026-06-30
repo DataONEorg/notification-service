@@ -34,7 +34,7 @@ public class SubscriptionMessageProcessor {
                 event.resourceType() + "&pid=" + 
                 event.pid()))
                 .header("Accept", "application/json")
-                .GET() // Default method, included for clarity
+                .POST(HttpRequest.BodyPublishers.ofString("")) 
                 .build();
         try {
             HttpResponse<String> response = client.send(request, 
