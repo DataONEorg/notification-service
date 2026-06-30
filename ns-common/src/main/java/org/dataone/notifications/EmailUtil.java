@@ -43,7 +43,7 @@ public class EmailUtil {
         }
     }
 
-    public String sendMail(){
+    public String sendMail(String resourceType, String pid){
         try{
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress("noreply@myapp.test", "My App"));
@@ -51,13 +51,12 @@ public class EmailUtil {
                     Message.RecipientType.TO,
                     new InternetAddress("test@example.com")
             );
-            message.setSubject("Hello from Jakarta Mail");
-            message.setText("""
-                    This is a test email.
-
-                    If you're reading this in Mailpit,
-                    everything is working!
-                    """);
+            String emailText = """
+                    This is a test email. You have subscribed to notifications for
+                    action: %s  on the record with pid: %s. 
+                    """.formatted(resourceType, pid);
+            message.setSubject("Hello from the Notification Service!");
+            message.setText(emailText);
 
             // Send it
             Transport.send(message);

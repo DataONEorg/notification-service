@@ -61,9 +61,10 @@ public class EventHandler {
             resourceType, pid, subscriptions.size());
         for (Subscription subscription : subscriptions) {
             log.debug("Sending event to subscription: {}", subscription);
+            String response = emailUtil.sendMail(resourceType.toString(), pid);
+            log.debug("Email send response: {}", response);
         }
-        String response = emailUtil.sendMail();
-        log.debug("Email send response: {}", response);
+        
         return new PingResponse(
             "Received event for resource type: "
              + resourceType + " and pid: " + pid + ". Sent to " 
