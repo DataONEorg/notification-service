@@ -417,6 +417,13 @@ nsconsumer:
   #   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
+emailUtil: 
+  host: ADD_HOST
+  port: ADD_PORT
+  auth: 
+    enabled: true
+    existingSecret: ""
+
 ## @section RabbitMQ Connection Configuration
 ## (This section does NOT affect the RabbitMQ Operator installation itself.)
 ## These settings are used to configure the connection from the nsconsumer app to an existing

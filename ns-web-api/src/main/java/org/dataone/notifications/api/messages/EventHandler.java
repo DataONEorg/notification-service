@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.Subscription;
+import org.dataone.notifications.EmailUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import java.util.List;
 public class EventHandler {
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataRepository dataRepository;
+    private EmailUtil emailUtil;
 
     public EventHandler() {
         throw new IllegalStateException(
@@ -38,6 +40,7 @@ public class EventHandler {
     @Inject
     public EventHandler(DataRepository dataRepository){
         this.dataRepository = dataRepository;
+        this.emailUtil = new EmailUtil();
     }
 
     @GET
@@ -56,6 +59,11 @@ public class EventHandler {
         log.debug(
             "Sending event for resource type: {} and pid: {} to {} subscriptions", 
             resourceType, pid, subscriptions.size());
+        for (Subscription subscription : subscriptions) {
+            log.debug("Sending event to subscription: {}", subscription);
+        }
+        String response = emailUtil.sendMail();
+        log.debug("Email send response: {}", response);
         return new PingResponse(
             "Received event for resource type: "
              + resourceType + " and pid: " + pid + ". Sent to " 

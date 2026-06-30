@@ -26,6 +26,14 @@ image:
     repository: notification-web-api
     tag: feature-15
     pullPolicy: Never
+
+emailUtil: 
+  host: mailpit
+  port: 1025
+  auth: 
+    enabled: true
+    existingSecret: "mailpit-auth"
+
 ingress:
   enabled: false
   hosts:
