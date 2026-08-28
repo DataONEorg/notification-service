@@ -317,7 +317,6 @@ nsconsumer:
   fullNameOverride: ""
   image:
     repository: ghcr.io/dataoneorg/nsconsumer
-    tag: feature-15
     pullPolicy: IfNotPresent
 
   resources:

@@ -26,7 +26,6 @@ ns:
     existingSecret: nsdb-cnpg-app
 image:
     repository: ghcr.io/dataoneorg/notification-service
-    tag: feature-5-eventhandler
     pullPolicy: Always
 tomcat:
   jmxEnabled: true
