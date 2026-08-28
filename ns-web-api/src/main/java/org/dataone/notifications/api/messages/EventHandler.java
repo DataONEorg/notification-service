@@ -2,7 +2,6 @@ package org.dataone.notifications.api.messages;
 
 import org.slf4j.LoggerFactory;
 
-import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -20,7 +19,6 @@ import org.dataone.notifications.storage.Subscription;
 import org.dataone.notifications.EmailUtil;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -65,7 +63,7 @@ public class EventHandler {
             log.debug("Email send response: {}", response);
         }
         
-        return new PingResponse(
+        return new SendResponse(
             "Received event for resource type: "
              + resourceType + " and pid: " + pid + ". Sent to " 
              + subscriptions.size() + " subscriptions.");
@@ -80,6 +78,9 @@ public class EventHandler {
     }
     // Simple DTO implementing the same marker type used elsewhere
     public record PingResponse(String status) {}
+
+    // Simple DTO for the send request
+    public record SendResponse(String message) {}
 
     private SubscriptionResourceType validateResourceType(String resource) {
         if (resource == null) {
