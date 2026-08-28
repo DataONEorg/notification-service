@@ -5,16 +5,14 @@ metadata:
   name: {{ include "notifications.fullname" . }}
   labels:
     {{- include "notifications.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: "{{ .Release.Namespace -}}
             -{{ .Release.Name }}-cors-headers@kubernetescrd"
+  {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with .Values.ingress.className }}
-  ingressClassName: {{ . }}
-  {{- end }}
+  ingressClassName: {{ .Values.ingress.className }}
   {{- if .Values.ingress.tls }}
   tls:
     {{- range .Values.ingress.tls }}
