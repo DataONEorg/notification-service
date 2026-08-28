@@ -7,13 +7,11 @@ metadata:
     {{- include "notifications.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ .Release.Namespace -}}
+            -{{ .Release.Name }}-cors-headers@kubernetescrd"
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.defaultBackend.enabled }}
-  defaultBackend:
-  {{- omit .Values.ingress.defaultBackend "enabled" | toYaml | nindent 4 }}
-  {{- end }}
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
   {{- end }}

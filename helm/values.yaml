@@ -68,7 +68,7 @@ serviceAccount:
   name: ""
 
 # This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ 
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 podAnnotations: {}
 # This is for setting Kubernetes Labels to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
@@ -99,33 +99,7 @@ ingress:
   ## @param ingress.className ClassName of the ingress provider in your cluster
   ##  Inspect available classes in your cluster using:    $ kubectl get ingressclasses
   ##
-  ## className: "traefik" -- For Rancher Desktop (provided you have traefik enabled:
-  ##     'preferences' -> 'kubernetes' -> 'enable traefik')
-  ## className: "nginx" -- For production, or to use certificates locally. Also:
-  ## - disable traefik ('preferences' -> 'kubernetes' -> uncheck 'enable traefik')
-  ## - install nginx:
-  ##   $  helm upgrade --install ingress-nginx ingress-nginx  \
-  ##        --repo https://kubernetes.github.io/ingress-nginx \
-  ##        --namespace ingress-nginx --create-namespace      \
-  ##        --set controller.allowSnippetAnnotations=true
-  ##
-  className: "nginx"
-
-  ## @param ingress.defaultBackend.enabled enable the optional defaultBackend
-  ## ingress.defaultBackend (optional) default for any requests not matching pre-defined paths
-  ## @param ingress.defaultBackend.enabled enable the optional defaultBackend
-  ## If none of the hosts or paths match the HTTP request in the Ingress objects, the traffic is
-  ## routed to your default backend. Example:
-  ##
-  ##   defaultBackend:
-  ##     enabled: true
-  ##     service:
-  ##       name: myrelease-wordpress
-  ##       port:
-  ##         number: 80
-  ##
-  defaultBackend:
-    enabled: false
+  className: "traefik"
 
   ## @param ingress.annotations [object] Annotations to add to the ingress;
   ## e.g. to use cert-manager to automatically issue TLS certificates for  the ingress hosts, you
@@ -135,36 +109,11 @@ ingress:
   ##   annotations:
   ##     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   ##
-  annotations:
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      # MetacatUI needs this Cors Setup
+  annotations: {}
 
-      set $cors 'true';
-
-      if ($request_method = 'OPTIONS') {
-        set $cors ${cors}options;
-      }
-
-      if ($cors = "true") {
-        more_set_headers 'Access-Control-Allow-Origin: $http_origin';
-        more_set_headers 'Access-Control-Allow-Credentials: true';
-        more_set_headers 'Access-Control-Allow-Methods: POST, PUT, GET, DELETE, OPTIONS';
-        more_set_headers 'Access-Control-Allow-Headers: DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-
-        more_set_headers 'Access-Control-Max-Age: 1728000';
-      }
-
-      if ($cors = "trueoptions") {
-        more_set_headers 'Access-Control-Allow-Origin: $http_origin';
-        more_set_headers 'Access-Control-Allow-Credentials: true';
-        more_set_headers 'Access-Control-Allow-Methods: POST, PUT, GET, DELETE, OPTIONS';
-        more_set_headers 'Access-Control-Allow-Headers: DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-
-        more_set_headers 'Access-Control-Max-Age: 1728000';
-        more_set_headers 'Content-Type: text/plain charset=UTF-8';
-        more_set_headers 'Content-Length: 0';
-        return 204;
-      }
+  ## @param ingress.corsEnabled Enable or disable CORS functionality for the ingress
+  ##
+  corsEnabled: true
 
   ## @param ingress.hosts [Object] List of hosts to be used for the ingress
   ## Each host must have a path defined, and the pathType must be set to either
@@ -181,7 +130,7 @@ ingress:
           pathType: Prefix
         - path: /notifications/v1/private/eventhandler
           pathType: Prefix
-          backend: 
+          backend:
             serviceName: null-service
             servicePort: 80
 
@@ -393,7 +342,7 @@ nsconsumer:
     initialDelaySeconds: 60
     periodSeconds: 10
     timeoutSeconds: 5
-  
+
   livenessProbe:
     enabled: true
     exec:
@@ -406,26 +355,26 @@ nsconsumer:
     timeoutSeconds: 5
 
   # @param extraEnvVars Optional additional env vars to be added to the container.
-  # Format: 
-  # extraEnvVars: 
+  # Format:
+  # extraEnvVars:
   #   EXAMPLE_ENV_VAR: "example_value_1"
   #   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
-# @section emailUtil Configuration for the email utility used by the notification service. 
-emailUtil: 
+# @section emailUtil Configuration for the email utility used by the notification service.
+emailUtil:
   # @param emailUtil.host The hostname of the SMTP server to use for sending emails.
   host: ADD_HOST
   # @param emailUtil.port The port of the SMTP server to use for sending emails.
   port: ADD_PORT
   # @section emailUtil.auth Configuration for SMTP authentication.
-  auth: 
+  auth:
     # @param emailUtil.auth.enabled Enable or disable SMTP authentication.
     enabled: true
-    # @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be 
-    # created automatically if you don't provide one, so you have to either 
+    # @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
+    # created automatically if you don't provide one, so you have to either
     # create it manually or via some other chart. The mailpit chart creates it automatically,
-    # and then you can just supply the name. 
+    # and then you can just supply the name.
     existingSecret: ""
 
 ## @section RabbitMQ Connection Configuration
