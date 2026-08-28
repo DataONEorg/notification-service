@@ -64,10 +64,6 @@ nsconsumer:
     pullPolicy: Always
 
 emailUtil:
-  # @param emailUtil.host The hostname of the SMTP server to use for sending emails.
-  host: ADD_HOST
-  # @param emailUtil.port The port of the SMTP server to use for sending emails.
-  port: ADD_PORT
   # @section emailUtil.auth Configuration for SMTP authentication.
   auth:
     # @param emailUtil.auth.enabled Enable or disable SMTP authentication.
@@ -76,4 +72,4 @@ emailUtil:
     # created automatically if you don't provide one, so you have to either
     # create it manually or via some other chart. The mailpit chart creates it automatically,
     # and then you can just supply the name.
-    existingSecret: "notify-secret" # TODO: WRONG, BUT JUST A PLACEHOLDER FOR SMTP SECRET NAME
+    existingSecret: "ns-notify-smtp"
