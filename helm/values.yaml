@@ -30,7 +30,7 @@ ns:
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
     ##
-    dbName: notificationdb
+    dbName: notifications
 
     ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & password
     ##
@@ -179,6 +179,11 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+        - path: /notifications/v1/private/eventhandler
+          pathType: Prefix
+          backend: 
+            serviceName: null-service
+            servicePort: 80
 
   ## @param ingress.tls List of TLS configurations for the ingress
   ## Each TLS configuration must have a secretName defined, and the hosts must match the
@@ -359,8 +364,8 @@ tomcat:
 # Default values for nsconsumer subchart
 nsconsumer:
   replicaCount: 1
-  nameOverride: "nsconsumer"
-  fullNameOverride: "notification-service-consumer"
+  nameOverride: ""
+  fullNameOverride: ""
   image:
     repository: ghcr.io/dataoneorg/nsconsumer
     tag: feature-15
@@ -407,6 +412,22 @@ nsconsumer:
   #   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
+# @section emailUtil Configuration for the email utility used by the notification service. 
+emailUtil: 
+  # @param emailUtil.host The hostname of the SMTP server to use for sending emails.
+  host: ADD_HOST
+  # @param emailUtil.port The port of the SMTP server to use for sending emails.
+  port: ADD_PORT
+  # @section emailUtil.auth Configuration for SMTP authentication.
+  auth: 
+    # @param emailUtil.auth.enabled Enable or disable SMTP authentication.
+    enabled: true
+    # @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be 
+    # created automatically if you don't provide one, so you have to either 
+    # create it manually or via some other chart. The mailpit chart creates it automatically,
+    # and then you can just supply the name. 
+    existingSecret: ""
+
 ## @section RabbitMQ Connection Configuration
 ## (This section does NOT affect the RabbitMQ Operator installation itself.)
 ## These settings are used to configure the connection from the nsconsumer app to an existing
@@ -418,13 +439,13 @@ rmq:
     ## @param rmqConnection.existingSecret Secret holding rmq credentials. Leave blank to autopopulate
     ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
     ##
-    existingSecret: "notification-service-rmq-4-1-3-default-user" # optional: if not using credentials in the default operator-generated secret
+    existingSecret: "ns-rmq-4-1-3-default-user" # optional: if not using credentials in the default operator-generated secret
     # TODO: autopopulate if not provided
 
     ## @param rmqConnection.hostname RMQ host to be called by indexer. Leave blank to autopopulate
     ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
     ##
-    hostname: "notification-service-rmq-4-1-3" # TODO: autopopulate if not provided
+    hostname: "ns-rmq-4-1-3" # TODO: autopopulate if not provided
 
     ## @param rmqConnection.port RMQ port to be called by consumer
     ##

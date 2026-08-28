@@ -34,12 +34,14 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            {{- with .pathType }}
-            pathType: {{ . }}
-            {{- end }}
+            pathType: {{ .pathType}}
             backend:
               service:
+                {{- if .backend }}
+                name: {{ .backend.serviceName }}
+                {{- else }}
                 name: {{ include "notifications.fullname" $ }}
+                {{- end }}
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}

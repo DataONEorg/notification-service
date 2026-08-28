@@ -70,6 +70,25 @@ spec:
                 secretKeyRef:
                   name: {{ $pgSecret }}
                   key: password
+            - name: EMAIL_HOST
+              value: {{ .Values.emailUtil.host }}
+            - name: EMAIL_PORT
+              value: {{ .Values.emailUtil.port | quote }}
+            - name: EMAIL_AUTH_ENABLED
+              value: {{ .Values.emailUtil.auth.enabled | quote }}
+            {{- if .Values.emailUtil.auth.enabled }}
+            {{- $emailAuthSecret :=  required "emailUtil.auth.existingSecret IS REQUIRED" .Values.emailUtil.auth.existingSecret }}
+            - name: EMAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $emailAuthSecret }}
+                  key: username
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $emailAuthSecret }}
+                  key: password
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

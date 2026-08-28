@@ -24,7 +24,10 @@ ns:
   database:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app
-
+image: 
+    repository: ghcr.io/dataoneorg/notification-service
+    tag: feature-5-eventhandler
+    pullPolicy: Always
 tomcat:
   jmxEnabled: true
 
@@ -44,7 +47,18 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+        - path: /notifications/v1/eventhandler
+          pathType: Prefix
+          backend: 
+            serviceName: null-service
+            servicePort: 80
   tls:
     - hosts:
         - *hostname
       secretName: ingress-nginx-tls-cert
+
+nsconsumer:
+  image:
+    repository: ghcr.io/dataoneorg/notification-consumer
+    tag: feature-5-eventhandler
+    pullPolicy: Always
