@@ -26,8 +26,9 @@ public class TestUtils {
                 .withUsername(nsConfig.getString("ns.database.username"))
                 .withPassword(nsConfig.getString("ns.database.password"))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(1)))
+                // Postgres logs this message twice: when setup starts and when DB process is ready:
                 .waitingFor(
-                    Wait.forLogMessage(".*database system is ready to accept connections.*", 1));
+                    Wait.forLogMessage(".*database system is ready to accept connections.*", 2));
         pg.start();
         verifyPostgresPortAvailable(pg);
         return pg;
