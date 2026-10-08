@@ -9,6 +9,8 @@ ns:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
+      connectTimeout: 5000
+      readTimeout: 5000
   database:
     username: notifications_user
     # Change this to your own password!
