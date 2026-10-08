@@ -19,38 +19,47 @@ Documentation is a work in progress, and can be found here in the README
 
 ## API Usage Examples
 
+### Interactive Web Page
+You can try out API queries on the interactive web page at: `${BASE_URL}/notifications`
+
+Example, for the instance running on the NCEAS dev cluster:
+- https://notifications.test.dataone.org/notifications
+- JWT token: > - Enter it using the `Authorize 🔒 ` button in the web UI).
+
+> [!TIP]
+> You can get an auth token by logging into a metacat instance that uses the same CN as the installation being tested, and going to `My Profile > Settings > Authentication Token`. For example:
+> - If it's a Production notification service, it should use `https://cn.dataone.org/cn/v2`; get a token from any prod metacat, e.g. [arcticdata.io](https://arcticdata.io/catalog)
+> - If it's a test/development notification service, it will likely use  `https://cn-stage-2.test.dataone.org/cn/v2`; get a token from the [nceas dev metacat](https://dev.nceas.ucsb.edu/data)
+> - If you are deploying via the values-rancher-desktop-ns-example.yaml file, the auth link is 'https://cn-sandbox.test.dataone.org/cn/v2'; get a token from [cn-sandbox](https://search-sandbox.test.dataone.org/)
+
+### From the Command Line
+
 Example API interactions, using curl:
 
 ```shell
 # BASE_URL: the base URL of the notification service instance you're using
-# TOKEN: a valid JWT token from the CN used by the installation under test
-#
 BASE_URL="https://notifications.test.dataone.org"
+
+# TOKEN: a valid JWT token from the CN used by the installation under test (see Tip above)
 TOKEN="your-jwt-token-here"
 
 # Subscribe user authenticated with jwt $TOKEN, to update-notifications for
 # the dataset identified by {pid}
 #
-$ curl --request POST "${BASE_URL}/notifications/datasetChanges/{pid}" \
+$ curl --request POST "${BASE_URL}/notifications/v1/datasetChanges/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 
 # Get a list of subscriptions for user authenticated with jwt $TOKEN:
 #
-$ curl --request GET "${BASE_URL}/notifications/datasetChanges" \
+$ curl --request GET "${BASE_URL}/notifications/v1/datasetChanges" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 
 # Unsubscribe user authenticated with jwt $TOKEN, from notifications for the
 # dataset identified by {pid}
 #
-$ curl --request DELETE "${BASE_URL}/notifications/datasetChanges/{pid}" \
+$ curl --request DELETE "${BASE_URL}/notifications/v1/datasetChanges/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 ```
-
-> [!TIP]
-> You can get an auth token by logging into a metacat instance that uses the same CN as the installation being tested. For example:
-> - If it's a Production notification service, it should use `https://cn.dataone.org/cn/v2`; get a token from any prod metacat, e.g. [arcticdata.io](https://arcticdata.io/catalog)
-> - If it's a test/development notification service, it will likely use  `https://cn-stage-2.test.dataone.org/cn/v2`; get a token from the [nceas dev metacat](https://dev.nceas.ucsb.edu/data)
-> - If you are deploying via the values-rancher-desktop-ns-example.yaml file, the auth link is 'https://cn-sandbox.test.dataone.org/cn/v2'; get a token from [cn-sandbox](https://search-sandbox.test.dataone.org/)
 
 ## Getting Started - Running `Notification Service` Yourself
 
@@ -165,7 +174,7 @@ $ mvn clean package -DskipTests
 $ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps
 ```
 ...and (re)start TomEE. You can then visit the URL:
-http://localhost:8080/notifications/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
+http://localhost:8080/notifications/v1/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
 
 ## License
 ```
