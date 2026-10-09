@@ -10,7 +10,7 @@ ns:
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
       connectTimeout: 5000
-      readTimeout: 5000
+      readTimeout: 10000
   database:
     username: notifications_user
     # Change this to your own password!

@@ -64,7 +64,6 @@ public class D1CnAuthUtil {
             con.setReadTimeout(NsConfig.getConfig()
                 .getInt("ns.auth.api.readTimeoutMillis", 5000));
             con.setRequestProperty("User-Agent", userAgent);
-
             int responseCode = con.getResponseCode();
             logger.debug("Authentication API response code: {}", responseCode);
             // a 401 Unauthorized response should be used for missing or bad authentication, and
