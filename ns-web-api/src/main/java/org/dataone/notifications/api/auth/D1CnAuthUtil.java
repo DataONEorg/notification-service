@@ -60,8 +60,9 @@ public class D1CnAuthUtil {
             con.setRequestMethod("GET");
             con.setRequestProperty("Authorization", "Bearer " + token.trim());
             con.setConnectTimeout(NsConfig.getConfig()
-                .getInt("ns.auth.api.userAgent", "DataONE notification-service/1.0"););
-            con.setReadTimeout(10000);
+                .getInt("ns.auth.api.connectTimeoutMillis", 5000));
+            con.setReadTimeout(NsConfig.getConfig()
+                .getInt("ns.auth.api.readTimeoutMillis", 5000));
             con.setRequestProperty("User-Agent", userAgent);
 
             int responseCode = con.getResponseCode();
