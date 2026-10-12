@@ -48,11 +48,11 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-        - path: /notifications/v1/eventhandler
+        - path: /notifications/v1/private
           pathType: Prefix
           backend:
-            serviceName: null-service
-            servicePort: 80
+            serviceName: dev-null-service
+            servicePort: 8080
   tls:
     - hosts:
         - *hostname

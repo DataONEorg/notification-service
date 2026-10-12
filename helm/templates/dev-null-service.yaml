@@ -1,10 +1,12 @@
+## A dummy service where invalid external requests can be routed by the ingress
+## For example, when external users request /notifications/v1/private/..., Traefik routes to
+## null-service and returns an immediate 503 Service Unavailable
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: null-service
+  name: dev-null-service
 spec:
   ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    app: does-not-exist
+    - port: 8080
+      targetPort: 8080
