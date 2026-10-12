@@ -100,7 +100,8 @@ This is a java application, built using the Maven build tool.
 > [!NOTE]
 > **Prerequisites:**
 > The build and tests require:
-> 1.  Java 21. It can be downloaded from [Adoptium](https://adoptium.net/temurin/releases?version=21&os=any&arch=any). You can also set Java 21 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
+> 1.  Java 25. It can be downloaded 
+      from [Adoptium](https://adoptium.net/temurin/releases?version=25&os=any&arch=any). You can also set Java 25 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
 > 2. [Maven v3.9+](https://maven.apache.org/download.cgi).
 
 ```shell
