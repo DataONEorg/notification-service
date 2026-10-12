@@ -5,7 +5,7 @@
 ##     * * *         WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME        * * *
 ##
 ## Make sure you're in the correct k8s context, then:
-##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
+##  $  helm upgrade --install ns -n notify -f values-dev-cluster-notifications.yaml \
 ##         oci://ghcr.io/dataone/charts/notification-service --version [version] \
 ##             --debug --render-subchart-notes
 ##

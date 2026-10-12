@@ -34,6 +34,7 @@ jobs:
         run: |
           check_changed() {
             local status=0
+            echo "$(git diff ${{ github.event.before }} ${{ github.sha }} -- $@)"
             git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- "$@" || status=$?
           
             if [ "$status" -gt 1 ]; then
@@ -45,14 +46,18 @@ jobs:
           }
           
           if check_changed helm/; then
+            echo "helm_changed=true"
             echo "helm_changed=true" >> "$GITHUB_OUTPUT"
           else
+            echo "helm_changed=false"
             echo "helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
           
           if check_changed . ':!helm/'; then
+            echo "non_helm_changed=true"
             echo "non_helm_changed=true" >> "$GITHUB_OUTPUT"
           else
+            echo "non_helm_changed=false"
             echo "non_helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
