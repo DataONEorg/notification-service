@@ -5,7 +5,7 @@
 ##     * * *         WHICH MUST BE REPLACED BY THE ACTUAL RELEASE NAME        * * *
 ##
 ## Make sure you're in the correct k8s context, then:
-##  $  helm upgrade --install ns -n notifications -f values-dev-cluster-notifications.yaml \
+##  $  helm upgrade --install ns -n notify -f values-dev-cluster-notifications.yaml \
 ##         oci://ghcr.io/dataone/charts/notification-service --version [version] \
 ##             --debug --render-subchart-notes
 ##
@@ -20,12 +20,16 @@ ns:
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
+  ## @param ns.auth.api.connectionTimeout The timeout limit for opening a connection to the auth API
+    ## @param ns.auth.api.readTimeout The timeout limit for reading data from the auth API
   ##
   auth:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
+      connectTimeout: 5000
+      readTimeout: 10000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
@@ -50,7 +54,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/dataoneorg/notification-service
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
@@ -128,11 +132,13 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-        - path: /notifications/v1/private/eventhandler
+        # send requests for private paths to a dummy service that returns
+        # "503 Service Unavailable", so that external users cannot access them
+        - path: /notifications/v1/private
           pathType: Prefix
           backend:
-            serviceName: null-service
-            servicePort: 80
+            serviceName: dev-null-service
+            servicePort: 8080
 
   ## @param ingress.tls List of TLS configurations for the ingress
   ## Each TLS configuration must have a secretName defined, and the hosts must match the

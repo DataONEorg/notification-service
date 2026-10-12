@@ -8,6 +8,8 @@ ns:
       baseUrl: https://bogus-cn-host.test.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "TEST notification-service/1.0"
+      connectTimeout: 1000
+      readTimeout: 1000
 
   database:
     username: notifications_test_user
