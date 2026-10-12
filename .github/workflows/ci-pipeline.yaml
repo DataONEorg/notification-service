@@ -27,21 +27,33 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 2  # Fetch enough history so prev. commit will be found
+          fetch-depth: 0  # Fetch all history so prev. commit will be found
 
       - name: Detect changes in helm/ and outside helm/
         id: detect
         run: |
-          if git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- helm/; then
-            echo "helm_changed=false" >> $GITHUB_OUTPUT
+          check_changed() {
+            local status=0
+            git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- "$@" || status=$?
+          
+            if [ "$status" -gt 1 ]; then
+              echo "git diff failed (exit code $status) for: $*" >&2
+              return "$status"
+            fi
+          
+            [ "$status" -eq 1 ]
+          }
+          
+          if check_changed helm/; then
+            echo "helm_changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "helm_changed=true" >> $GITHUB_OUTPUT
+            echo "helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
-
-          if git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- . ':!helm/'; then
-            echo "non_helm_changed=false" >> $GITHUB_OUTPUT
+          
+          if check_changed . ':!helm/'; then
+            echo "non_helm_changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "non_helm_changed=true" >> $GITHUB_OUTPUT
+            echo "non_helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
   maven-build:

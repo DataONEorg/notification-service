@@ -132,6 +132,8 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+        # send requests for private paths to a dummy service that returns
+        # 503 Service Unavailable, so that external users cannot access them
         - path: /notifications/v1/private
           pathType: Prefix
           backend:
