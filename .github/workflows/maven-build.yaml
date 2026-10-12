@@ -67,6 +67,8 @@ jobs:
       with:
         path: .
         key: builddir-${{ github.run_id }}
-      # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+      # Optional: only on develop; uploads the full dependency graph to GitHub to improve the
+      # quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
+      if: github.ref_name == 'develop'
       uses: advanced-security/maven-dependency-submission-action@v6

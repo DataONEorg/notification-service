@@ -34,7 +34,6 @@ jobs:
         run: |
           check_changed() {
             local status=0
-            echo "$(git diff ${{ github.event.before }} ${{ github.sha }} -- $@)"
             git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- "$@" || status=$?
           
             if [ "$status" -gt 1 ]; then
@@ -56,7 +55,7 @@ jobs:
           else
             echo "non_helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "FINISHED; RESULTS: $(cat $GITHUB_OUTPUT | grep helm_changed)"
+          echo "detect-changes FINISHED: $(cat $GITHUB_OUTPUT | grep helm_changed)"
 
   maven-build:
     uses: ./.github/workflows/maven-build.yaml
