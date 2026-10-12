@@ -60,6 +60,7 @@ jobs:
             echo "non_helm_changed=false"
             echo "non_helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
+          echo "FINISHED; RESULTS: helm_changed=$(cat $GITHUB_OUTPUT | grep helm_changed), non_helm_changed=$(cat $GITHUB_OUTPUT | grep non_helm_changed)"
 
   maven-build:
     uses: ./.github/workflows/maven-build.yaml

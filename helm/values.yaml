@@ -29,7 +29,7 @@ ns:
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
       connectTimeout: 5000
-      readTimeout: 5000
+      readTimeout: 10000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
