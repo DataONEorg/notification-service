@@ -30,19 +30,17 @@ jobs:
           echo "Chart version: $version"
           echo "GitHub ref: $ref"
 
-          if [[ "$ref_name" == "develop" ]]; then
-            if [[ ! "$version" =~ ^0\.[0-9]+\.[0-9]+$ && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+- ]]; then
-            echo "❌ ERROR: On 'develop', chart version ($version) must start with 0.x.y or include a suffix (e.g. 1.2.3-develop)"
-          exit 1
-          fi
-          fi
-
           if [[ "$ref" =~ ^refs/tags/chart-(.+)$ ]]; then
             tag_version="${BASH_REMATCH[1]}"
             if [[ "$version" != "$tag_version" ]]; then
               echo "❌ ERROR: Chart version ($version) does not match tag version (chart-$tag_version)"
               exit 1
             fi
+          fi
+
+          if [[ ! "$version" =~ ^0\.[0-9]+\.[0-9]+$ && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "❌ ERROR: On 'non-main branches', chart version ($version) must start with 0.x.y or include a suffix (e.g. 1.2.3-develop)"
+            exit 1
           fi
 
       - name: Set up Helm
