@@ -37,9 +37,9 @@
             <version>2.4</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.data.version}</version>
         </dependency>
         <!-- Provide commons-beanutils to satisfy Apache Commons Configuration at test/runtime -->
         <dependency>
