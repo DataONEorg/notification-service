@@ -31,6 +31,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- DEPENDENCY VERSIONS -->
+        <apache.commons.version>2.15.1</apache.commons.version>
         <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
         <flyway.version>11.10.3</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
@@ -40,9 +41,10 @@
         <jackson.data.version>3.2.3</jackson.data.version>
         <jersey.version>3.1.10</jersey.version>
         <junit-jupiter-version>5.13.3</junit-jupiter-version>
-        <log4j.version>2.25.4</log4j.version>
-        <postgresql.version>42.7.12</postgresql.version>
-        <rabbitmq-client.version>5.20.0</rabbitmq-client.version>
+        <log4j.version>2.26.1</log4j.version>
+        <postgresql.version>42.7.14</postgresql.version>
+        <rabbitmq-client.version>5.36.0</rabbitmq-client.version>
+        <slf4j.version>2.0.19</slf4j.version>
         <tomee.version>10.1.1</tomee.version>
         <!-- TEST DEPENDENCY VERSIONS -->
         <mockito-version>5.18.0</mockito-version>
@@ -194,37 +196,16 @@
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.1.0-alpha1</version>
+            <version>${slf4j.version}</version>
         </dependency>
-
-        <!--
-        Begin Apache Commons vulnerability fixes.
-        Latest version of commons-configuration2 depends on vulnerable version of
-        commons-compress and commons-lang3, so overriding those here. Can remove when
-        commons-configuration2 updates its dependencies.
-        -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
-            <version>2.12.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${apache.commons.version}</version>
         </dependency>
-        <!--
-        End Apache Commons vulnerability fix.
-        -->
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
