@@ -14,8 +14,8 @@ class NsConfigSmokeTest {
         URL props = Thread.currentThread().getContextClassLoader().getResource("properties.yaml");
         assertNotNull(props, "properties.yaml must be on classpath");
 
-        URL log4j = Thread.currentThread().getContextClassLoader().getResource("log4j2.yaml");
-        assertNotNull(log4j, "log4j2.yaml must be on classpath");
+        URL log4j = Thread.currentThread().getContextClassLoader().getResource("log4j2.xml");
+        assertNotNull(log4j, "log4j2.xml must be on classpath");
 
         Configuration cfg = NsConfig.getConfig();
         assertNotNull(cfg, "NsConfig must return a non-null Configuration");

@@ -58,7 +58,7 @@ spec:
                         {{- end }}
                         {{- join " " .Values.tomcat.jmxCatalinaOpts }}
                       {{- end }}{{- printf " " -}}
-                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.yaml
+                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
             {{- $pgSecret :=  required "ns.database.existingSecret IS REQUIRED" .Values.ns.database.existingSecret }}
             - name: NS_DATABASE_USERNAME
               valueFrom:

@@ -79,18 +79,7 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.annotations.version}</version>
             </dependency>
-            <dependency>
-                <groupId>tools.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.data.version}</version>
-            </dependency>
-            <!-- Jackson 2 YAML is needed only by Log4j 2.x to read log4j2.yaml; it does not support Jackson 3 -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.core.version}</version>
-            </dependency>
-            <!-- Keep Jackson 2 databind (also pulled in by Jersey) aligned with the Jackson 2 YAML version -->
+            <!-- Keep Jackson 2 databind (pulled in by Jersey) aligned with jackson-core -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
