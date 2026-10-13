@@ -28,8 +28,8 @@ ns:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
-      connectTimeout: 5000
-      readTimeout: 10000
+      connectTimeout: 10000
+      readTimeout: 20000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.

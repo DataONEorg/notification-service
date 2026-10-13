@@ -10,11 +10,12 @@
 
     <Loggers>
         <!--
-        Root log level defaults to ERROR. Override from the command line if needed, using
+        Root log level defaults to DEBUG, since manual deployment is typically only for
+        development purposes. Override from the command line if needed, using
         '-DLOG_LEVEL='; e.g.:
-                        mvn verify -DLOG_LEVEL=debug
+                        mvn verify -DLOG_LEVEL=warn
         -->
-        <Root level="error">
+        <Root level="debug">
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="org.jboss" level="error" additivity="false">

@@ -9,7 +9,7 @@ ns:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
-      connectTimeout: 5000
+      connectTimeout: 10000
       readTimeout: 10000
   database:
     username: notifications_user
