@@ -41,6 +41,12 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>${jackson.data.version}</version>
         </dependency>
+        <!-- Log4j 2.x reads log4j2.yaml via Jackson 2 YAML only -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- Provide commons-beanutils to satisfy Apache Commons Configuration at test/runtime -->
         <dependency>
             <groupId>commons-beanutils</groupId>
