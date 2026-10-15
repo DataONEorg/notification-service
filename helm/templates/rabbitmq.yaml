@@ -30,5 +30,5 @@ spec:
       {{- end }}
     {{- end }}
   persistence:
-    storageClassName: {{ .Values.rmq.rmqOperator.persistence.storageClassName }}
+    storageClassName: {{ required "rmq.rmqOperator.persistence.storageClassName IS REQUIRED" .Values.rmq.rmqOperator.persistence.storageClassName }}
     storage: {{ .Values.rmq.rmqOperator.persistence.size }}
