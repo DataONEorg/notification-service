@@ -32,7 +32,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- DEPENDENCY VERSIONS -->
         <apache.commons.version>2.15.1</apache.commons.version>
-        <commonsdbcp2.version>2.13.0</commonsdbcp2.version>
         <flyway.version>11.10.3</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <failsafe.version>3.3.1</failsafe.version>
@@ -45,7 +44,6 @@
         <postgresql.version>42.7.14</postgresql.version>
         <rabbitmq-client.version>5.36.0</rabbitmq-client.version>
         <slf4j.version>2.0.19</slf4j.version>
-        <tomee.version>10.1.1</tomee.version>
         <!-- TEST DEPENDENCY VERSIONS -->
         <mockito-version>5.18.0</mockito-version>
         <surefire.version>3.5.3</surefire.version>
@@ -60,11 +58,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-configuration2</artifactId>
-                <version>2.15.1</version>
-            </dependency>
             <!-- Project-wide managed dependency versions -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -113,16 +106,6 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-dbcp2</artifactId>
-                <version>${commonsdbcp2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <version>${flyway.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.flywaydb</groupId>
