@@ -36,6 +36,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- Log4j JUL bridge (FlyWay uses JUL) -->
         <dependency>

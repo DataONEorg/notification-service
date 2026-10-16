@@ -25,6 +25,10 @@
             <id>dataone.org</id>
             <url>https://maven.dataone.org</url>
         </repository>
+        <repository>
+            <id>flyway-community-db-support</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
     </repositories>
 
     <properties>
@@ -32,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- DEPENDENCY VERSIONS -->
         <apache.commons.version>2.15.1</apache.commons.version>
-        <flyway.version>11.10.3</flyway.version>
+        <flyway.version>13.7.0</flyway.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <failsafe.version>3.3.1</failsafe.version>
         <jackson.core.version>2.22.3</jackson.core.version>
@@ -55,19 +59,11 @@
         https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
         -->
         <argLine/>
-        <!-- no mockito.javaagent property - javaagent usage removed to simplify config -->
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <!-- BOM imports: one version property each, replacing per-artifact entries -->
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.core.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey</groupId>
                 <artifactId>jersey-bom</artifactId>
@@ -96,14 +92,18 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-            <!-- Jackson 3 (separate groupId; not covered by the Jackson 2 BOM) -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.data.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
