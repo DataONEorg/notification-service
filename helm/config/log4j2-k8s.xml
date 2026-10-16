@@ -1,0 +1,21 @@
+<!-- monitorInterval, in seconds, is time between log4j reloading config changes automatically -->
+<Configuration status="warn" monitorInterval="30">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="notification-service %d{yyyyMMdd-HH:mm:ss}: [%p]: %m [%C:%M:%L]%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Root level='{{ .Values.ns.logLevel | default "warn" }}'>
+            <AppenderRef ref="Console"/>
+        </Root>
+        <Logger name="org.jboss" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="com.zaxxer.hikari.pool" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+    </Loggers>
+</Configuration>

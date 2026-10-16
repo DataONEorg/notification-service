@@ -28,8 +28,8 @@ ns:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
-      connectTimeout: 5000
-      readTimeout: 10000
+      connectTimeout: 10000
+      readTimeout: 20000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
@@ -167,10 +167,10 @@ startupProbe:
   httpGet:
     path: /
     port: 8080
+  periodSeconds: 2
+  timeoutSeconds: 2
   successThreshold: 1
-  failureThreshold: 15
-  periodSeconds: 10
-  timeoutSeconds: 5
+  failureThreshold: 75
 
 ## Liveness Probe
 ## Periodic probe of container service liveness. If the probe fails, container will be restarted
@@ -186,12 +186,11 @@ startupProbe:
 livenessProbe:
   enabled: true
   httpGet:
-    path: /
+    path: /notifications/v1/metrics/ping
     port: http
-  initialDelaySeconds: 10
-  periodSeconds: 10
+  periodSeconds: 1
   timeoutSeconds: 5
-  failureThreshold: 10
+  failureThreshold: 100
   successThreshold: 1
 
 ## Readiness Probe
@@ -212,9 +211,9 @@ readinessProbe:
     path: /notifications/v1/metrics/ping
     port: http
   initialDelaySeconds: 5
-  periodSeconds: 5
+  periodSeconds: 1
   timeoutSeconds: 5
-  failureThreshold: 10
+  failureThreshold: 50
   successThreshold: 1
 
 # CURRENTLY IGNORED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
@@ -473,7 +472,7 @@ rmq:
 
     persistence:
       ## @param rmqOperator.persistence.storageClassName Storage class name for rabbitmq data PV
-      ## Leave blank ("") to use the default storage class for the cluster
+      ## REQUIRED
       ##
       storageClassName: ""
 

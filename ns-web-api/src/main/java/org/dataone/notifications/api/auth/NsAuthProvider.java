@@ -13,8 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.apache.logging.log4j.util.Strings.isBlank;
-
 /**
  * An implementation of the AuthProvider interface for the notification service.
  */
@@ -44,7 +42,7 @@ public class NsAuthProvider implements AuthProvider {
         }
         String subject = d1CnAuthUtil.getSubject(token);
 
-        if (isBlank(subject)) {
+        if (subject == null || subject.isBlank()) {
             log.debug("Subject not authenticated - throwing NotAuthorizedException");
             throw new NotAuthorizedException("Bearer");
         }
@@ -57,7 +55,7 @@ public class NsAuthProvider implements AuthProvider {
     public Set<String> authorize(String subject, SubscriptionResourceType resourceType, List<String> pids)
         throws NotAuthorizedException {
 
-        if (isBlank(subject)) {
+        if (subject == null || subject.isBlank()) {
             throw new NotAuthorizedException("Missing Subject");
         }
         if (pids == null || pids.isEmpty()) {

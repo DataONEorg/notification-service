@@ -67,7 +67,7 @@ $ curl --request DELETE "${BASE_URL}/notifications/v1/datasetChanges/{pid}" \
 > Notification Service requires a pre-existing PostgreSQL database (deployed either within or outside a Kubernetes cluster). We recommend CloudNative PG. Installing CNPG Operator is beyond the scope of this document, but the process is easy - see the [DataONE K8s Cluster documentation](https://github.com/DataONEorg/k8s-cluster/blob/main/postgres/postgres.md#cloudnativepg-operator-installation). Once the oprator is running, a Postrges cluster can be created using the [dataone-cnpg Helm chart](https://github.com/DataONEorg/dataone-cnpg/pkgs/container/charts%2Fcnpg). Both of these are one-time setup steps.
 
 The simplest way to try out the notification service is to use the Helm chart to deploy
-in a Kubernetes cluster. For example, assuming you are using [Rancher Desktop](https://rancherdesktop.io/), and have installed [ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/#quick-start) and a CNPG cluster on your local machine (see note above), it's easy to install the latest Helm chart:
+in a Kubernetes cluster. For example, assuming you are using [Rancher Desktop](https://rancherdesktop.io/), and have installed [Traefik Proxy Ingress](https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-ingress/) and a CNPG cluster on your local machine (see note above), it's easy to install the latest Helm chart:
 
 ```shell
 helm upgrade --install ns --debug -n notify --create-namespace \
@@ -172,7 +172,10 @@ Build with maven and copy the war file to your TomEE webapps directory:
 ```shell
 $ mvn clean package -DskipTests
 
-$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps
+$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps/notifications.war
+  # The war file name determines the context used in the URL.
+  # In this case, the context is `notifications`, so the base URL
+  # will be `http://localhost:8080/notifications/...etc`.
 ```
 ...and (re)start TomEE. You can then visit the URL:
 http://localhost:8080/notifications/v1/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).

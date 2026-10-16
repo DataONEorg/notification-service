@@ -34,8 +34,8 @@ tomcat:
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1000m
+    memory: 1024Mi
   requests:
     cpu: 300m
     memory: 128Mi
@@ -63,6 +63,11 @@ nsconsumer:
     repository: ghcr.io/dataoneorg/notification-consumer
     tag: feature-5-eventhandler
     pullPolicy: Always
+
+rmq:
+  rmqOperator:
+    persistence:
+      storageClassName: "csi-cephfs-sc-ephemeral"
 
 emailUtil:
   # @section emailUtil.auth Configuration for SMTP authentication.
