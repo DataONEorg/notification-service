@@ -49,17 +49,17 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting SubscriptionEventConsumer for queue {}", 
+        log.info("Starting SubscriptionEventConsumer for queue {}",
             properties.queueName());
         executor.submit(this::consumeLoop);
     }
 
     private void consumeLoop() {
-        log.info("Starting RabbitMQ consumer loop for queue {}", 
+        log.info("Starting RabbitMQ consumer loop for queue {}",
             properties.queueName());
         while (running.get()) {
             try (Channel channel = newChannel()) {
-                log.info("Created channel to RabbitMQ, consuming from queue {}", 
+                log.info("Created channel to RabbitMQ, consuming from queue {}",
                     properties.queueName());
                 DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(channel, delivery);
                 channel.basicConsume(properties.queueName(), false, callback, consumerTag -> {});
@@ -97,9 +97,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             processor.process(event);
             channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("Failed to process message. Failed messages are not requeued. ", e);
-            // Disabling the requeue here to avoid bad messages holding up the 
-            // queue forever. In the future, we could add a dead letter queue. 
+            log.error("Failed to process message. Failed messages are not re-queued. ", e);
+            // Disabling the requeue here to avoid bad messages holding up the
+            // queue forever. In the future, we could add a dead letter queue.
             //channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
             channel.basicAck(tag, false);
         }
@@ -121,10 +121,10 @@ public class SubscriptionEventConsumer implements AutoCloseable {
 
     private String getRequiredText(JsonNode node, String field) {
         JsonNode value = node.get(field);
-        if (value == null || value.asText().isBlank()) {
+        if (value == null || value.asString().isBlank()) {
             throw new IllegalArgumentException("Missing value for field: " + field);
         }
-        return value.asText();
+        return value.asString();
     }
 
     public void stop() {
@@ -153,18 +153,18 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         return ch;
     }
 
-    private synchronized Channel getChannel() throws IOException, TimeoutException {
-        if (channel != null && channel.isOpen()) {
-            return channel;
-        }
-        if (connection == null || !connection.isOpen()) {
-            connection = createConnection();
-        }
-        channel = connection.createChannel();
-        channel.queueDeclare(properties.queueName(), true, false, false, null);
-        channel.basicQos(properties.prefetchCount());
-        return channel;
-    }
+//    private synchronized Channel getChannel() throws IOException, TimeoutException {
+//        if (channel != null && channel.isOpen()) {
+//            return channel;
+//        }
+//        if (connection == null || !connection.isOpen()) {
+//            connection = createConnection();
+//        }
+//        channel = connection.createChannel();
+//        channel.queueDeclare(properties.queueName(), true, false, false, null);
+//        channel.basicQos(properties.prefetchCount());
+//        return channel;
+//    }
 
     private Connection createConnection() throws IOException, TimeoutException {
         try{
@@ -179,9 +179,9 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             factory.setNetworkRecoveryInterval(5000);
             factory.setRequestedHeartbeat(30);
             log.info("Attempting to create RabbitMQ connection to " +
-                " {}:{} with virtual host '{}'", 
+                " {}:{} with virtual host '{}'",
                 properties.host(), properties.port(), properties.virtualHost());
-            return factory.newConnection(); 
+            return factory.newConnection();
         }catch(IOException e){
             log.info("IOException in createConnection: {}", e.getMessage());
             throw e;
@@ -192,7 +192,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
             log.info("Unexpected Exception in createConnection: {}", e.getMessage());
             throw new RuntimeException("Failed to create RabbitMQ connection", e);
         }
-           
+
     }
 
     public synchronized void shutdown() {
@@ -220,23 +220,23 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
-        log.debug("Checking connection status: " + 
-            " connection={}, connection.isOpen={}", 
+        log.debug("Checking connection status: " +
+            " connection={}, connection.isOpen={}",
             connection, connection != null ? connection.isOpen() : "n/a");
         return connection != null && connection.isOpen();
     }
 
-    /**
-     * Attempt to open and immediately close a channel to verify connectivity.
-     */
-    public synchronized boolean checkConnection() {
-        try {
-            Channel ch = newChannel();
-            try { ch.close(); } catch (Exception ignored) {}
-            return true;
-        } catch (Exception e) {
-            log.warn("RabbitMQ connectivity check failed: {}", e.getMessage());
-            return false;
-        }
-    }
+//    /**
+//     * Attempt to open and immediately close a channel to verify connectivity.
+//     */
+//    public synchronized boolean checkConnection() {
+//        try {
+//            Channel ch = newChannel();
+//            try { ch.close(); } catch (Exception ignored) {}
+//            return true;
+//        } catch (Exception e) {
+//            log.warn("RabbitMQ connectivity check failed: {}", e.getMessage());
+//            return false;
+//        }
+//    }
 }
