@@ -15,7 +15,9 @@ RUN apt-get update \
     lsof              \
     procps            \
     telnet            \
-    vim
+    vim \
+  && echo 'export CATALINA_OPTS="$CATALINA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"' \
+    > /usr/local/tomee/bin/setenv.sh
 
 RUN groupadd -g $GID notifier && useradd -u $UID -g $GID notifier
 
