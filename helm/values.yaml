@@ -370,7 +370,7 @@ emailUtil:
   # @param emailUtil.host The hostname of the SMTP server to use for sending emails.
   host: ADD_HOST
   # @param emailUtil.port The port of the SMTP server to use for sending emails.
-  port: ADD_PORT
+  port: 1025
   # @section emailUtil.auth Configuration for SMTP authentication.
   auth:
     # @param emailUtil.auth.enabled Enable or disable SMTP authentication.
