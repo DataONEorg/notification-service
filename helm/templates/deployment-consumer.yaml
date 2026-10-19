@@ -32,6 +32,8 @@ spec:
           env:
             - name: NS_PROPERTIES_YAML_PATH
               value: /etc/dataone/notification-service/properties.yaml
+            - name: JAVA_TOOL_OPTIONS
+              value: -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
             {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
             {{- if not $secretName }}
             {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
