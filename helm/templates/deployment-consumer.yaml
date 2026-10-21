@@ -33,7 +33,11 @@ spec:
             - name: NS_PROPERTIES_YAML_PATH
               value: /etc/dataone/notification-service/properties.yaml
             - name: JAVA_TOOL_OPTIONS
-              value: -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+              value: >-
+                -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+                {{- if .Values.tomcat.remoteDebugEnabled }}
+                  -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:{{ .Values.tomcat.remoteDebugPort }}
+                {{- end }}
             {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
             {{- if not $secretName }}
             {{ $secretName =  ( printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride ) }}
@@ -56,6 +60,11 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
+          {{- if .Values.tomcat.remoteDebugEnabled }}
+          ports:
+            - containerPort: {{ .Values.tomcat.remoteDebugPort }}
+              name: jdwp
+          {{- end }}
           {{- if .Values.nsconsumer.readinessProbe.enabled }}
           readinessProbe:
             {{- omit .Values.nsconsumer.readinessProbe "enabled" | toYaml | nindent 12 }}
@@ -91,4 +100,3 @@ spec:
       tolerations:
         {{ toYaml . | nindent 8 }}
       {{- end }}
-      

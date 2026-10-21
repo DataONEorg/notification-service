@@ -23,9 +23,7 @@ RUN apt-get update \
     postgresql-client \
     procps            \
     telnet            \
-    vim \
-  && echo 'export CATALINA_OPTS="$CATALINA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"' \
-    > /usr/local/tomee/bin/setenv.sh
+    vim
 
 COPY ./ns-web-api/target/ns-web-api-${NS_VERSION}.war ./webapps/notifications.war
 
@@ -39,6 +37,5 @@ LABEL org.opencontainers.image.version=${TAG}
 LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notification-service"
 
 EXPOSE 8080
-EXPOSE 5005
 
 CMD ["catalina.sh", "run"]

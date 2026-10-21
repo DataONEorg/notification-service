@@ -31,6 +31,8 @@ image:
     pullPolicy: Always
 tomcat:
   jmxEnabled: true
+  remoteDebugEnabled: true
+  remoteDebugPort: 5005
 
 resources:
   limits:

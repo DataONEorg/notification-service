@@ -4,7 +4,6 @@ ARG TAG="NO-TAG"
 ARG NS_VERSION=${TAG}
 ARG UID=56700
 ARG GID=56700
-ENV JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
 WORKDIR /app
 
@@ -32,7 +31,5 @@ USER $UID
 LABEL org.opencontainers.image.title="Notifications-Consumer"
 LABEL org.opencontainers.image.version=${TAG}
 LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notification-consumer"
-
-EXPOSE 5005
 
 ENTRYPOINT ["java","-jar","consumer.jar"]

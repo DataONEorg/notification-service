@@ -315,6 +315,14 @@ tomcat:
     - -Dcom.sun.management.jmxremote.ssl=false
     - -Djava.rmi.server.hostname=127.0.0.1
 
+  ## @param tomcat.remoteDebugEnabled Enable remote debugging for Tomcat
+  ##
+  remoteDebugEnabled: false
+
+  ## @param tomcat.remoteDebugPort The port to use for remote debugging connections
+  ##
+  remoteDebugPort: 5005
+
 # Default values for nsconsumer subchart
 nsconsumer:
   replicaCount: 1
