@@ -54,7 +54,7 @@ spec:
               value: >-
                 {{ join " " .Values.tomcat.extraCatalinaOpts }}
                 {{- if .Values.tomcat.jmxEnabled }}
-                  {{ join " " .Values.tomcat.jmxCatalinaOpts }}
+                {{ join " " .Values.tomcat.jmxCatalinaOpts }}
                 {{- end }}
                 -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
                 {{- if .Values.tomcat.remoteDebugEnabled }}
