@@ -4,6 +4,7 @@ import org.dataone.notifications.messaging.SubscriptionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,7 +20,7 @@ public class SubscriptionMessageProcessor {
         SubscriptionMessageProcessor.class);
 
     public void process(SubscriptionEvent event) {
-        log.debug("Processing subscription event: {}", event);
+        log.debug("Processing SubscriptionEvent: {}", event);
 //        log.info("Processing subscription event: resourceType={}, pid={}",
 //            event.resourceType(), event.pid());
 

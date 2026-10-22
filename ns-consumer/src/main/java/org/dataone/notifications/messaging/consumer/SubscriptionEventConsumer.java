@@ -82,7 +82,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         String body = "";
         try{
             body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-            log.info("Message received: {}", body);
+            log.info("Message body: {}", body);
             JsonNode node = mapper.readTree(body);
             String resourceType = getRequiredText(node, "resourceType");
             String pid = getRequiredText(node, "pid");
