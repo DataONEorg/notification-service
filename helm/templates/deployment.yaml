@@ -51,14 +51,15 @@ spec:
             - name: NS_PROPERTIES_YAML_PATH
               value: /etc/dataone/notification-service/properties.yaml
             - name: CATALINA_OPTS
-              value: {{ join " " .Values.tomcat.extraCatalinaOpts }}
-                      {{- if .Values.tomcat.jmxEnabled }}
-                        {{- if .Values.tomcat.extraCatalinaOpts }}
-                          {{- printf " " }}
-                        {{- end }}
-                        {{- join " " .Values.tomcat.jmxCatalinaOpts }}
-                      {{- end }}{{- printf " " -}}
-                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+              value: >-
+                {{ join " " .Values.tomcat.extraCatalinaOpts }}
+                {{- if .Values.tomcat.jmxEnabled }}
+                {{ join " " .Values.tomcat.jmxCatalinaOpts }}
+                {{- end }}
+                -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+                {{- if .Values.tomcat.remoteDebugEnabled }}
+                -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:{{ .Values.tomcat.remoteDebugPort }}
+                {{- end }}
             {{- $pgSecret :=  required "ns.database.existingSecret IS REQUIRED" .Values.ns.database.existingSecret }}
             - name: NS_DATABASE_USERNAME
               valueFrom:
@@ -96,6 +97,10 @@ spec:
           {{- if .Values.tomcat.jmxEnabled }}
             - containerPort: {{ .Values.tomcat.jmxPort }}
               name: jmx
+          {{- end }}
+          {{- if .Values.tomcat.remoteDebugEnabled }}
+            - containerPort: {{ .Values.tomcat.remoteDebugPort }}
+              name: jdwp
           {{- end }}
           {{- if .Values.startupProbe.enabled }}
           startupProbe:
