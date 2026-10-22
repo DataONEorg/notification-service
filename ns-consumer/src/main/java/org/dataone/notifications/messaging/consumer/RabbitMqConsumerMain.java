@@ -56,7 +56,6 @@ public class RabbitMqConsumerMain {
         // start file-based health probe
         startHealthProbe(
             probeFile, () -> {
-                log.info("Starting health probe");
                 try {
                     return isConnected();
                 } catch (Throwable t) {
@@ -82,9 +81,6 @@ public class RabbitMqConsumerMain {
     }
 
     private static boolean isConnected() {
-        log.debug(
-            "Connection status: consumer={}, consumer.isConnected={}", consumer,
-            consumer != null ? consumer.isConnected() : "null");
         return consumer != null && consumer.isConnected();
     }
 
@@ -186,7 +182,6 @@ public class RabbitMqConsumerMain {
     }
 
     private static void writeProbeFile() {
-        log.info("writing to probe file");
         if (healthProbeFile == null) {
             return;
         }
