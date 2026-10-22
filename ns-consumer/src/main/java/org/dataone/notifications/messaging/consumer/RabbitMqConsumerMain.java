@@ -11,12 +11,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -27,13 +24,9 @@ public class RabbitMqConsumerMain {
 
     private static SubscriptionEventConsumer consumer;
 
-    // Health probe state (inlined from previous HealthServer)
+    private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
+    private static final long healthPollIntervalSeconds = 15L;
     private static ScheduledExecutorService healthScheduler;
-    private static ScheduledFuture<?> healthFuture;
-    private static AtomicBoolean healthStatus = new AtomicBoolean(false);
-    private static Path healthProbeFile;
-    private static BooleanSupplier healthPoller;
-    private static long healthPollIntervalSeconds = 5L;
 
     static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -50,24 +43,10 @@ public class RabbitMqConsumerMain {
         final SubscriptionMessageProcessor processor = new SubscriptionMessageProcessor();
         consumer = new SubscriptionEventConsumer(props, processor);
 
-        int pollInterval = 15;
-        String probeFile = "/tmp/rmq-consumer-readiness";
-
-        // start file-based health probe
-        startHealthProbe(
-            probeFile, () -> {
-                try {
-                    return isConnected();
-                } catch (Throwable t) {
-                    log.error("Health poller error: {}", t.getMessage());
-                    return false;
-                }
-            }, pollInterval);
-
         try {
             consumer.start();
             log.info("Consumer started");
-            refreshHealthNow();
+            startHealthProbe();
         } catch (Exception e) {
             log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
             stopHealthProbe();
@@ -87,51 +66,18 @@ public class RabbitMqConsumerMain {
     /**
      * Start the health probe.
      */
-    protected static synchronized void startHealthProbe(
-        String probeFilePath, BooleanSupplier poller, long pollIntervalSeconds) {
+    private static synchronized void startHealthProbe() {
         if (healthScheduler != null) {
-            // already started
             return;
         }
-        Objects.requireNonNull(probeFilePath, "probeFilePath");
-        healthProbeFile = Paths.get(probeFilePath);
-        healthPoller = Objects.requireNonNull(poller, "poller");
-        healthPollIntervalSeconds = pollIntervalSeconds <= 0 ? 5 : pollIntervalSeconds;
-        healthStatus = new AtomicBoolean(false);
         healthScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "rmq-health-poller");
             t.setDaemon(true);
             return t;
         });
-
-        // Ensure parent directory exists
-        Path parent = healthProbeFile.getParent();
-        if (parent != null) {
-            try {
-                Files.createDirectories(parent);
-            } catch (Exception e) {
-                log.warn(
-                    "Could not create probe file parent directories {}: {}", parent,
-                    e.getMessage());
-            }
-        }
-
-        refreshHealthNow();
-
-        healthFuture = healthScheduler.scheduleAtFixedRate(
-            () -> {
-                try {
-                    boolean newStatus = healthPoller.getAsBoolean();
-                    healthStatus.set(newStatus);
-                    if (newStatus) {
-                        writeProbeFile();
-                    }
-                    log.debug("Health poller updated status={}", newStatus);
-                } catch (Exception e) {
-                    log.warn("Health poller threw exception: {}", e.getMessage());
-                    healthStatus.set(false);
-                }
-            }, healthPollIntervalSeconds, healthPollIntervalSeconds, TimeUnit.SECONDS);
+        healthScheduler.scheduleAtFixedRate(
+            () -> refreshProbeIfConnected(RabbitMqConsumerMain::isConnected, healthProbeFile),
+            0, healthPollIntervalSeconds, TimeUnit.SECONDS);
 
         log.info(
             "Health file probe started for {} with interval {} sec", healthProbeFile,
@@ -142,66 +88,40 @@ public class RabbitMqConsumerMain {
      * Stop the health probe.
      */
     protected static synchronized void stopHealthProbe() {
-        if (healthFuture != null) {
-            healthFuture.cancel(true);
-            healthFuture = null;
-        }
         if (healthScheduler != null) {
-            try {
-                healthScheduler.shutdownNow();
-            } catch (Exception ignored) {
-            }
+            healthScheduler.shutdownNow();
             healthScheduler = null;
         }
-        healthProbeFile = null;
-        healthPoller = null;
-        healthStatus = new AtomicBoolean(false);
     }
 
-    /**
-     * Force an immediate health refresh
-     */
-    protected static void refreshHealthNow() {
-        log.info("Refreshing health status now");
-        if (healthPoller == null) {
-            log.info("Health poller not initialized, skipping refresh");
-            return;
-        }
+    static void refreshProbeIfConnected(BooleanSupplier connectionStatus, Path probeFile) {
         try {
-            boolean newStatus = healthPoller.getAsBoolean();
-            healthStatus.set(newStatus);
-            if (newStatus) {
-                log.info("Updating health file to {}", newStatus);
-                writeProbeFile();
+            if (connectionStatus.getAsBoolean()) {
+                writeProbeFile(probeFile);
             }
-            log.debug("Health refreshNow updated status={}", newStatus);
-        } catch (Exception e) {
-            log.error("Health refreshNow threw exception: {}", e.getMessage());
-            healthStatus.set(false);
+        } catch (RuntimeException e) {
+            log.warn("Health probe failed: {}", e.getMessage());
         }
     }
 
-    private static void writeProbeFile() {
-        if (healthProbeFile == null) {
-            return;
-        }
+    private static void writeProbeFile(Path probeFile) {
         try {
             String content = Long.toString(Instant.now().getEpochSecond());
             Path tmp =
-                healthProbeFile.resolveSibling(healthProbeFile.getFileName().toString() + ".tmp");
+                probeFile.resolveSibling(probeFile.getFileName().toString() + ".tmp");
             Files.writeString(tmp, content);
             Files.move(
-                tmp, healthProbeFile, StandardCopyOption.REPLACE_EXISTING,
+                tmp, probeFile, StandardCopyOption.REPLACE_EXISTING,
                 StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             log.warn("writeProbeFile() falling  back to non atomic write");
             try {
-                Files.writeString(healthProbeFile, Long.toString(Instant.now().getEpochSecond()));
+                Files.writeString(probeFile, Long.toString(Instant.now().getEpochSecond()));
             } catch (IOException ex) {
-                log.warn("Failed to write probe file {}: {}", healthProbeFile, ex.getMessage());
+                log.warn("Failed to write probe file {}: {}", probeFile, ex.getMessage());
             }
         } catch (Exception e) {
-            log.warn("Failed to update probe file {}: {}", healthProbeFile, e.getMessage());
+            log.warn("Failed to update probe file {}: {}", probeFile, e.getMessage());
         }
     }
 }
