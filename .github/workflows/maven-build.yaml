@@ -38,26 +38,26 @@ jobs:
       id: build-and-test
       run: mvn --batch-mode --update-snapshots test
       continue-on-error: true
-    - name: Upload test logs if tests failed
+    - name: Upload test logs if unit tests failed
       if: steps.build-and-test.outcome != 'success'
       uses: actions/upload-artifact@v7
       with:
         name: surefire-reports
         path: target/surefire-reports/
-    - name: Fail build if tests failed
+    - name: Fail build if unit tests failed
       if: steps.build-and-test.outcome != 'success'
       run: exit 1
     - name: Integration Tests
       id: integration-tests
       run: mvn --batch-mode --update-snapshots verify -DskipTests=true
       continue-on-error: true
-    - name: Upload test logs if tests failed
+    - name: Upload test logs if integration tests failed
       if: steps.integration-tests.outcome != 'success'
       uses: actions/upload-artifact@v7
       with:
         name: failsafe-reports
         path: target/failsafe-reports/
-    - name: Fail build if tests failed
+    - name: Fail build if integration tests failed
       if: steps.integration-tests.outcome != 'success'
       run: exit 1
     - name: Package
