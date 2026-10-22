@@ -79,15 +79,16 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     }
 
     private SubscriptionEvent deserialize(Delivery delivery) throws IOException {
+        String body = "";
         try{
-            String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            body = new String(delivery.getBody(), StandardCharsets.UTF_8);
             log.info("Message received: {}", body);
             JsonNode node = mapper.readTree(body);
             String resourceType = getRequiredText(node, "resourceType");
             String pid = getRequiredText(node, "pid");
             return SubscriptionEvent.from(resourceType, pid);
         }catch(Exception e){
-            log.info("Error deserializing message: {}", e.getMessage());
+            log.error("Error: ({}) while deserializing message: ({})", e.getMessage(), body);
             throw new IOException();
         }
     }

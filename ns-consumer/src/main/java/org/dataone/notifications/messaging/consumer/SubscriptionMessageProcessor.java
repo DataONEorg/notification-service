@@ -19,32 +19,33 @@ public class SubscriptionMessageProcessor {
         SubscriptionMessageProcessor.class);
 
     public void process(SubscriptionEvent event) {
-        log.info("Processing subscription event: resourceType={}, pid={}",
-            event.resourceType(), event.pid());
-        
+        log.debug("Processing subscription event: {}", event);
+//        log.info("Processing subscription event: resourceType={}, pid={}",
+//            event.resourceType(), event.pid());
+
         String messagesHost = System.getenv("NS_MESSAGES_HOST");
         String messagesPort = System.getenv("NS_MESSAGES_PORT");
-
-        HttpClient client = HttpClient.newHttpClient();
+        log.debug("Target host:port is {}:{}", messagesHost, messagesPort);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
-                    "http://" + messagesHost+ ":" + messagesPort 
+                    "http://" + messagesHost+ ":" + messagesPort
                     + "/notifications/v1/private/eventhandler/send?resource=" +
-                event.resourceType() + "&pid=" + 
+                event.resourceType() + "&pid=" +
                 event.pid()))
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("")) 
+                .POST(HttpRequest.BodyPublishers.ofString(""))
                 .build();
-        try {
-            HttpResponse<String> response = client.send(request, 
-                HttpResponse.BodyHandlers.ofString());
+        try (HttpClient client = HttpClient.newHttpClient()) {
 
-            System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Response Body: " + response.body());
-            
+            HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            log.debug("Status Code: {}", response.statusCode());
+            log.debug("Response Body: {}", response.body());
+
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error("Error: {}; making request to uri: {}", e.getMessage(), request.uri());
         }
     }
 }
