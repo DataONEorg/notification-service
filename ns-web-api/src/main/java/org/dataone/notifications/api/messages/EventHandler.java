@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -13,59 +12,57 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import org.dataone.notifications.NotificationListener;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.api.resource.SubscriptionResource;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.Subscription;
-import org.dataone.notifications.EmailUtil;
+import org.dataone.notifications.EmailNotifier;
 
 import org.slf4j.Logger;
 
 import java.util.List;
-
 
 @RequestScoped
 @Path("/private/eventhandler")
 public class EventHandler {
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataRepository dataRepository;
-    private EmailUtil emailUtil;
-
-    public EventHandler() {
-        throw new IllegalStateException(
-            "EventHandler not initialized: missing DataRepository");
-    }
+    private final NotificationListener emailListener;
 
     @Inject
     public EventHandler(DataRepository dataRepository){
         this.dataRepository = dataRepository;
-        this.emailUtil = new EmailUtil();
+        this.emailListener = new EmailNotifier();
     }
 
     @POST
     @Path("/send")
     @Produces(MediaType.APPLICATION_JSON)
     public Record send(
-        @QueryParam("resource") String resource, 
+        @QueryParam("resource") String resource,
         @QueryParam("pid") String pid
     ){
-        log.debug("Received request to send event for resource type: {}",
-            resource);
+        log.debug("Got request to process event for pid: {} of resource type: {}", pid, resource);
         SubscriptionResourceType resourceType = validateResourceType(resource);
         validatePid(pid);
-        List<Subscription> subscriptions = 
+        List<Subscription> subscriptions =
             dataRepository.getSubscriptionsByPid(pid, resourceType);
         log.debug(
-            "Sending event for resource type: {} and pid: {} to {} subscriptions", 
-            resourceType, pid, subscriptions.size());
+            "Sending notification to {} subscribers, for pid: {} of resource type: {}",
+            subscriptions.size(), pid, resourceType);
         for (Subscription subscription : subscriptions) {
-            log.debug("Sending event to subscription: {}", subscription);
-            String response = emailUtil.sendMail(resourceType.toString(), pid);
-            log.debug("Email send response: {}", response);
+            String subscriber = subscription.subject();
+            log.debug("Sending notification to subscriber ORCID: {}", subscriber);
+            // If we decide to notify via other channels besides email (eg SMS? etc.), we can add
+            // code here to handle different notification types
+            String response = emailListener.handleNotification(subscriber, resourceType.toString(), pid);
+            log.debug("Notification response: {}", response);
         }
-        
+
         return new SendResponse(
             "Received event for resource type: "
-             + resourceType + " and pid: " + pid + ". Sent to " 
+             + resourceType + " and pid: " + pid + ". Sent to "
              + subscriptions.size() + " subscriptions.");
     }
 
@@ -83,18 +80,10 @@ public class EventHandler {
     public record SendResponse(String message) {}
 
     private SubscriptionResourceType validateResourceType(String resource) {
-        if (resource == null) {
-            log.error("Missing resource type");
-            throw new NotFoundException("Missing resource type");
-        }
-        SubscriptionResourceType resourceType;
-        try {
-            resourceType = SubscriptionResourceType.fromString(resource);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e.getMessage());
-        }
-        return resourceType;
+        return SubscriptionResource.getSubscriptionResourceType(resource, log);
     }
+
+
 
     private void validatePid(String pid) {
         if (pid == null) {

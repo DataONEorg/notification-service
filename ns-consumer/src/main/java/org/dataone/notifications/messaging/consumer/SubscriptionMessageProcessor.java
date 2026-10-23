@@ -20,14 +20,10 @@ public class SubscriptionMessageProcessor {
         SubscriptionMessageProcessor.class);
 
     public void process(SubscriptionEvent event) {
-        log.debug("Processing SubscriptionEvent: {}", event);
-//        log.info("Processing subscription event: resourceType={}, pid={}",
-//            event.resourceType(), event.pid());
+        log.debug("Processing subscription event: {}", event);
 
         String messagesHost = System.getenv("NS_MESSAGES_HOST");
         String messagesPort = System.getenv("NS_MESSAGES_PORT");
-        log.debug("Target host:port is {}:{}", messagesHost, messagesPort);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
                     "http://" + messagesHost+ ":" + messagesPort
@@ -37,14 +33,12 @@ public class SubscriptionMessageProcessor {
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(""))
                 .build();
-        try (HttpClient client = HttpClient.newHttpClient()) {
 
+        log.debug("Sending request to {}", request.uri());
+        try (HttpClient client = HttpClient.newHttpClient()) {
             HttpResponse<String> response =
                 client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            log.debug("Status Code: {}", response.statusCode());
-            log.debug("Response Body: {}", response.body());
-
+            log.debug("Response Status Code::Body: {}::{}", response.statusCode(), response.body());
         } catch (IOException | InterruptedException e) {
             log.error("Error: {}; making request to uri: {}", e.getMessage(), request.uri());
         }

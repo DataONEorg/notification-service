@@ -3,6 +3,7 @@ package org.dataone.notifications;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
@@ -11,16 +12,16 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EmailUtil {
+public class EmailNotifier implements NotificationListener {
     Session session;
-    private static final Logger log = LoggerFactory.getLogger(EmailUtil.class);
-    
-    public EmailUtil(){
+    private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
+
+    public EmailNotifier(){
         Properties props = new Properties();
         boolean emailAuthEnabled = Boolean.parseBoolean(System.getenv("EMAIL_AUTH_ENABLED"));
         String emailHost = System.getenv("EMAIL_HOST");
         String emailPort = System.getenv("EMAIL_PORT");
-        log.debug("Initializing EmailUtil with host: {}, port: {}, auth enabled: {}", emailHost, emailPort, emailAuthEnabled);
+        log.debug("Initializing EmailNotifier with host: {}, port: {}, auth enabled: {}", emailHost, emailPort, emailAuthEnabled);
         props.put("mail.smtp.host", emailHost);
         props.put("mail.smtp.port", emailPort);
         if(emailAuthEnabled) {
@@ -43,30 +44,41 @@ public class EmailUtil {
         }
     }
 
-    public String sendMail(String resourceType, String pid){
+    @Override
+    public String handleNotification(String subscriber, String resourceType, String pid){
         try{
             MimeMessage message = new MimeMessage(session);
+
+            InternetAddress recipientEmail = getEmailForOrcid(subscriber);
+            // TODO: get from address from config/env
             message.setFrom(new InternetAddress("noreply@myapp.test", "My App"));
-            message.setRecipient(
-                    Message.RecipientType.TO,
-                    new InternetAddress("test@example.com")
-            );
+            message.setRecipient(Message.RecipientType.TO, recipientEmail);
+            // TODO: get body from config/env
             String emailText = """
                     This is a test email. You have subscribed to notifications for
-                    action: %s  on the record with pid: %s. 
+                    action: %s  on the record with pid: %s.
                     """.formatted(resourceType, pid);
+            // TODO: get subject from config/env
             message.setSubject("Hello from the Notification Service!");
             message.setText(emailText);
 
-            // Send it
             Transport.send(message);
 
-            System.out.println("Email sent successfully!");
+            log.debug("Email sent successfully!");
             return "Email sent successfully!";
         }catch(Exception e){
-            e.printStackTrace();
-            return "Failed to send email: " + e.getMessage();
+            log.error("Failed to send email, due to error: {}", e.getMessage(), e);
+            return "Failed to send email, due to error: " + e.getMessage();
         }
-        
+
+    }
+
+    private InternetAddress getEmailForOrcid(String subscriber) throws AddressException {
+        // Placeholder implementation for retrieving email address based on subject (ORCID)
+        // In a real implementation, this would query the account service and/or ORCID API
+        log.debug("Retrieving email for ORCID: {}", subscriber);
+
+        return new InternetAddress(
+            subscriber.replaceAll("https?//:", "").replace('/', '-') + "@example.com"); //
     }
 }
