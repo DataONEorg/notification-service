@@ -30,6 +30,12 @@ public class EventHandler {
     private final DataRepository dataRepository;
     private final NotificationListener emailListener;
 
+    // Constructor for dependency injection. The no-arg constructor is required for CDI.
+    @Deprecated
+    public EventHandler(){
+        throw new IllegalStateException("EventHandler must be constructed with a DataRepository");
+    }
+
     @Inject
     public EventHandler(DataRepository dataRepository){
         this.dataRepository = dataRepository;
