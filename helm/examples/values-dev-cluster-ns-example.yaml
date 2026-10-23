@@ -63,7 +63,6 @@ ingress:
 nsconsumer:
   image:
     repository: ghcr.io/dataoneorg/notification-consumer
-    tag: feature-5-eventhandler
     pullPolicy: Always
 
 rmq:

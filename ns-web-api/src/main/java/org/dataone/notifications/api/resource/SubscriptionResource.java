@@ -195,6 +195,11 @@ public class SubscriptionResource {
 
 
     private SubscriptionResourceType validateResourceType(String resource) {
+        return getSubscriptionResourceType(resource, log);
+    }
+
+    public static SubscriptionResourceType getSubscriptionResourceType(
+        String resource, Logger log) {
         if (resource == null) {
             log.error("Missing resource type");
             throw new NotFoundException("Missing resource type");

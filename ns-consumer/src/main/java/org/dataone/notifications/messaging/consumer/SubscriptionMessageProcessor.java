@@ -4,6 +4,7 @@ import org.dataone.notifications.messaging.SubscriptionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,32 +20,27 @@ public class SubscriptionMessageProcessor {
         SubscriptionMessageProcessor.class);
 
     public void process(SubscriptionEvent event) {
-        log.info("Processing subscription event: resourceType={}, pid={}",
-            event.resourceType(), event.pid());
-        
+        log.debug("Processing subscription event: {}", event);
+
         String messagesHost = System.getenv("NS_MESSAGES_HOST");
         String messagesPort = System.getenv("NS_MESSAGES_PORT");
-
-        HttpClient client = HttpClient.newHttpClient();
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
-                    "http://" + messagesHost+ ":" + messagesPort 
+                    "http://" + messagesHost+ ":" + messagesPort
                     + "/notifications/v1/private/eventhandler/send?resource=" +
-                event.resourceType() + "&pid=" + 
+                event.resourceType() + "&pid=" +
                 event.pid()))
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("")) 
+                .POST(HttpRequest.BodyPublishers.ofString(""))
                 .build();
-        try {
-            HttpResponse<String> response = client.send(request, 
-                HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Response Body: " + response.body());
-            
+        log.debug("Sending request to {}", request.uri());
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+            log.debug("Response Status Code::Body: {}::{}", response.statusCode(), response.body());
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error("Error: {}; making request to uri: {}", e.getMessage(), request.uri());
         }
     }
 }

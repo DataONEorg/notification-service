@@ -1,5 +1,5 @@
 # This workflow will use the output from the Maven build, to create a multi-platform docker image
-# and push it to the GitHub Container Registry (ghcr.io).
+# for the given image-name, and push it to the GitHub Container Registry (ghcr.io).
 name: Docker Publish
 
 on:
@@ -9,9 +9,15 @@ on:
       version:
         required: true
         type: string
+      imageName:
+        required: true
+        type: string
+      dockerFilePath:
+        required: true
+        type: string
 
 jobs:
-  docker-publish-web-api:
+  docker-publish-consumer:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,12 +40,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository_owner }}/notification-service
+          images: ghcr.io/${{ github.repository_owner }}/${{ inputs.imageName}}
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/Dockerfile-web-api
+          file: ${{inputs.dockerFilePath}}
           platforms: linux/amd64,linux/arm64
           build-args: TAG=${{ inputs.version }}
           push: ${{ github.event_name != 'pull_request' }}
