@@ -22,6 +22,7 @@ import org.dataone.notifications.EmailNotifier;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 
 @RequestScoped
 @Path("/private/eventhandler")
@@ -57,19 +58,33 @@ public class EventHandler {
         log.debug(
             "Sending notification to {} subscribers, for pid: {} of resource type: {}",
             subscriptions.size(), pid, resourceType);
+        List<String> successList = new java.util.ArrayList<>();
+        Map<String, String> failureMap = new java.util.HashMap<>();
         for (Subscription subscription : subscriptions) {
             String subscriber = subscription.subject();
             log.debug("Sending notification to subscriber ORCID: {}", subscriber);
-            // If we decide to notify via other channels besides email (eg SMS? etc.), we can add
-            // code here to handle different notification types
-            String response = emailListener.handleNotification(subscriber, resourceType.toString(), pid);
-            log.debug("Notification response: {}", response);
+            try {
+                // If we decide to notify via other channels besides email (eg SMS? etc.), we can
+                // add code here to handle different notification types:
+                String response =
+                    emailListener.handleNotification(subscriber, resourceType.toString(), pid);
+                log.debug("Email sent successfully to subscriber: {}", response);
+                successList.add(response);
+            } catch (Exception e) {
+                log.error("Failed to send email to: {}. Error: {}", subscriber,e.getMessage());
+                failureMap.put(subscriber, e.getMessage());
+            }
         }
+        return new NotificationResult(successList, failureMap);
+    }
 
-        return new SendResponse(
-            "Received event for resource type: "
-             + resourceType + " and pid: " + pid + ". Sent to "
-             + subscriptions.size() + " subscriptions.");
+    /**
+     * A record representing the result of a notification handling operation.
+     *
+     * @param successful   A list of subscribers for whom the notification was successfully sent.
+     * @param unsuccessful A map of subscribers to error messages for whom the notification failed.
+     */
+    public record NotificationResult(List<String> successful, Map<String, String> unsuccessful) {
     }
 
     @GET
@@ -77,19 +92,14 @@ public class EventHandler {
     @Produces(MediaType.APPLICATION_JSON)
     public Record ping() {
         log.debug("Received ping request");
-        return new PingResponse("pong");
+        return new PingResponse("ok");
     }
-    // Simple DTO implementing the same marker type used elsewhere
-    public record PingResponse(String status) {}
 
-    // Simple DTO for the send request
-    public record SendResponse(String message) {}
+    public record PingResponse(String status) {}
 
     private SubscriptionResourceType validateResourceType(String resource) {
         return SubscriptionResource.getSubscriptionResourceType(resource, log);
     }
-
-
 
     private void validatePid(String pid) {
         if (pid == null) {
