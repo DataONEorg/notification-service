@@ -79,6 +79,6 @@ public class EmailNotifier implements NotificationListener {
         log.debug("Retrieving email for ORCID: {}", subscriber);
 
         return new InternetAddress(
-            subscriber.replaceAll("https?//:", "").replace('/', '-') + "@example.com"); //
+            subscriber.replaceAll("https?://", "").replace('/', '-') + "@example.com"); //
     }
 }
