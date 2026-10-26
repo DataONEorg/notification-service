@@ -27,6 +27,5 @@ public class Metrics {
         return new PingResponse("ok");
     }
 
-    // Simple DTO implementing the same marker type used elsewhere
     public record PingResponse(String status) {}
 }
