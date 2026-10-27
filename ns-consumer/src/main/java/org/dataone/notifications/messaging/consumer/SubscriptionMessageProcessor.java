@@ -16,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import notifications.util.StringUtils;
@@ -69,8 +70,8 @@ public class SubscriptionMessageProcessor {
      *
      * @param body String representation of the message body.
      * @return A SubscriptionEvent object representing the deserialized message.
-     * @throws IOException If there is an error during deserialization.
-     * @throws IgnoredResourceTypeException If the resource type is ignored (e.g., "DATA")
+     * @throws IOException                      If there is an error during deserialization.
+     * @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
      * @throws UnsupportedResourceTypeException If the resource type is unsupported.
      */
     private SubscriptionEvent deserialize(String body)
@@ -80,9 +81,12 @@ public class SubscriptionMessageProcessor {
             NsEventMessage.NsEvent nsEvent = mapper.readValue(body, NsEventMessage.class).nsEvent();
             SubscriptionResourceType resourceType = getResourceType(nsEvent);
             String pid = requireText(nsEvent.id(), "id");
+            log.debug(
+                "Deserialized message into SubscriptionEvent with resourceType: {}, pid: {}",
+                resourceType, pid);
             return new SubscriptionEvent(resourceType, pid);
         } catch (IgnoredResourceTypeException | UnsupportedResourceTypeException e) {
-            log.info("Ignoring message with body: {}. Reason: {}", body, e.getMessage());
+            log.debug("Ignoring message with body: {}. Reason: {}", body, e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Error: {}; while deserializing message: {}", e.getMessage(), body);
@@ -116,7 +120,7 @@ public class SubscriptionMessageProcessor {
     /// @param nsEvent The SolrDoc object containing the fields needed to determine the resource
     /// type
     /// @return The resource type as a SubscriptionResourceType
-    /// @throws IgnoredResourceTypeException If the resource type is ignored (e.g., "DATA")
+    /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
     /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
     ///
     private SubscriptionResourceType getResourceType(NsEventMessage.NsEvent nsEvent)
@@ -127,19 +131,25 @@ public class SubscriptionMessageProcessor {
         try {
             formatType = requireText(nsEvent.formatType(), "formatType");
             formatId = requireText(nsEvent.formatId(), "formatId");
+            log.debug(
+                "getResourceType() got formatType: {}, formatId: {} & resourceMap(): {}",
+                formatType, formatId, nsEvent.resourceMap());
         } catch (IOException e) {
             throw new UnsupportedResourceTypeException(e.getMessage());
         }
+        List<String> resourceMap = nsEvent.resourceMap();
 
         return switch (formatType) {
             case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");
             case "RESOURCE" -> SubscriptionResourceType.datasetChanges;
             case "METADATA" -> {
                 if (PORTAL_FORMAT_ID_PATTERN.matcher(formatId).matches()) {
+                    log.debug("formatId: {} matches portal pattern -> portalMetaChanges", formatId);
                     yield SubscriptionResourceType.portalMetaChanges;
                 }
-                if (nsEvent.resourceMap() != null && !nsEvent.resourceMap().isEmpty()
-                    && !StringUtils.isBlank(nsEvent.resourceMap().getFirst())) {
+                if (resourceMap != null && !resourceMap.isEmpty() && !StringUtils.isBlank(
+                    resourceMap.getFirst())) {
+                    log.debug("resourceMap: {} exists -> ignore to avoid duplicate", resourceMap);
                     throw new IgnoredResourceTypeException(
                         "formatType: METADATA with resourceMap is ignored");
                 }
