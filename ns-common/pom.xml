@@ -51,5 +51,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-web-api</artifactId>
+            <version>${jakarta.platform.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

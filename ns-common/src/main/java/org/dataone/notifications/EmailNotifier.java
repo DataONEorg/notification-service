@@ -1,5 +1,6 @@
 package org.dataone.notifications;
 
+import jakarta.enterprise.inject.Default;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
@@ -13,6 +14,7 @@ import org.dataone.notifications.exception.NotificationDeliveryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Default
 public class EmailNotifier implements NotificationListener {
     private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
     Session session;
