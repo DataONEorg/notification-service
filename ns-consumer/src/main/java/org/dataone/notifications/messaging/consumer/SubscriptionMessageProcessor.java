@@ -117,13 +117,13 @@ public class SubscriptionMessageProcessor {
     /// - Enumeration of available resource types:
     /// [org.dataone.notifications.api.resource.SubscriptionResourceType]
     ///
-    /// @param nsEvent The SolrDoc object containing the fields needed to determine the resource
+    /// @param nsEvent The nsEvent object containing the fields needed to determine the resource
     /// type
     /// @return The resource type as a SubscriptionResourceType
     /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
     /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
     ///
-    private SubscriptionResourceType getResourceType(NsEventMessage.NsEvent nsEvent)
+    protected SubscriptionResourceType getResourceType(NsEventMessage.NsEvent nsEvent)
         throws IgnoredResourceTypeException, UnsupportedResourceTypeException {
 
         String formatType;
