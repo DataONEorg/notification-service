@@ -1,4 +1,4 @@
-package org.dataone.notifications.api.messages;
+package org.dataone.notifications.api.internal.event;
 
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,6 @@ import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.dataone.notifications.api.resource.SubscriptionResource;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.Subscription;
-import org.dataone.notifications.EmailNotifier;
 
 import org.slf4j.Logger;
 
@@ -38,9 +37,9 @@ public class EventHandler {
     }
 
     @Inject
-    public EventHandler(DataRepository dataRepository){
+    public EventHandler(DataRepository dataRepository, NotificationListener emailListener){
         this.dataRepository = dataRepository;
-        this.emailListener = new EmailNotifier();
+        this.emailListener = emailListener;
     }
 
     @POST
