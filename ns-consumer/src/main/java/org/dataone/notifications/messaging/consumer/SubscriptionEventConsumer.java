@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.dataone.notifications.messaging.SubscriptionEvent;
-import org.dataone.notifications.messaging.config.RabbitMqProperties;
+import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
