@@ -9,7 +9,8 @@ import com.rabbitmq.client.Delivery;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.dataone.notifications.messaging.config.RabbitMqProperties;
+import org.dataone.notifications.messaging.SubscriptionEvent;
+import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package org.dataone.notifications.messaging.consumer;
 
 import org.dataone.notifications.NsConfig;
-import org.dataone.notifications.messaging.config.RabbitMqProperties;
+import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

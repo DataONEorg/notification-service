@@ -1,4 +1,4 @@
-package org.dataone.notifications.messaging.config;
+package org.dataone.notifications.event;
 
 import java.util.Objects;
 import org.apache.commons.configuration2.Configuration;
