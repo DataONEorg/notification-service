@@ -86,7 +86,8 @@ public class SubscriptionMessageProcessor {
                 resourceType, pid);
             return new SubscriptionEvent(resourceType, pid);
         } catch (IgnoredResourceTypeException | UnsupportedResourceTypeException e) {
-            log.debug("Ignoring message with body: {}. Reason: {}", body, e.getMessage());
+            log.debug("Ignoring message; reason: {}", e.getMessage());
+            log.trace("Ignored message body: {}", body);
             throw e;
         } catch (Exception e) {
             log.error("Error: {}; while deserializing message: {}", e.getMessage(), body);
@@ -97,19 +98,18 @@ public class SubscriptionMessageProcessor {
     /// Extracts the SubscriptionResourceType from the given parameters.
     ///
     /// `formatType` can be `RESOURCE`, `DATA`, or `METADATA`:
-    ///
     /// - `DATA` can be ignored because there will always be another event for the corresponding
-    /// resourceMap update, and we don't want to alert twice for the same thing.
+    ///   resourceMap update, and we don't want to alert twice for the same thing.
     /// - `RESOURCE` is a resourceMap, which is always a dataset, so return
-    /// `SubscriptionResourceType.datasetChanges`.
+    ///   `SubscriptionResourceType.datasetChanges`.
     /// - For `METADATA`:
     ///   - If `formatId` matches `https://purl.dataone.org/portals-.*`, return
-    /// `SubscriptionResourceType.portalMetaChanges` (portals do not have a resourceMap).
+    ///     `SubscriptionResourceType.portalMetaChanges` (portals do not have a resourceMap).
     ///   - If a `resourceMap` field exists, ignore the event because there will be another event
-    /// for the corresponding resourceMap update, and we don't want to alert twice for the same
-    /// thing.
+    ///     for the corresponding resourceMap update, and we don't want to alert twice for the same
+    ///     thing.
     ///   - If a `resourceMap` field does not exist, this is a science-metadata-only dataset; return
-    /// `SubscriptionResourceType.datasetChanges`.
+    ///     `SubscriptionResourceType.datasetChanges`.
     ///
     /// References:
     ///
