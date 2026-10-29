@@ -40,8 +40,9 @@
         <hikaricp.version>6.3.0</hikaricp.version>
         <failsafe.version>3.3.1</failsafe.version>
         <jackson.core.version>2.22.3</jackson.core.version>
-        <jackson.data.version>3.2.3</jackson.data.version>
-        <jersey.version>3.1.10</jersey.version>
+        <jackson.data.version>3.2.4</jackson.data.version>
+        <jakarta.platform.version>11.0.0</jakarta.platform.version>
+        <jersey.version>4.0.3</jersey.version>
         <junit-jupiter-version>5.13.3</junit-jupiter-version>
         <microprofile-openapi.version>4.1.1</microprofile-openapi.version>
         <log4j.version>2.26.1</log4j.version>

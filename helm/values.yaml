@@ -20,16 +20,16 @@ ns:
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
-  ## @param ns.auth.api.connectionTimeout The timeout limit for opening a connection to the auth API
-    ## @param ns.auth.api.readTimeout The timeout limit for reading data from the auth API
+  ## @param ns.auth.api.connectTimeoutMilliSec Timeout limit for opening connection to the auth API
+  ## @param ns.auth.api.readTimeoutMilliSec Timeout limit for reading data from the auth API
   ##
   auth:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
-      connectTimeout: 10000
-      readTimeout: 20000
+      connectTimeoutMilliSec: 5000
+      readTimeoutMilliSec: 5000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
@@ -50,12 +50,21 @@ ns:
     ##
     jdbcPort: 5432
 
+## @param replicaCount The number of replicas for the notification web-api service deployment.
+##
 replicaCount: 1
 
 image:
+  ## @param image.repository image repository
+  ##
   repository: ghcr.io/dataoneorg/notification-service
+
+  ## @param image.pullPolicy image pull policy
+  ##
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+
+  ## @param image.tag Overrides the image tag. Will default to the chart appVersion if set to ""
+  ##
   tag: ""
 
 
@@ -71,16 +80,25 @@ serviceAccount:
   annotations: {}
   name: ""
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+## @param podAnnotations Annotations to add to the pod
+## see: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+##
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+
+## @param podLabels Labels to add to the pod
+## see: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##
 podLabels: {}
 
+## @param podSecurityContext Security context for the pod
+## see: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+##
 podSecurityContext: {}
   # fsGroup: 2000
 
+## @param securityContext Security context for the container
+## see: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+##
 securityContext: {}
   # capabilities:
   #   drop:
@@ -119,7 +137,7 @@ ingress:
   ##
   corsEnabled: true
 
-  ## @param ingress.hosts [Object] List of hosts to be used for the ingress
+  ## List of hosts to be used for the ingress
   ## Each host must have a path defined, and the pathType must be set to either
   ## 'ImplementationSpecific', 'Exact', or 'Prefix'; e.g:
   ##   hosts:
@@ -128,16 +146,23 @@ ingress:
   ##         - path: /
   ##           pathType: Prefix
   hosts:
+      ## @param ingress.hosts[0].host The hostname for the ingress
     - host: localhost
       paths:
+          ## @param ingress.hosts[0].paths[0].path The path for the ingress host
         - path: /
+          ## @param ingress.hosts[0].paths[0].pathType The path type for the ingress host
           pathType: Prefix
-        # send requests for private paths to a dummy service that returns
-        # "503 Service Unavailable", so that external users cannot access them
+        ## send requests for private paths to a dummy service that returns
+        ## "503 Service Unavailable", so that external users cannot access them
+          ## @param ingress.hosts[0].paths[1].path The path for the ingress host
         - path: /notifications/v1/private
+            ## @param ingress.hosts[0].paths[1].pathType The path type for the ingress host
           pathType: Prefix
           backend:
+            ## @param ingress.hosts[0].paths[1].backend.serviceName The service name for the backend
             serviceName: dev-null-service
+            ## @param ingress.hosts[0].paths[1].backend.servicePort The service port for the backend
             servicePort: 8080
 
   ## @param ingress.tls List of TLS configurations for the ingress
@@ -200,6 +225,7 @@ livenessProbe:
 ## @param readinessProbe.enabled Enable readinessProbe for notifications container
 ## @param readinessProbe.httpGet.path The url path to probe.
 ## @param readinessProbe.httpGet.port The named containerPort to probe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
 ## @param readinessProbe.periodSeconds Period seconds for readinessProbe
 ## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
 ## @param readinessProbe.successThreshold Min consecutive successes for probe to be successful
@@ -216,44 +242,72 @@ readinessProbe:
   failureThreshold: 50
   successThreshold: 1
 
-# CURRENTLY IGNORED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
-# This section is for setting up autoscaling. More information can be found here:
-# https://kubernetes.io/docs/concepts/workloads/autoscaling/
+## CURRENTLY IGNORED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
+## This section is for setting up autoscaling. More information can be found here:
+## https://kubernetes.io/docs/concepts/workloads/autoscaling/
+## @param autoscaling.enabled Enable or disable autoscaling for the notification service deployment
+## @param autoscaling.minReplicas Minimum number of replicas for the notification service deployment
+## @param autoscaling.maxReplicas Maximum number of replicas for the notification service deployment
+## @param autoscaling.targetCPUUtilizationPercentage Target CPU utilization percentage for the notification service deployment
+## @param autoscaling.targetMemoryUtilizationPercentage Target memory utilization percentage for the notification service deployment
+##
 autoscaling:
-  enabled: false
+  enabled: false    # CURRENTLY IGNORED - NEEDS METRICS SERVICE ON CLUSTER
   minReplicas: 1
-  maxReplicas: 10
-  # targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  maxReplicas: 10   # CURRENTLY IGNORED - NEEDS METRICS SERVICE ON CLUSTER
+  targetCPUUtilizationPercentage: 80    # CURRENTLY IGNORED - NEEDS METRICS SERVICE ON CLUSTER
+  targetMemoryUtilizationPercentage: 80 # CURRENTLY IGNORED - NEEDS METRICS SERVICE ON CLUSTER
 
-# Additional volumes on the output Deployment definition.
+## @param extraVolumes Optional additional volumes to be added to the pod.
+## Format:
+## extraVolumes:
+##   - name: example-volume
+##     emptyDir: {}
+##
 extraVolumes: []
 
-# Additional volumeMounts on the output Deployment definition.
+## @param extraVolumeMounts Optional additional volume mounts to be added to the container.
+## Format:
+## extraVolumeMounts:
+##   - name: example-volume
+##     mountPath: /example/path
+##
 extraVolumeMounts: []
 
+## @param service.port The port for the notification service.
+##
 service:
   port: 8080
 
+## @param imagePullSecrets Optional list of image pull secrets (if image repo requires auth)
 imagePullSecrets: []
+## @param fullnameOverride Override the full name of the chart
 fullnameOverride: ""
+## @param nameOverride Override the name of the chart
 nameOverride: ""
+## @param nodeSelector Node labels for pod assignment
 nodeSelector: {}
+## @param tolerations Tolerations for pod assignment
 tolerations: []
+## @param affinity Affinity for pod assignment
 affinity: {}
-resources: {}
 
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with limited
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-#resources:
-#  limits:
-#    cpu: 500m
-#    memory: 512Mi
-#  requests:
-#    cpu: 300m
-#    memory: 128Mi
+## Resource requests and limits for the notification service deployment
+resources:
+  requests:
+    ## @param resources.requests.cpu CPU requested for the nsconsumer container
+    ##
+    cpu: 100m
+    ## @param resources.requests.memory Memory requested for the nsconsumer container
+    ##
+    memory: 512Mi
+  limits:
+    ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
+    ##
+    cpu: 500m
+    ## @param resources.limits.memory Maximum memory the nsconsumer container may use
+    ##
+    memory: 1Gi
 
 ## @section Tomcat Configuration
 tomcat:
@@ -323,27 +377,62 @@ tomcat:
   ##
   remoteDebugPort: 5005
 
-# Default values for nsconsumer subchart
+## @Section Default values for nsconsumer subchart
 nsconsumer:
+
+  ## @param nsconsumer.replicaCount The number of replicas for the nsconsumer deployment
+  ##
   replicaCount: 1
+
+  ## @param nsconsumer.nameOverride String to partially override the nsconsumer chart name
+  ##
   nameOverride: ""
+
+  ## @param nsconsumer.fullNameOverride String to fully override the nsconsumer resource names
+  ##
   fullNameOverride: ""
+
   image:
+    ## @param nsconsumer.image.repository The nsconsumer image repository
+    ##
     repository: ghcr.io/dataoneorg/nsconsumer
+
+    ## @param nsconsumer.image.pullPolicy The nsconsumer image pull policy
+    ##
     pullPolicy: IfNotPresent
 
+
+  ## Resource requests and limits for the notification consumer deployment
   resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
     requests:
+      ## @param nsconsumer.resources.requests.cpu CPU requested for the nsconsumer container
+      ##
       cpu: 100m
+      ## @param nsconsumer.resources.requests.memory Memory requested for the nsconsumer container
+      ##
       memory: 128Mi
+    limits:
+      ## @param nsconsumer.resources.limits.cpu Maximum CPU the nsconsumer container may use
+      ##
+      cpu: 200m
+      ## @param nsconsumer.resources.limits.memory Maximum memory the nsconsumer container may use
+      ##
+      memory: 256Mi
 
   serviceAccount:
+    ## @param nsconsumer.serviceAccount.create Should a service account be created for nsconsumer?
+    ##
     create: false
+    ## @param nsconsumer.serviceAccount.name The name of the service account to use for nsconsumer
+    ##
     name: ""
 
+  ## @param nsconsumer.readinessProbe.enabled Enable the readinessProbe for the nsconsumer container
+  ## @param nsconsumer.readinessProbe.exec.command The command that checks the consumer's readiness file is fresh (<30s old)
+  ## @param nsconsumer.readinessProbe.initialDelaySeconds Seconds to wait after container start before probing
+  ## @param nsconsumer.readinessProbe.periodSeconds How often (in seconds) to perform the probe
+  ## @param nsconsumer.readinessProbe.timeoutSeconds Seconds after which the probe times out
+  ##
   readinessProbe:
     enabled: true
     exec:
@@ -355,6 +444,12 @@ nsconsumer:
     periodSeconds: 10
     timeoutSeconds: 5
 
+  ## @param nsconsumer.livenessProbe.enabled Enable the livenessProbe for the nsconsumer container
+  ## @param nsconsumer.livenessProbe.exec.command The command that checks the consumer's readiness file is fresh (<30s old)
+  ## @param nsconsumer.livenessProbe.initialDelaySeconds Seconds to wait after container start before probing
+  ## @param nsconsumer.livenessProbe.periodSeconds How often (in seconds) to perform the probe
+  ## @param nsconsumer.livenessProbe.timeoutSeconds Seconds after which the probe times out
+  ##
   livenessProbe:
     enabled: true
     exec:
@@ -366,27 +461,26 @@ nsconsumer:
     periodSeconds: 10
     timeoutSeconds: 5
 
-  # @param extraEnvVars Optional additional env vars to be added to the container.
-  # Format:
-  # extraEnvVars:
-  #   EXAMPLE_ENV_VAR: "example_value_1"
-  #   EXAMPLE_ENV_VAR_2: "example_value_2"
+  ## @param nsconsumer.extraEnvVars Optional additional env vars to be added to the container.
+  ## Format:
+  ## extraEnvVars:
+  ##   EXAMPLE_ENV_VAR: "example_value_1"
+  ##   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
-# @section emailUtil Configuration for the email utility used by the notification service.
+## @section Configuration for the SMTP server used to send email notifications
 emailUtil:
-  # @param emailUtil.host The hostname of the SMTP server to use for sending emails.
+  ## @param emailUtil.host The hostname of the SMTP server to use for sending emails.
   host: ADD_HOST
-  # @param emailUtil.port The port of the SMTP server to use for sending emails.
+  ## @param emailUtil.port The port of the SMTP server to use for sending emails.
   port: 1025
-  # @section emailUtil.auth Configuration for SMTP authentication.
   auth:
-    # @param emailUtil.auth.enabled Enable or disable SMTP authentication.
+    ## @param emailUtil.auth.enabled Enable or disable SMTP authentication.
     enabled: true
-    # @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
-    # created automatically if you don't provide one, so you have to either
-    # create it manually or via some other chart. The mailpit chart creates it automatically,
-    # and then you can just supply the name.
+    ## @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
+    ## created automatically if you don't provide one, so you have to either
+    ## create it manually or reference a secret created by the email service chart.
+    ##
     existingSecret: ""
 
 ## @section RabbitMQ Connection Configuration
@@ -397,37 +491,44 @@ emailUtil:
 ##
 rmq:
   rmqConnection:
-    ## @param rmqConnection.existingSecret Secret holding rmq credentials. Leave blank to autopopulate
-    ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
+    ## @param rmq.rmqConnection.existingSecret Name of Secret holding RMQ credentials (REQUIRED)
     ##
-    existingSecret: "ns-rmq-4-1-3-default-user" # optional: if not using credentials in the default operator-generated secret
-    # TODO: autopopulate if not provided
+    existingSecret: "ns-rmq-4-1-3-default-user"
+    ## TODO: autopopulate if not provided
 
-    ## @param rmqConnection.hostname RMQ host to be called by indexer. Leave blank to autopopulate
-    ## from the bundled rabbitmq operator installation (if rmqOperator.enabled)
+    ## @param rmq.rmqConnection.hostname RMQ hostname (REQUIRED)
     ##
     hostname: "ns-rmq-4-1-3" # TODO: autopopulate if not provided
 
-    ## @param rmqConnection.port RMQ port to be called by consumer
+    ## @param rmq.rmqConnection.port RMQ amqp port
     ##
     port: "5672"
 
+    ## @param rmq.rmqConnection.virtualHost RMQ virtual host
+    ##
     virtualHost: "/"
 
+    ## @param rmq.rmqConnection.queueName RMQ queue name
+    ##
     queueName: "dataone.notifications"
 
+    ## @param rmq.rmqConnection.prefetchCount RMQ prefetch count
+    ## This is the number of messages that the consumer will prefetch from the queue before
+    ## acknowledging them. A higher prefetch count can improve throughput, but may also increase
+    ## memory usage and latency. The optimal value depends on the workload and the consumer's
+    ## processing speed.
+    ##
     prefetchCount: 25
 
-    ## @param rmqConnection.username The username needed for rabbitmq access. Leave blank to autopopulate
-    ## from 'rmqConnection.existingSecret'
+    ## @param rmq.rmqConnection.username The username needed for rabbitmq access.
     ##
     username: ""  # TODO: autopopulate if not provided
 
-    ## @param rmqConnection.rabbitmqUserKey key associated with rabbitmq username in existing secret
+    ## @param rmq.rmqConnection.rmqUserKey key for rabbitmq username in existing secret
     ##
     rmqUserKey: "username"
 
-    ## @param rmqConnection.rabbitmqPasswordKey key associated with rabbitmq password in existing secret
+    ## @param rmq.rmqConnection.rmqPasswordKey key for rabbitmq password in existing secret
     ##
     rmqPasswordKey: "password"
 
@@ -438,9 +539,11 @@ rmq:
   ## https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples/production-ready
   ##
   rmqOperator:
+    ## @param rmq.rmqOperator.enabled Enable or disable the RabbitMQ Operator installation
+    ##
     enabled: true
 
-    ## @param rmqOperator.nameOverride REQUIRED partial override for resourcename used for pods, PVCs etc
+    ## @param rmq.rmqOperator.nameOverride REQUIRED partial override for resourcename used for pods, PVCs etc
     ## Automatically prepends the release name, so the resulting resource name for the pods etc. will
     ## begin:  <myrelease>-<rabbitmq.nameOverride>-...
     ##
@@ -454,12 +557,12 @@ rmq:
     ##
     nameOverride: "rmq-4-1-3"
 
-    ## @param rmqOperator.replicaCount Number of desired rabbitmq pods (always use an odd number)
+    ## @param rmq.rmqOperator.replicaCount Number of desired rabbitmq pods (always use an odd number)
     ## see: https://www.rabbitmq.com/docs/clustering#node-count
     ##
     replicaCount: 1
 
-    ## @param rmqOperator.resources Resource requests and limits for rabbitmq pods (OVERRIDE THESE!)
+    ## Resource requests and limits for rabbitmq pods (OVERRIDE THESE!)
     ##
     ## NOTE:
     ##   CPU: For production, the ABSOLUTE MINIMUM is 2 CPUs per RabbitMQ node (and 4 CPUs
@@ -467,28 +570,37 @@ rmq:
     ##        RMQ will work poorly with 1 CPU, which is why it's not recommended for production
     ##        workloads
     ##   MEMORY: For production, min. 2GB of RAM is recommended, increasing to 4Gi or even 8 - 10Gi,
-    ##        depending on load. It is recommended to keep the memory requests and limits both at the
-    ##        same value.
+    ##        depending on load. It is recommended to keep the memory requests and limits both at
+    ##        the same value.
     ##
     resources:
       requests:
-        cpu: 500m
+        ## @param rmq.rmqOperator.resources.requests.cpu CPU requested for the nsconsumer
+        ##
+        cpu: 400m
+        ## @param rmq.rmqOperator.resources.requests.memory Memory requested for the nsconsumer
+        ##
         memory: 500Mi
+
       limits:
-        cpu: 800m
+        ## @param rmq.rmqOperator.resources.limits.cpu Maximum CPU the nsconsumer may use
+        ##
+        cpu: 900m
+        ## @param rmq.rmqOperator.resources.limits.memory Maximum memory the nsconsumer may use
+        ##
         memory: 500Mi
 
     persistence:
-      ## @param rmqOperator.persistence.storageClassName Storage class name for rabbitmq data PV
+      ## @param rmq.rmqOperator.persistence.storageClassName Storage class name for rabbitmq data PV
       ## REQUIRED
       ##
       storageClassName: ""
 
-      ## @param rmqOperator.persistence Size of persistent volume for rabbitmq data
+      ## @param rmq.rmqOperator.persistence.size Size of persistent volume for rabbitmq data
       ##
       size: 10Gi
 
-    ## @param rmqOperator.envConfig Additional rabbitmq environment variable settings
+    ## @param rmq.rmqOperator.envConfig Additional rabbitmq environment variable settings
     ## See:
     ##   https://www.rabbitmq.com/kubernetes/operator/using-operator#env-config
     ##   https://www.rabbitmq.com/docs/configure#customise-environment
@@ -497,18 +609,19 @@ rmq:
     ##     RABBITMQ_USE_LONGNAME: "true"
     envConfig: {}
 
-    ## @param rmqOperator.additionalConfig Additional rabbitmq configuration settings
+    ## Additional rabbitmq configuration settings
     ## See:
     ##   https://www.rabbitmq.com/docs/configure#config-items
     ##   https://www.rabbitmq.com/docs/production-checklist
     ##   https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples/production-ready
     ##
     additionalConfig:
+      ## @param rmq.rmqOperator.additionalConfig.disk_free_limit.relative set_disk_free_limit mem_relative
+      ## Limit relative to the total amount available RAM as a non-negative floating point number.
+      ## Values lower than 1.0 can be dangerous and should be used carefully
+      ## See:
+      ##   https://www.rabbitmq.com/docs/production-checklist#resource-limits-disk-space
+      ##   https://www.rabbitmq.com/docs/configure#config-items
+      ##   https://www.rabbitmq.com/docs/man/rabbitmqctl.8#set_disk_free_limit~2
+      ##
       disk_free_limit.relative: "1.0"
-
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}

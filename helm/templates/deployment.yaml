@@ -110,13 +110,14 @@ spec:
                   - /bin/sh
                   - -c
                   - |
-                    # The service will not initialize until it receives an initial request (and the
-                    # healthcheck uri doesn't count). A call to /datasetChanges without a token
-                    # returns HTTP 401, but still initializes the service and loads all the
-                    # necessary classes.
+                    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initializing app..." >> /tmp/postStart.log
+                    # App will not initialize until it receives a request. /datasetChanges call with
+                    # no token returns HTTP 401, but still initializes the service/loads the classes
                     until curl -s -o /dev/null http://localhost:8080/notifications/v1/datasetChanges; do
+                      echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - waiting for app to initialize..." >> /tmp/postStart.log
                       sleep 1
                     done
+                    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initialization done..." >> /tmp/postStart.log
           startupProbe:
             {{- omit .Values.startupProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}
