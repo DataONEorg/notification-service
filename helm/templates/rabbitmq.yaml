@@ -1,3 +1,4 @@
+{{- if .Values.rmq.rmqOperator.enabled }}
 ### RabbitMQ Cluster Configuration
 ## --------------------------------------
 ## This manifest deploys a RabbitMQ cluster using the RabbitMQ Cluster Operator.
@@ -32,3 +33,4 @@ spec:
   persistence:
     storageClassName: {{ required "rmq.rmqOperator.persistence.storageClassName IS REQUIRED" .Values.rmq.rmqOperator.persistence.storageClassName }}
     storage: {{ .Values.rmq.rmqOperator.persistence.size }}
+  {{- end }}

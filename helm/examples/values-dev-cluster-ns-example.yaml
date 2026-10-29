@@ -34,13 +34,13 @@ tomcat:
   remoteDebugEnabled: true
   remoteDebugPort: 5005
 
-resources:
-  limits:
-    cpu: 1000m
-    memory: 1024Mi
-  requests:
-    cpu: 300m
-    memory: 128Mi
+#resources:
+#  limits:
+#    cpu: 1000m
+#    memory: 1024Mi
+#  requests:
+#    cpu: 300m
+#    memory: 128Mi
 
 ingress:
   annotations:

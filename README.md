@@ -15,6 +15,24 @@ Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions)
 
 ## Documentation
 
+### Table of Contents
+
+- [API Usage Examples](#api-usage-examples)
+  - [Interactive Web Page](#interactive-web-page)
+  - [From the Command Line](#from-the-command-line)
+- [Getting Started - Running Notification Service Yourself](#getting-started---running-notification-service-yourself)
+  - [Running in a Kubernetes Cluster](#running-in-a-kubernetes-cluster)
+- [Developer Guide](#developer-guide)
+  - [Jakarta EE](#jakarta-ee)
+  - [Development build](#development-build)
+  - [Local Environment](#local-environment)
+  - [Running the Tests](#running-the-tests)
+    - [Unit Tests](#unit-tests)
+    - [Integration Tests](#integration-tests)
+    - [Smoke Tests](#smoke-tests)
+  - [Building and Running on a Localhost Web Application Server](#building-and-running-on-a-localhost-web-application-server)
+- [Appendix 1: Building and Publishing the Container Images](#appendix-1-building-and-publishing-the-container-images)
+
 Documentation is a work in progress, and can be found here in the README
 
 ## API Usage Examples
@@ -24,7 +42,7 @@ You can try out API queries on the interactive web page at: `${BASE_URL}/notific
 
 Example, for the instance running on the NCEAS dev cluster:
 - https://notifications.test.dataone.org/notifications
-- JWT token: > - Enter it using the `Authorize 🔒 ` button in the web UI).
+- JWT token: > - Enter it using the `Authorize 🔒 ` button in the web UI
 
 > [!TIP]
 > You can get an auth token by logging into a metacat instance that uses the same CN as the installation being tested, and going to `My Profile > Settings > Authentication Token`. For example:
@@ -61,24 +79,11 @@ $ curl --request DELETE "${BASE_URL}/notifications/v1/datasetChanges/{pid}" \
        --header "Authorization: Bearer $TOKEN"  |  jq
 ```
 
-## Getting Started - Running `Notification Service` Yourself
+## Getting Started - Running Notification Service Yourself
 
-> [!NOTE]
-> Notification Service requires a pre-existing PostgreSQL database (deployed either within or outside a Kubernetes cluster). We recommend CloudNative PG. Installing CNPG Operator is beyond the scope of this document, but the process is easy - see the [DataONE K8s Cluster documentation](https://github.com/DataONEorg/k8s-cluster/blob/main/postgres/postgres.md#cloudnativepg-operator-installation). Once the oprator is running, a Postrges cluster can be created using the [dataone-cnpg Helm chart](https://github.com/DataONEorg/dataone-cnpg/pkgs/container/charts%2Fcnpg). Both of these are one-time setup steps.
+The simplest way to try out the notification service is to use the Helm chart to deploy in a Kubernetes ("K8s") cluster - see the [Helm Chart README](helm/README.md).
 
-The simplest way to try out the notification service is to use the Helm chart to deploy
-in a Kubernetes cluster. For example, assuming you are using [Rancher Desktop](https://rancherdesktop.io/), and have installed [Traefik Proxy Ingress](https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-ingress/) and a CNPG cluster on your local machine (see note above), it's easy to install the latest Helm chart:
-
-```shell
-helm upgrade --install ns --debug -n notify --create-namespace \
-    -f ./helm/examples/values-dev-cluster-ns-example.yaml \
-    oci://ghcr.io/dataoneorg/charts/notifications
-```
-
-> [!CAUTION]
-> This is a simplified process, for evaluation purposes only, and is not intended for production use, since it uses defaults for the namespace, release name and secret credentials.
->
-> For production use, you should set credentials appropriately, and may need to override more of the values.yaml settings.
+It is also possible to  run locally on your development machine (see [Building and Running on a Localhost Web Application Server](#building-and-running-on-a-localhost-web-application-server)), although this approach is not well tested or supported.
 
 ## Developer Guide
 
@@ -93,16 +98,21 @@ Here are some useful links for those unfamiliar with Jakarta EE:
 - [Jakarta EE REST Service
   Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
-## Development build
+### Development build
 
-This is a java application, built using the Maven build tool.
+This is a java application, built using the Maven build tool, and deployed either on a local machine or in a docker container on a Kubernetes Cluster (deployed using helm).
 
-> [!NOTE]
-> **Prerequisites:**
-> The build and tests require:
-> 1.  Java 25. It can be downloaded 
-      from [Adoptium](https://adoptium.net/temurin/releases?version=25&os=any&arch=any). You can also set Java 25 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
-> 2. [Maven v3.9+](https://maven.apache.org/download.cgi).
+> [!TIP]
+> You do not need to build the helm chart or container images yourself, as they are already built and published to the [GitHub Container Registry (GHCR)](https://github.com/orgs/DataONEorg/packages?repo_name=notification-service) each time changes are pushed to GitHub, by [this GitHub Action](.github/workflows/ci-pipeline.yaml).
+>
+> See [Appendix 1](#appendix-1-building-and-publishing-the-container-images) for instructions on how to build and publish the image manually, if you wish to do so.
+
+### Local Environment
+
+**Prerequisites:**
+The build and tests require:
+1.  Java 25. It can be downloaded from [Adoptium](https://adoptium.net/temurin/releases?version=25&os=any&arch=any). You can also set Java 25 as the default for only the current directory, using the simple, lightweight [jenv](https://www.jenv.be/) tool. This allows you to set global and local Java versions, and switch between them easily.
+2. [Maven v3.9+](https://maven.apache.org/download.cgi).
 
 ```shell
 $ mvn clean package  [ -DskipTests ]
@@ -112,7 +122,7 @@ $ mvn clean package  [ -DskipTests ]
 
 The tests and their resources all reside in the `src/test/java` directory. They fall into three categories, and it is important to distinguish between them and adhere to their respective conventions:
 
-### Unit Tests
+#### Unit Tests
 
 Unit tests are intended to test **individual classes and methods**.
 
@@ -125,12 +135,12 @@ Unit tests are named `*Test.java`, and are run using the Maven `test` goal:
 mvn clean test
 ```
 
-### Integration Tests
+#### Integration Tests
 
 Integration tests are intended to test **the integration and interactions of multiple classes or modules**.
 
 > [!IMPORTANT]
-> Integration tests should **NEVER** require a running instance of the application (See [Smoke Tests](#smoke-tests)). They may, however, rely on other components (such as a database), which are provided and managed by the test framework. (For example, see [TestUtils::getTestDb](./src/test/java/org/dataone/notifications/util/TestUtils.java), which uses [TestContainers](https://www.testcontainers.org/)). This enables the test suite to be self-contained, so it will run in CI/CD pipelines.
+> Integration tests should **NEVER** require a running instance of the application (See [Smoke Tests](#smoke-tests)). They may, however, rely on other components (such as a database), which are provided and managed by the test framework. (For example, see [TestUtils::getTestDb](ns-web-api/src/test/java/org/dataone/notifications/util/TestUtils.java), which uses [TestContainers](https://www.testcontainers.org/)). This enables the test suite to be self-contained, so it will run in CI/CD pipelines.
 
 Integration tests are named `*IT.java`, and are run using the Maven `verify` goal (which also runs the unit tests first):
 
@@ -138,7 +148,7 @@ Integration tests are named `*IT.java`, and are run using the Maven `verify` goa
 mvn clean verify
 ```
 
-### Smoke Tests
+#### Smoke Tests
 
 Smoke tests are intended to be **executed against a running instance of the application** (e.g. in production), to verify that it is working as expected, after installation or upgrade.
 
@@ -161,11 +171,8 @@ mvn verify -PsmokeTest -DBASE_URL="https://notifications.test.dataone.org" -DTOK
 > In addition to the Java and maven versions listed above, you will need:
 > 1. [Apache TomEE](https://tomee.apache.org) MicroProfile v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
  Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE. TomEE is available in different "flavors"; choose the `MicroProfile` version.)
-> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script:
->
-> ```shell
-> ./scripts/docker-run-db.sh
-> ```
+> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script: `./scripts/docker-run-db.sh`.
+> 3. RabbitMQ: you should be able to configure Notification Service to work with any RabbitMQ instance, by editing the settings in `ns-common/src/main/resources/properties.yaml`. This approach is not tested or supported, but should work if you have a working RabbitMQ instance running on your local machine.
 
 Build with maven and copy the war file to your TomEE webapps directory:
 
@@ -179,6 +186,53 @@ $ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps/notificatio
 ```
 ...and (re)start TomEE. You can then visit the URL:
 http://localhost:8080/notifications/v1/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
+
+## Appendix 1: Building and Publishing the Container Images
+
+1. First package the application using maven, which will create the necessary war and jar files:
+
+    ```shell
+    $ mvn clean package  [ -DskipTests ]
+    ```
+
+2. Then set the following environment variables:
+
+    ```shell
+    # Set the tag for the image
+    TAG="feature5"
+    # Set the version - this must match the version in the built jar file's name, which is set in the pom.xml file.
+    NS_VERSION="1.0.0-SNAPSHOT"
+    # Set the platform for the build.
+    # "linux/amd64" is compatible with most cloud providers and Kubernetes clusters.
+    # "linux/arm64" is compatible with Apple M-series chips.
+    PLATFORM="linux/arm64"
+    ````
+
+3. Then build and push the container images using the provided Dockerfiles:
+
+  - `ns-consumer`:
+
+    ```shell
+    # build
+    docker buildx build -t ghcr. io/dataoneorg/notification-consumer:"$TAG" \
+        -f docker/Dockerfile-consumer --build-arg TAG=$TAG --build-arg NS_VERSION=${NS_VERSION} \
+        --platform "$PLATFORM" --no-cache .
+
+    # push
+    docker push ghcr.io/dataoneorg/notification-consumer:"$TAG"
+    ```
+
+  - `ns-web-api`:
+
+    ```shell
+    # build
+    docker buildx build -t ghcr. io/dataoneorg/notification-service:"$TAG" \
+        -f docker/Dockerfile-web-api --build-arg TAG=$TAG --build-arg NS_VERSION=${NS_VERSION} \
+        --platform "$PLATFORM" --no-cache .
+
+    # push
+     docker push ghcr.io/dataoneorg/notification-service:"$TAG"
+    ```
 
 ## License
 ```
