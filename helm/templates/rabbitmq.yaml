@@ -16,7 +16,7 @@ metadata:
 spec:
   replicas: {{ .Values.rmq.rmqOperator.replicaCount }}
   resources:
-    {{ toYaml .Values.rmq.rmqOperator.resources | nindent 4 }}
+    {{- toYaml .Values.rmq.rmqOperator.resources | nindent 4 }}
   rabbitmq:
     {{- if .Values.rmq.rmqOperator.envConfig }}
     envConfig: |

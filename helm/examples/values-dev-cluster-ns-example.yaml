@@ -19,13 +19,14 @@ ns:
   auth:
     api:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
-      connectTimeout: 5000
-      readTimeout: 10000
+      connectTimeoutMilliSec: 10000
+      readTimeoutMilliSec: 20000
 
   ## Assuming your CNPG helm release name is 'nsdb':
   database:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app
+
 image:
     repository: ghcr.io/dataoneorg/notification-service
     pullPolicy: Always
@@ -33,14 +34,6 @@ tomcat:
   jmxEnabled: true
   remoteDebugEnabled: true
   remoteDebugPort: 5005
-
-#resources:
-#  limits:
-#    cpu: 1000m
-#    memory: 1024Mi
-#  requests:
-#    cpu: 300m
-#    memory: 128Mi
 
 ingress:
   annotations:

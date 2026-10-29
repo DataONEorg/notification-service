@@ -18,7 +18,10 @@ ns:
   auth:
     api:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
+      connectTimeoutMilliSec: 10000
+      readTimeoutMilliSec: 20000
 
+  ## Assuming your CNPG helm release name is 'nsdb':
   database:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app

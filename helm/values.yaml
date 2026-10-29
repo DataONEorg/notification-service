@@ -20,16 +20,16 @@ ns:
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
-  ## @param ns.auth.api.connectTimeout The timeout limit for opening a connection to the auth API
-  ## @param ns.auth.api.readTimeout The timeout limit for reading data from the auth API
+  ## @param ns.auth.api.connectTimeoutMilliSec Timeout limit for opening connection to the auth API
+  ## @param ns.auth.api.readTimeoutMilliSec Timeout limit for reading data from the auth API
   ##
   auth:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
       userAgent: "DataONE notification-service/1.0"
-      connectTimeout: 10000
-      readTimeout: 20000
+      connectTimeoutMilliSec: 5000
+      readTimeoutMilliSec: 5000
 
   database:
     ## @param ns.database.dbName The name of the database used by the notification service.
@@ -294,20 +294,20 @@ affinity: {}
 
 ## Resource requests and limits for the notification service deployment
 resources:
-  limits:
-    ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
-    ##
-    cpu: 200m
-    ## @param resources.limits.memory Maximum memory the nsconsumer container may use
-    ##
-    memory: 256Mi
   requests:
     ## @param resources.requests.cpu CPU requested for the nsconsumer container
     ##
     cpu: 100m
     ## @param resources.requests.memory Memory requested for the nsconsumer container
     ##
-    memory: 128Mi
+    memory: 512Mi
+  limits:
+    ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
+    ##
+    cpu: 500m
+    ## @param resources.limits.memory Maximum memory the nsconsumer container may use
+    ##
+    memory: 1Gi
 
 ## @section Tomcat Configuration
 tomcat:
@@ -404,13 +404,6 @@ nsconsumer:
 
   ## Resource requests and limits for the notification consumer deployment
   resources:
-    limits:
-      ## @param nsconsumer.resources.limits.cpu Maximum CPU the nsconsumer container may use
-      ##
-      cpu: 200m
-      ## @param nsconsumer.resources.limits.memory Maximum memory the nsconsumer container may use
-      ##
-      memory: 256Mi
     requests:
       ## @param nsconsumer.resources.requests.cpu CPU requested for the nsconsumer container
       ##
@@ -418,6 +411,13 @@ nsconsumer:
       ## @param nsconsumer.resources.requests.memory Memory requested for the nsconsumer container
       ##
       memory: 128Mi
+    limits:
+      ## @param nsconsumer.resources.limits.cpu Maximum CPU the nsconsumer container may use
+      ##
+      cpu: 200m
+      ## @param nsconsumer.resources.limits.memory Maximum memory the nsconsumer container may use
+      ##
+      memory: 256Mi
 
   serviceAccount:
     ## @param nsconsumer.serviceAccount.create Should a service account be created for nsconsumer?
@@ -574,18 +574,19 @@ rmq:
     ##        the same value.
     ##
     resources:
-      limits:
-        ## @param rmq.rmqOperator.resources.limits.cpu Maximum CPU the nsconsumer may use
-        ##
-        cpu: 500m
-        ## @param rmq.rmqOperator.resources.limits.memory Maximum memory the nsconsumer may use
-        ##
-        memory: 500Mi
       requests:
         ## @param rmq.rmqOperator.resources.requests.cpu CPU requested for the nsconsumer
         ##
-        cpu: 800m
+        cpu: 400m
         ## @param rmq.rmqOperator.resources.requests.memory Memory requested for the nsconsumer
+        ##
+        memory: 500Mi
+
+      limits:
+        ## @param rmq.rmqOperator.resources.limits.cpu Maximum CPU the nsconsumer may use
+        ##
+        cpu: 900m
+        ## @param rmq.rmqOperator.resources.limits.memory Maximum memory the nsconsumer may use
         ##
         memory: 500Mi
 

@@ -33,8 +33,8 @@ helm upgrade --install ns -n notify --create-namespace \
 | `ns.auth.api.baseUrl`                           | The base URL for the authentication API (typically the CN)                   | `https://cn.dataone.org/cn/v2`            |
 | `ns.auth.api.authenticate`                      | The endpoint for authentication (CN uses '/diag/subject')                    | `/diag/subject`                           |
 | `ns.auth.api.userAgent`                         | The User-Agent string to use when making requests to the auth API            | `DataONE notification-service/1.0`        |
-| `ns.auth.api.connectTimeout`                    | The timeout limit for opening a connection to the auth API                   | `10000`                                   |
-| `ns.auth.api.readTimeout`                       | The timeout limit for reading data from the auth API                         | `20000`                                   |
+| `ns.auth.api.connectTimeoutMilliSec`            | The timeout limit for opening a connection to the auth API                   | `10000`                                   |
+| `ns.auth.api.readTimeoutMilliSec`               | The timeout limit for reading data from the auth API                         | `20000`                                   |
 | `ns.database.dbName`                            | The name of the database used by the notification service.                   | `notifications`                           |
 | `ns.database.existingSecret`                    | (REQUIRED) Basic Auth Secret name for DB username & password                 | `nsdb-cnpg-app`                           |
 | `ns.database.jdbcHost`                          | (REQUIRED) database connection hostname (postgresql k8s service)             | `nsdb-cnpg-rw`                            |
