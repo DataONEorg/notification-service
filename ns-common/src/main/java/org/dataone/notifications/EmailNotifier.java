@@ -44,8 +44,7 @@ public class EmailNotifier implements NotificationListener {
             session = Session.getInstance(
                 props, new jakarta.mail.Authenticator() {
                     protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
-                        return new jakarta.mail.PasswordAuthentication(
-                            emailUsername, emailPassword);
+                    return new jakarta.mail.PasswordAuthentication(emailUsername, emailPassword);
                     }
                 });
         } else {
@@ -66,7 +65,7 @@ public class EmailNotifier implements NotificationListener {
             MimeMessage message = new MimeMessage(session);
 
             recipientEmail = getEmailForOrcid(subscriber);
-            // TODO: get from address from config/env
+            // TODO: get from: address from config/env
             message.setFrom(new InternetAddress("noreply@myapp.test", "My App"));
             message.setRecipient(Message.RecipientType.TO, recipientEmail);
             // TODO: get body from config/env
@@ -92,9 +91,11 @@ public class EmailNotifier implements NotificationListener {
     }
 
     private InternetAddress getEmailForOrcid(String subscriber) throws AddressException {
-        // Placeholder implementation for retrieving email address based on subject (ORCID)
-        // In a real implementation, this would query the account service and/or ORCID API
+
         log.debug("Retrieving email for ORCID: {}", subscriber);
+
+        // Placeholder implementation for retrieving email address based on subject (ORCID)
+        // TODO: query the account service and/or ORCID API
 
         return new InternetAddress(
             subscriber.replaceAll("https?://", "").replace('/', '-') + "@example.com"); //
