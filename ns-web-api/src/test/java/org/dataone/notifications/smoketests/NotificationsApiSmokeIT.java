@@ -1,12 +1,12 @@
 package org.dataone.notifications.smoketests;
 
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Response;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,19 +72,16 @@ class NotificationsApiSmokeIT {
                   prettyPrint(initList));
 
         for (String pid : testPids) {
-            log.debug("Adding subscription for pid: " + pid);
-            Response r = client.target(baseUrl)
+            log.debug("Adding subscription for pid: {}", pid);
+            try (Response r = client.target(baseUrl)
                 .path(URI_PREFIX)
                 .path(SubscriptionResourceType.datasetChanges.name())
                 .path(pid)
                 .request()
-                .header("Authorization", "Bearer " + token)
-                .post(Entity.json("{}"));
-            try {
+                .header("Authorization", "Bearer " + token).post(Entity.json("{}"))) {
+
                 int status = r.getStatus();
                 assertTrue(status == 200 || status == 201, "unexpected post status: " + status);
-            } finally {
-                r.close();
             }
         }
 
@@ -93,24 +90,21 @@ class NotificationsApiSmokeIT {
         assertEquals(
             initCount + totPids, subsList.size(), "unexpected subscription count after adds");
         for (String pid : testPids) {
-            log.debug("Verifying: " + pid);
+            log.debug("Verifying: {}", pid);
             assertTrue(subsList.contains(pid), "Missing: " + pid);
         }
 
         for (String pid : testPids) {
-            log.debug("Deleting subscription for pid: " + pid);
-            Response r = client.target(baseUrl)
+            log.debug("Deleting subscription for pid: {}", pid);
+            try (Response r = client.target(baseUrl)
                 .path(URI_PREFIX)
                 .path(SubscriptionResourceType.datasetChanges.name())
-                .path(pid)
-                .request()
+                .path(pid).request()
                 .header("Authorization", "Bearer " + token)
-                .delete();
-            try {
+                .delete()) {
+
                 int status = r.getStatus();
                 assertTrue(status == 200 || status == 204, "unexpected delete status: " + status);
-            } finally {
-                r.close();
             }
         }
 
@@ -120,14 +114,13 @@ class NotificationsApiSmokeIT {
     }
 
     private List<String> getSubscriptions() {
-        Response r = client.target(baseUrl)
+
+        try (Response r = client.target(baseUrl)
             .path(URI_PREFIX)
             .path(SubscriptionResourceType.datasetChanges.name())
             .request()
-            .header("Authorization", "Bearer " + token)
-            .get();
+            .header("Authorization", "Bearer " + token).get()) {
 
-        try {
             assertEquals(200, r.getStatus(), "GET subscriptions failed: " + r.getStatus());
             String body = r.readEntity(String.class);
 
@@ -141,15 +134,13 @@ class NotificationsApiSmokeIT {
                 List<String> result = new ArrayList<>();
                 if (arr != null && arr.isArray()) {
                     for (JsonNode n : arr) {
-                        result.add(n.asText());
+                        result.add(n.asString());
                     }
                 }
                 return result;
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to parse response JSON", e);
             }
-        } finally {
-            r.close();
         }
     }
 

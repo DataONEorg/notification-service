@@ -1,5 +1,6 @@
 package org.dataone.notifications.api.internal.event;
 
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
 import jakarta.enterprise.context.RequestScoped;
@@ -13,7 +14,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
 import org.dataone.notifications.NotificationListener;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.dataone.notifications.api.resource.SubscriptionResource;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.Subscription;
