@@ -1,4 +1,4 @@
-package notifications.util;
+package org.dataone.notifications.util;
 
 /**
  * A utility class for string manipulation. Created this because it did not make sense to add a

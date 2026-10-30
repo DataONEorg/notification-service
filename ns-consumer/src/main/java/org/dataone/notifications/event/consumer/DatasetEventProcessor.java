@@ -3,7 +3,7 @@ package org.dataone.notifications.event.consumer;
 import com.rabbitmq.client.Delivery;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.dataone.notifications.event.DatasetEvent;
-import org.dataone.notifications.event.NsEventMessage;
+import org.dataone.notifications.event.DatasetEventMessage;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import notifications.util.StringUtils;
+import org.dataone.notifications.util.StringUtils;
 
 /**
  * Processor invoked after a RabbitMQ message is consumed.
@@ -78,9 +78,10 @@ public class DatasetEventProcessor {
         throws IOException, IgnoredResourceTypeException, UnsupportedResourceTypeException {
         try {
             log.trace("Message body: {}", body);
-            NsEventMessage.NsEvent nsEvent = mapper.readValue(body, NsEventMessage.class).nsEvent();
-            SubscriptionResourceType resourceType = getResourceType(nsEvent);
-            String pid = requireText(nsEvent.id(), "id");
+            DatasetEventMessage.DatasetEvent
+                datasetEvent = mapper.readValue(body, DatasetEventMessage.class).datasetEvent();
+            SubscriptionResourceType resourceType = getResourceType(datasetEvent);
+            String pid = requireText(datasetEvent.id(), "id");
             log.debug(
                 "Deserialized message into DatasetEvent with resourceType: {}, pid: {}",
                 resourceType, pid);
@@ -117,27 +118,28 @@ public class DatasetEventProcessor {
     /// - Enumeration of available resource types:
     /// [org.dataone.notifications.api.resource.SubscriptionResourceType]
     ///
-    /// @param nsEvent The nsEvent object containing the fields needed to determine the resource
+    /// @param datasetEvent The datasetEvent object containing the fields needed to determine the resource
     /// type
     /// @return The resource type as a SubscriptionResourceType
     /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
     /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
     ///
-    protected SubscriptionResourceType getResourceType(NsEventMessage.NsEvent nsEvent)
+    protected SubscriptionResourceType getResourceType(
+        DatasetEventMessage.DatasetEvent datasetEvent)
         throws IgnoredResourceTypeException, UnsupportedResourceTypeException {
 
         String formatType;
         String formatId;
         try {
-            formatType = requireText(nsEvent.formatType(), "formatType");
-            formatId = requireText(nsEvent.formatId(), "formatId");
+            formatType = requireText(datasetEvent.formatType(), "formatType");
+            formatId = requireText(datasetEvent.formatId(), "formatId");
             log.debug(
                 "getResourceType() got formatType: {}, formatId: {} & resourceMap(): {}",
-                formatType, formatId, nsEvent.resourceMap());
+                formatType, formatId, datasetEvent.resourceMap());
         } catch (IOException e) {
             throw new UnsupportedResourceTypeException(e.getMessage());
         }
-        List<String> resourceMap = nsEvent.resourceMap();
+        List<String> resourceMap = datasetEvent.resourceMap();
 
         return switch (formatType) {
             case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");

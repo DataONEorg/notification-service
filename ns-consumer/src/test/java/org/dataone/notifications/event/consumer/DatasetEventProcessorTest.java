@@ -2,7 +2,7 @@ package org.dataone.notifications.event.consumer;
 
 import com.rabbitmq.client.Delivery;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
-import org.dataone.notifications.event.NsEventMessage.NsEvent;
+import org.dataone.notifications.event.DatasetEventMessage.DatasetEvent;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +85,7 @@ class DatasetEventProcessorTest {
 
     @Test
     void metadataWithResourceMap_isIgnored() {
-        NsEvent event = event("METADATA", ORE, RESOURCE_MAP_LIST);
+        DatasetEvent event = event("METADATA", ORE, RESOURCE_MAP_LIST);
         assertThrows(IgnoredResourceTypeException.class, () -> processor.getResourceType(event));
     }
 
@@ -105,27 +105,27 @@ class DatasetEventProcessorTest {
 
     @Test
     void unknownFormatType_isUnsupported() {
-        NsEvent event = event("BOGUS", ORE, null);
+        DatasetEvent event = event("BOGUS", ORE, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
     @Test
     void missingFormatType_isUnsupported() {
-        NsEvent event = event(null, ORE, null);
+        DatasetEvent event = event(null, ORE, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
     @Test
     void missingFormatId_isUnsupported() {
-        NsEvent event = event("METADATA", null, null);
+        DatasetEvent event = event("METADATA", null, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
-    private static NsEvent event(String formatType, String formatId, List<String> resourceMap) {
-        NsEvent event = mock(NsEvent.class);
+    private static DatasetEvent event(String formatType, String formatId, List<String> resourceMap) {
+        DatasetEvent event = mock(DatasetEvent.class);
         lenient().when(event.formatType()).thenReturn(formatType);
         lenient().when(event.formatId()).thenReturn(formatId);
         lenient().when(event.resourceMap()).thenReturn(resourceMap);
@@ -183,7 +183,7 @@ class DatasetEventProcessorTest {
     private static String json(String formatType) {
         return """
             {
-              "nsEvent": {
+              "datasetEvent": {
                 "_version_":1879779856146759680,
                 "id":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",
                 "identifier":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",
