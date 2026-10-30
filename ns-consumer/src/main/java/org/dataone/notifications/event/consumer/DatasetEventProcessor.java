@@ -29,6 +29,8 @@ public class DatasetEventProcessor {
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DatasetEventProcessor.class);
     private final ObjectMapper mapper = new ObjectMapper();
+    private final String messagesHost = System.getenv("NS_MESSAGES_HOST");
+    private final String messagesPort = System.getenv("NS_MESSAGES_PORT");
 
     public void process(Delivery delivery) throws IOException {
 
@@ -47,8 +49,6 @@ public class DatasetEventProcessor {
         }
         log.debug("Processing subscription event: {}", event);
 
-        String messagesHost = System.getenv("NS_MESSAGES_HOST");
-        String messagesPort = System.getenv("NS_MESSAGES_PORT");
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(
                 "http://" + messagesHost + ":" + messagesPort
                     + "/notifications/v1/private/eventhandler/send?resource=" + event.resourceType()
@@ -81,11 +81,13 @@ public class DatasetEventProcessor {
             DatasetEventMessage.DatasetEvent
                 datasetEvent = mapper.readValue(body, DatasetEventMessage.class).datasetEvent();
             SubscriptionResourceType resourceType = getResourceType(datasetEvent);
-            String pid = requireText(datasetEvent.id(), "id");
+            String eventPid = requireText(datasetEvent.id(), "id");
+            String pid = getLatestPid(eventPid);
             log.debug(
                 "Deserialized message into DatasetEvent with resourceType: {}, pid: {}",
                 resourceType, pid);
             return new DatasetEvent(resourceType, pid);
+
         } catch (IgnoredResourceTypeException | UnsupportedResourceTypeException e) {
             log.debug("Ignoring message; reason: {}", e.getMessage());
             log.trace("Ignored message body: {}", body);
@@ -94,6 +96,19 @@ public class DatasetEventProcessor {
             log.error("Error: {}; while deserializing message: {}", e.getMessage(), body);
             throw new IOException();
         }
+    }
+
+    /// Given a pid from a change event, walk the version chain (via solr queries) to find and
+    /// return the pid of the latest version the given resource.
+    ///
+    /// @param eventPid The pid from the change event.
+    /// @return The pid of the latest version of the resource.
+    ///
+    private String getLatestPid(String eventPid) {
+
+        // TODO: Implement logic to query Solr for the latest version of the resource
+
+        return eventPid;
     }
 
     /// Extracts the SubscriptionResourceType from the given parameters.
