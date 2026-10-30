@@ -1,4 +1,4 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

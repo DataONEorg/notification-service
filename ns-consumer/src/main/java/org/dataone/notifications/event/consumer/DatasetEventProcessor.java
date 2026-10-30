@@ -1,11 +1,11 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
 import com.rabbitmq.client.Delivery;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.event.DatasetEvent;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
-import org.dataone.notifications.messaging.SubscriptionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
@@ -24,16 +24,16 @@ import notifications.util.StringUtils;
 /**
  * Processor invoked after a RabbitMQ message is consumed.
  */
-public class SubscriptionMessageProcessor {
+public class DatasetEventProcessor {
     private static final Pattern PORTAL_FORMAT_ID_PATTERN =
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionMessageProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(DatasetEventProcessor.class);
     private final ObjectMapper mapper = new ObjectMapper();
 
     public void process(Delivery delivery) throws IOException {
 
         String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-        SubscriptionEvent event;
+        DatasetEvent event;
         try {
             event = deserialize(body);
 
@@ -66,15 +66,15 @@ public class SubscriptionMessageProcessor {
     }
 
     /**
-     * Deserialize the message body into a SubscriptionEvent
+     * Deserialize the message body into a DatasetEvent
      *
      * @param body String representation of the message body.
-     * @return A SubscriptionEvent object representing the deserialized message.
+     * @return A DatasetEvent object representing the deserialized message.
      * @throws IOException                      If there is an error during deserialization.
      * @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
      * @throws UnsupportedResourceTypeException If the resource type is unsupported.
      */
-    private SubscriptionEvent deserialize(String body)
+    private DatasetEvent deserialize(String body)
         throws IOException, IgnoredResourceTypeException, UnsupportedResourceTypeException {
         try {
             log.trace("Message body: {}", body);
@@ -82,9 +82,9 @@ public class SubscriptionMessageProcessor {
             SubscriptionResourceType resourceType = getResourceType(nsEvent);
             String pid = requireText(nsEvent.id(), "id");
             log.debug(
-                "Deserialized message into SubscriptionEvent with resourceType: {}, pid: {}",
+                "Deserialized message into DatasetEvent with resourceType: {}, pid: {}",
                 resourceType, pid);
-            return new SubscriptionEvent(resourceType, pid);
+            return new DatasetEvent(resourceType, pid);
         } catch (IgnoredResourceTypeException | UnsupportedResourceTypeException e) {
             log.debug("Ignoring message; reason: {}", e.getMessage());
             log.trace("Ignored message body: {}", body);

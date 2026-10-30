@@ -1,6 +1,5 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
-import tools.jackson.databind.JsonNode;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -9,7 +8,7 @@ import com.rabbitmq.client.Delivery;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.dataone.notifications.messaging.SubscriptionEvent;
+
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,20 +16,20 @@ import org.slf4j.LoggerFactory;
 /**
  * Minimal RabbitMQ queue consumer that runs until the container shuts down.
  */
-public class SubscriptionEventConsumer implements AutoCloseable {
+public class DatasetEventConsumer implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionEventConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(DatasetEventConsumer.class);
 
     private final RabbitMqProperties properties;
     // inlined connection management that was previously in RabbitMqConnectionManager
     private Connection connection;
     private Channel channel;
-    private final SubscriptionMessageProcessor processor;
+    private final DatasetEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public SubscriptionEventConsumer(
+    public DatasetEventConsumer(
         RabbitMqProperties properties,
-        SubscriptionMessageProcessor processor) {
+        DatasetEventProcessor processor) {
         this.properties = properties;
         this.processor = processor;
     }
@@ -44,7 +43,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting SubscriptionEventConsumer for queue {}",
+        log.info("Starting DatasetEventConsumer for queue {}",
             properties.queueName());
         try {
             final Channel ch = newChannel();
