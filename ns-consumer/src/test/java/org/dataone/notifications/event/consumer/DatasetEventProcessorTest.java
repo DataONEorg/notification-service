@@ -1,4 +1,4 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
 import com.rabbitmq.client.Delivery;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
-class SubscriptionMessageProcessorTest {
+class DatasetEventProcessorTest {
 
     private static final String ORE = "http://www.openarchives.org/ore/terms";
     private static final String PORTAL_1_0_0 = "https://purl.dataone.org/portals-1.0.0";
@@ -45,7 +45,7 @@ class SubscriptionMessageProcessorTest {
     @SystemStub
     private EnvironmentVariables env;
 
-    private final SubscriptionMessageProcessor processor = new SubscriptionMessageProcessor();
+    private final DatasetEventProcessor processor = new DatasetEventProcessor();
 
     @BeforeEach
     void setMessagesServiceEnv() {
