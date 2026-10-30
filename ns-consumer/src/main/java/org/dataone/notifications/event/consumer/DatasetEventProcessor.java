@@ -29,8 +29,6 @@ public class DatasetEventProcessor {
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DatasetEventProcessor.class);
     private final ObjectMapper mapper = new ObjectMapper();
-    private final String messagesHost = System.getenv("NS_MESSAGES_HOST");
-    private final String messagesPort = System.getenv("NS_MESSAGES_PORT");
 
     public void process(Delivery delivery) throws IOException {
 
@@ -49,6 +47,8 @@ public class DatasetEventProcessor {
         }
         log.debug("Processing subscription event: {}", event);
 
+        final String messagesHost = System.getenv("NS_MESSAGES_HOST");
+        final String messagesPort = System.getenv("NS_MESSAGES_PORT");
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(
                 "http://" + messagesHost + ":" + messagesPort
                     + "/notifications/v1/private/eventhandler/send?resource=" + event.resourceType()
