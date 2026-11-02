@@ -1,5 +1,5 @@
 
-package org.dataone.notifications.solr;
+package org.dataone.notifications.eventsource.solr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
