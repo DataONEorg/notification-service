@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.List;
 
 /** Typed view of the JSON message body:
- * { "nsEvent": {
+ * { "datasetEvent": {
  *     "_version_":1879779856146759680,
  *     "id":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",
  *     "identifier":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",
@@ -31,10 +31,10 @@ import java.util.List;
  * }
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record NsEventMessage(NsEvent nsEvent) {
+public record DatasetEventMessage(DatasetEvent datasetEvent) {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record NsEvent(
+    public record DatasetEvent(
             long _version_,
             String id,
             String identifier,

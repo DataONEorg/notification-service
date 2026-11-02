@@ -1,17 +1,14 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.dataone.notifications.messaging.SubscriptionEvent;
+
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,21 +16,20 @@ import org.slf4j.LoggerFactory;
 /**
  * Minimal RabbitMQ queue consumer that runs until the container shuts down.
  */
-public class SubscriptionEventConsumer implements AutoCloseable {
+public class DatasetEventConsumer implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionEventConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(DatasetEventConsumer.class);
 
     private final RabbitMqProperties properties;
     // inlined connection management that was previously in RabbitMqConnectionManager
     private Connection connection;
     private Channel channel;
-    private final SubscriptionMessageProcessor processor;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final DatasetEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public SubscriptionEventConsumer(
+    public DatasetEventConsumer(
         RabbitMqProperties properties,
-        SubscriptionMessageProcessor processor) {
+        DatasetEventProcessor processor) {
         this.properties = properties;
         this.processor = processor;
     }
@@ -47,7 +43,7 @@ public class SubscriptionEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting SubscriptionEventConsumer for queue {}",
+        log.info("Starting DatasetEventConsumer for queue {}",
             properties.queueName());
         try {
             final Channel ch = newChannel();
@@ -66,39 +62,16 @@ public class SubscriptionEventConsumer implements AutoCloseable {
     private void handleDelivery(Channel channel, Delivery delivery) throws IOException {
         long tag = delivery.getEnvelope().getDeliveryTag();
         try {
-            SubscriptionEvent event = deserialize(delivery);
-            processor.process(event);
+            processor.process(delivery);
             channel.basicAck(tag, false);
         } catch (Exception e) {
             log.error("Failed to process message. Failed messages are not re-queued. ", e);
-            // Disabling the requeue here to avoid bad messages holding up the
-            // queue forever. In the future, we could add a dead letter queue.
-            //channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            // Disabling the requeue here to avoid bad messages holding up the queue forever:
+            //     channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            // TODO: could eventually add a dead letter queue? Or some other type of operator
+            //  alerting. For now, not priority, since this is not mission critical.
             channel.basicAck(tag, false);
         }
-    }
-
-    private SubscriptionEvent deserialize(Delivery delivery) throws IOException {
-        String body = "";
-        try{
-            body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-            log.info("Message body: {}", body);
-            JsonNode node = mapper.readTree(body);
-            String resourceType = getRequiredText(node, "resourceType");
-            String pid = getRequiredText(node, "pid");
-            return SubscriptionEvent.from(resourceType, pid);
-        }catch(Exception e){
-            log.error("Error: ({}) while deserializing message: ({})", e.getMessage(), body);
-            throw new IOException();
-        }
-    }
-
-    private String getRequiredText(JsonNode node, String field) {
-        JsonNode value = node.get(field);
-        if (value == null || value.asString().isBlank()) {
-            throw new IllegalArgumentException("Missing value for field: " + field);
-        }
-        return value.asString();
     }
 
     public void stop() {
@@ -180,9 +153,8 @@ public class SubscriptionEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
-        log.debug("Checking connection status: " +
-            " connection={}, connection.isOpen={}",
-            connection, connection != null ? connection.isOpen() : "n/a");
-        return connection != null && connection.isOpen();
+        boolean isOpen = connection != null && connection.isOpen();
+        log.trace("connection={}, connection.isOpen={}", connection, isOpen);
+        return isOpen;
     }
 }

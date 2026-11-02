@@ -5,13 +5,14 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.dataone.notifications.api.resource.SubscriptionResourceType;
 
 /**
  * An implementation of the AuthProvider interface for the notification service.

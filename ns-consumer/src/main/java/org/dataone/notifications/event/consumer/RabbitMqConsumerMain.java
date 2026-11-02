@@ -1,4 +1,4 @@
-package org.dataone.notifications.messaging.consumer;
+package org.dataone.notifications.event.consumer;
 
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.RabbitMqProperties;
@@ -22,7 +22,7 @@ import java.util.function.BooleanSupplier;
 public class RabbitMqConsumerMain {
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConsumerMain.class);
 
-    private static SubscriptionEventConsumer consumer;
+    private static DatasetEventConsumer consumer;
 
     private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
     private static final long healthPollIntervalSeconds = 15L;
@@ -40,8 +40,8 @@ public class RabbitMqConsumerMain {
 
         // read configuration and create runtime objects
         final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
-        final SubscriptionMessageProcessor processor = new SubscriptionMessageProcessor();
-        consumer = new SubscriptionEventConsumer(props, processor);
+        final DatasetEventProcessor processor = new DatasetEventProcessor();
+        consumer = new DatasetEventConsumer(props, processor);
 
         try {
             consumer.start();
