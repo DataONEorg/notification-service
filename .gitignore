@@ -165,3 +165,6 @@ helm/charts
 helm/Chart.lock
 
 .vscode/settings.json
+
+# macOS Finder files
+.DS_Store

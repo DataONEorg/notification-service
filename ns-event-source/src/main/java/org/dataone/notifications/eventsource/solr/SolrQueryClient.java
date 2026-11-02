@@ -86,7 +86,7 @@ public class SolrQueryClient {
      * Make sure there is no encoding in the key and key is in the allowed set.
      * @param entry  the entry will be examined
      */
-    protected void validateParamEnty(Map.Entry<String, String> entry) {
+    protected static void validateParamEnty(Map.Entry<String, String> entry) {
         if (entry != null) {
             String key = entry.getKey();
             if (key.isBlank() || key.contains("%") || !ALLOWED_PARAMS.contains(key)) {
