@@ -1,44 +1,51 @@
 flowchart LR
+subgraph background[" "]
+    direction LR
     subgraph "Sources Pod"
         subgraph "Event Sources"
-            A(["'DatasetChanges'<br/>(Solr) event source"])
-            B(["'View' & 'Download'<br/>(Metrics) event source"])
-            H(["Future event source"])
+            ds-src(["'DatasetChanges'<br/>(Solr) event source"])
+            mtrx-src(["'View' & 'Download'<br/>(Metrics) event source"])
+            fut-src(["Future event source"])
         end
-        C["<b>Subscription<br/>Processor</b><br/><em>(who's subscribed<br/>to this event?<br/>Update DB to
+        subs-proc["<b>Subscription<br/>Processor</b><br/><em>(who's subscribed<br/>to this event?<br/>Update DB to
         newPid)</em>"]
     end
-    D["<b>Notifications<br/>Queue</b><br/><em>(1 notification<br/>per event,<br/>per recipient</em>)
+    Q["<b>Notifications<br/>Queue</b><br/><em>(1 notification<br/>per event,<br/>per recipient</em>)
     "]@{ shape: trapezoid-bottom }
     subgraph "Outputs Pod"
-        E["<b>Notifications<br/>Consumer</b><br/><em>(throttling;<br/>grouping?)</em>"]
+        consumer["<b>Notifications<br/>Consumer</b><br/><em>(throttling;<br/>grouping?)</em>"]
         subgraph Channels
-            F(["<b>Email service</b><br/>chooses template based on<br/>SubscriptionResourceType"])
-            G(["(Future channels;<br/>eg SMS)"])
+            email-svc(["<b>Email service</b><br/>chooses template based on<br/>SubscriptionResourceType"])
+            fut-channel(["(Future channels;<br/>eg SMS)"])
         end
     end
-    I["Database<br/>(Postgres)"]@{ shape: cylinder }
-    J["<b>Account<br/>Service</b><br/><em>(get email,<br/>SMS etc for<br/>subscriberId)</em>"]
+    DB["Database<br/>(Postgres)"]@{ shape: cylinder }
+    account-svc(["<b>Account Service</b><br/><em>(get email,SMS etc<br/>for subscriberId)</em>"])
 
-    A -- <em> { subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType:
-datasetChanges }</em> --> C
-    B --> C
-    C -- <em> { subscriberId:0000-0002-1472-913X<br/>newPid:456<br/>SubscriptionResourceType:
-datasetChanges }</em> --> D
-    D --> E
-    E --> F
-    J --> E
-    E --> G
-    H --> C
-    C <-- <em>lastSuccessfulRuntime</em> --> I
-    I -- <em>lastSuccessfulRuntime</em> --> A
-    I -- <em>Metadata for msg template (Title etc)</em> --> E
+    ds-src -- <em> { subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType:
+datasetChanges }</em> --> subs-proc
+    mtrx-src --> subs-proc
+    subs-proc -- <em> { subscriberId:0000-0002-1472-913X<br/>newPid:456<br/>SubscriptionResourceType:
+datasetChanges }</em> --> Q
+    Q --> consumer
+    consumer --> email-svc
+    account-svc --> consumer
+    consumer --> fut-channel
+    fut-src --> subs-proc
+    subs-proc <-- <em>lastSuccessfulRuntime</em> --> DB
+    DB -- <em>lastSuccessfulRuntime</em> --> ds-src
+    DB -- <em>Metadata for msg template (Title etc)</em> --> consumer
+end
 
-    style A color:#FFFFFF, stroke:#AA0033, fill:#AA0033
-    style B color:#FFFFFF, stroke:#006633, fill:#006633
-    style C color:#FFFFFF, stroke:#0066CC, fill:#0066CC
-    style D color:#FFFFFF, stroke:#003399, fill:#003399
-    style E color:#FFFFFF, stroke:#0066CC, fill:#0066CC
-    style F color:#FFFFFF, stroke:#6699FF, fill:#6699FF
-    style G color:#000000, stroke:#aaaaaa, fill:#aaaaaa
-    style H color:#000000, stroke:#aaaaaa, fill:#aaaaaa
+style background fill:#ffffff,stroke:none
+linkStyle default stroke-width:3px
+style ds-src color:#FFFFFF, stroke:#AA0033, fill:#AA0033
+style mtrx-src color:#FFFFFF, stroke:#006633, fill:#006633
+style subs-proc color:#FFFFFF, stroke:#0066CC, fill:#0066CC
+style Q color:#FFFFFF, stroke:#996600, fill:#994400
+style consumer color:#FFFFFF, stroke:#0066CC, fill:#0066CC
+style email-svc color:#FFFFFF, stroke:#6699FF, fill:#6699FF
+style fut-channel color:#000000, stroke:#aaaaaa, fill:#aaaaaa
+style fut-src color:#000000, stroke:#aaaaaa, fill:#aaaaaa
+style DB color:#FFFFFF, stroke:#6699FF, fill:#003399
+style account-svc color:#000000, stroke:#779977, fill:#779977
