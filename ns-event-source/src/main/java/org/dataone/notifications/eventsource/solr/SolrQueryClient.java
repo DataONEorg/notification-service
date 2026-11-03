@@ -3,6 +3,8 @@ package org.dataone.notifications.eventsource.solr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,8 +21,11 @@ import java.util.Set;
  * A client class to query a Solr server
  */
 public class SolrQueryClient {
+    private static final Logger log = LoggerFactory.getLogger(SolrQueryClient.class);
     private static final Set<String> ALLOWED_PARAMS =
         Set.of("q", "fl", "sort", "rows", "cursorMark", "start", "fq", "wt");
+    private static final String JSON = "json";
+    private static final String WT = "wt";
     private final String solrQueryUrl;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -46,6 +51,7 @@ public class SolrQueryClient {
      * @throws InterruptedException
      */
     public JsonNode query(Map<String, String> params) throws IOException, InterruptedException {
+        boolean setWT = false;
         StringBuilder formData = new StringBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (entry.getKey().isBlank()) {
@@ -55,20 +61,40 @@ public class SolrQueryClient {
             if (formData.length() > 0) {
                 formData.append("&");
             }
+            if(WT.equals(entry.getKey())) {
+                if (!JSON.equals(entry.getValue())) {
+                    throw new IllegalArgumentException(
+                        "The value of the parameter wt can only be " + JSON + " rather than "
+                            + entry.getValue());
+                } else {
+                    // The parameter already has wt=json
+                    setWT = true;
+                }
+            }
             formData.append(URLEncoder.encode(
                 entry.getKey(), StandardCharsets.UTF_8));
             formData.append("=");
             formData.append(URLEncoder.encode(
                 entry.getValue(), StandardCharsets.UTF_8));
         }
-
+        //  Add the parameter of wt with value json
+        if (!setWT) {
+            log.debug("Append wt=json");
+            if (formData.length() > 0) {
+                formData.append("&");
+            }
+            formData.append(WT);
+            formData.append("=");
+            formData.append(JSON);
+        }
+        String paramString = formData.toString();
+        log.debug("The solr parameter string is {}", paramString);
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(solrQueryUrl))
             .timeout(Duration.ofSeconds(60))
             .header("Content-Type",
                     "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(
-                formData.toString()))
+            .POST(HttpRequest.BodyPublishers.ofString(paramString))
             .build();
 
         HttpResponse<String> response = httpClient.send(
