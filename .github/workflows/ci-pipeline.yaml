@@ -42,7 +42,7 @@ jobs:
 
           check_changed() {
             local status=0
-            git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- "$@" || status=$?
+            git diff --quiet "$BEFORE" ${{ github.sha }} -- "$@" || status=$?
 
             if [ "$status" -gt 1 ]; then
               echo "git diff failed (exit code $status) for: $*" >&2
