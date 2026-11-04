@@ -15,8 +15,8 @@ import java.util.Map;
 /**
  * The class to poll the solr server and find the candidate objects for the notification service
  */
-public class DataSource {
-    private static final Logger log = LoggerFactory.getLogger(DataSource.class);
+public class DataSet {
+    private static final Logger log = LoggerFactory.getLogger(DataSet.class);
     private static final String solrQueryUrl = "";
     private static final SolrQueryClient solrClient = new SolrQueryClient(solrQueryUrl);
 
