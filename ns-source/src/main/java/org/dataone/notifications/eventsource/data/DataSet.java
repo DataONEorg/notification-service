@@ -17,8 +17,9 @@ import java.util.Map;
  */
 public class DataSet {
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
-    private static final String solrQueryUrl = "";
-    private static final SolrQueryClient solrClient = new SolrQueryClient(solrQueryUrl);
+    private static final String solrQueryUrl =
+        "http://localhost:8983/solr/metacat-index/select-all";
+    private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
 
 
     /**
@@ -59,7 +60,7 @@ public class DataSet {
             params.put("rows", "1000");
             params.put("wt", "json");
             // Reuse your SolrQueryClient query method here.
-            JsonNode result = solrClient.query(params);
+            JsonNode result = solrQueryClient.query(params);
             JsonNode documents = result.path("response").path("docs");
             // Process this batch.
             for (JsonNode doc : documents) {
@@ -99,5 +100,36 @@ public class DataSet {
     private void saveMnLatestMap(Map<String, String> map) {
 
     }
+
+    /**
+     * Get the list of the distinct authoritativeMN id from the solr server
+     * @return a list of the distinct authoritativeMN. An empty list will be returned if there is
+     * no result.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    protected List<String> getDistinctAuthoritativeMNs() throws IOException, InterruptedException {
+        Map<String, String> params = new HashMap<>();
+        params.put("q", "*:*");
+        params.put("rows", "0");
+        params.put("facet", "true");
+        params.put("facet.field", "authoritativeMN");
+        params.put("facet.limit", "-1");
+        params.put("facet.mincount", "1");
+        params.put("wt", "json");
+        JsonNode response = solrQueryClient.query(params);
+        List<String> result = new ArrayList<>();
+        JsonNode values =
+            response.path("facet_counts").path("facet_fields").path("authoritativeMN");
+        if (values.isArray()) {
+            for (int i = 0; i < values.size(); i += 2) {
+                result.add(values.get(i).asText());
+            }
+        }
+        log.debug("The list of the distinct authoritative mns is {}", result);
+        return result;
+    }
+
+
 
 }
