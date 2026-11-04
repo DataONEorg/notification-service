@@ -26,16 +26,18 @@ ns:
     jdbcHost: nsdb-cnpg-rw
     existingSecret: nsdb-cnpg-app
 
-image:
-    repository: "ghcr.io/dataoneorg/notification-service"
-    tag: feature5
-    pullPolicy: Never
+## Use 'pullPolicy: Never' to pull from locally-build images
+##
+#image:
+#    tag: feature5
+#    pullPolicy: Never
 
-nsconsumer:
-  image:
-    repository: "ghcr.io/dataoneorg/notification-consumer"
-    tag: feature5
-    pullPolicy: Never
+## Use 'pullPolicy: Never' to pull from locally-build images
+##
+#nsconsumer:
+#  image:
+#    tag: feature5
+#    pullPolicy: Never
 
 emailUtil:
   host: mailpit

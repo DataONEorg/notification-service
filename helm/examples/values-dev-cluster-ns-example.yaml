@@ -28,8 +28,8 @@ ns:
     existingSecret: nsdb-cnpg-app
 
 image:
-    repository: ghcr.io/dataoneorg/notification-service
     pullPolicy: Always
+
 tomcat:
   jmxEnabled: true
   remoteDebugEnabled: true
@@ -55,7 +55,6 @@ ingress:
 
 nsconsumer:
   image:
-    repository: ghcr.io/dataoneorg/notification-consumer
     pullPolicy: Always
 
 rmq:
