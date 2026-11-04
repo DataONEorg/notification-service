@@ -6,9 +6,6 @@ config:
     edgeLabelBackground: "#888888"
 ---
 flowchart LR
-%%    subgraph background["Notification Service Architecture"]
-        direction LR
-
         subgraph RabbitMQ Cluster
             Q["<b>Notifications<br/>Queue</b><br/><em>(1 notification<br/>per event,<br/>per recipient</em>)"]@{ shape: trapezoid-bottom }
         end
@@ -54,8 +51,6 @@ flowchart LR
         ds-src -- "Internal HTTP GET<br/>(lastSuccessfulRuntime)" --> web-api
         subs-proc -- "Internal HTTP<br/>(POST<br/>lastSuccessfulRuntime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
         web-api <-- Subscription CRUD --> DB
-
-%%    end
 
     linkStyle default stroke-width:3px,color:#000000,font-style:italic
     style ds-src color:#FFFFFF, stroke:#AA0033, fill:#AA0033
