@@ -26,15 +26,14 @@ public class DataSource {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void poll()
-        throws IOException, InterruptedException {
-        Map<String, String> notificationMnLatestMap = null;
-        if (notificationMnLatestMap == null || notificationMnLatestMap.isEmpty()) {
+    public void poll() throws IOException, InterruptedException {
+        Map<String, String> originalMnLatestModifiedDateMap = getMnLatestMap();
+        if (originalMnLatestModifiedDateMap == null || originalMnLatestModifiedDateMap.isEmpty()) {
             return;
         }
         // Build the MN/date conditions.
         List<String> mnQueries = new ArrayList<>();
-        for (Map.Entry<String, String> entry : notificationMnLatestMap.entrySet()) {
+        for (Map.Entry<String, String> entry : originalMnLatestModifiedDateMap.entrySet()) {
             String mn = entry.getKey();
             String dateModified = entry.getValue();
             mnQueries.add(
@@ -49,11 +48,13 @@ public class DataSource {
             " AND obsoletedBy:[* TO *]" +
             " AND (formatType:\"RESOURCE\" OR formatType:\"METADATA\")";
         String cursorMark = "*";
+        // A new map to store the latest modification date for this poll
+        Map<String, String> latestModifiedMap = new HashMap<>();
         while (true) {
             Map<String, String> params = new HashMap<>();
             params.put("q", q);
-            params.put("fl", "id,authoritativeMN,obsoletedBy");
-            params.put("sort", "id asc");
+            params.put("fl", "id,authoritativeMN,obsoletedBy,dateModified");
+            params.put("sort", "dateModified desc,id asc");
             params.put("cursorMark", cursorMark);
             params.put("rows", "1000");
             params.put("wt", "json");
@@ -65,6 +66,11 @@ public class DataSource {
                 String guid = doc.path("id").asText(null);
                 String newId = doc.path("obsoletedBy").asText(null);
                 String nodeId = doc.path("authoritativeMN").asText(null);
+                String modifiedDate = doc.path("dateModified").asText(null);
+                // Since the modficationDate is desc, the first record has the newest value
+                if (nodeId != null && modifiedDate != null) {
+                    latestModifiedMap.putIfAbsent(nodeId, modifiedDate);
+                }
                 log.debug(
                     "The id is {}, the new id is {} and the node id is {}", guid, newId, nodeId);
                 // TODO: Submit the notification task.
@@ -77,14 +83,21 @@ public class DataSource {
             }
             cursorMark = nextCursorMark;
         }
+        // Update the original map with new values
+        originalMnLatestModifiedDateMap.putAll(latestModifiedMap);
+        saveMnLatestMap(originalMnLatestModifiedDateMap);
     }
 
     private String escapeSolrValue(String value) {
         return ClientUtils.escapeQueryChars(value);
     }
 
-    private Map<String, String> getMNLatestMap() {
+    private Map<String, String> getMnLatestMap() {
         return null;
+    }
+
+    private void saveMnLatestMap(Map<String, String> map) {
+
     }
 
 }
