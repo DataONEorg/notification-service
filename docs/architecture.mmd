@@ -1,51 +1,71 @@
+---
+config:
+  themeVariables:
+    clusterBorder: "#888888"
+    clusterBkg: "#333333"
+    edgeLabelBackground: "#888888"
+---
 flowchart LR
-subgraph background[" "]
-    direction LR
-    subgraph "Sources Pod"
-        subgraph "Event Sources"
-            ds-src(["'DatasetChanges'<br/>(Solr) event source"])
-            mtrx-src(["'View' & 'Download'<br/>(Metrics) event source"])
-            fut-src(["Future event source"])
-        end
-        subs-proc["<b>Subscription<br/>Processor</b><br/><em>(who's subscribed<br/>to this event?<br/>Update DB to
-        newPid)</em>"]
-    end
-    Q["<b>Notifications<br/>Queue</b><br/><em>(1 notification<br/>per event,<br/>per recipient</em>)
-    "]@{ shape: trapezoid-bottom }
-    subgraph "Outputs Pod"
-        consumer["<b>Notifications<br/>Consumer</b><br/><em>(throttling;<br/>grouping?)</em>"]
-        subgraph Channels
-            email-svc(["<b>Email service</b><br/>chooses template based on<br/>SubscriptionResourceType"])
-            fut-channel(["(Future channels;<br/>eg SMS)"])
-        end
-    end
-    DB["Database<br/>(Postgres)"]@{ shape: cylinder }
-    account-svc(["<b>Account Service</b><br/><em>(get email,SMS etc<br/>for subscriberId)</em>"])
+%%    subgraph background["Notification Service Architecture"]
+        direction LR
 
-    ds-src -- <em> { subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType:
-datasetChanges }</em> --> subs-proc
-    mtrx-src --> subs-proc
-    subs-proc -- <em> { subscriberId:0000-0002-1472-913X<br/>newPid:456<br/>SubscriptionResourceType:
-datasetChanges }</em> --> Q
-    Q --> consumer
-    consumer --> email-svc
-    account-svc --> consumer
-    consumer --> fut-channel
-    fut-src --> subs-proc
-    subs-proc <-- <em>lastSuccessfulRuntime</em> --> DB
-    DB -- <em>lastSuccessfulRuntime</em> --> ds-src
-    DB -- <em>Metadata for msg template (Title etc)</em> --> consumer
-end
+        subgraph RabbitMQ Cluster
+            Q["<b>Notifications<br/>Queue</b><br/><em>(1 notification<br/>per event,<br/>per recipient</em>)"]@{ shape: trapezoid-bottom }
+        end
 
-style background fill:#ffffff,stroke:none
-linkStyle default stroke-width:3px
-style ds-src color:#FFFFFF, stroke:#AA0033, fill:#AA0033
-style mtrx-src color:#FFFFFF, stroke:#006633, fill:#006633
-style subs-proc color:#FFFFFF, stroke:#0066CC, fill:#0066CC
-style Q color:#FFFFFF, stroke:#996600, fill:#994400
-style consumer color:#FFFFFF, stroke:#0066CC, fill:#0066CC
-style email-svc color:#FFFFFF, stroke:#6699FF, fill:#6699FF
-style fut-channel color:#000000, stroke:#aaaaaa, fill:#aaaaaa
-style fut-src color:#000000, stroke:#aaaaaa, fill:#aaaaaa
-style DB color:#FFFFFF, stroke:#6699FF, fill:#003399
-style account-svc color:#000000, stroke:#779977, fill:#779977
+        subgraph "CN"
+            account-svc(["<b>Account Service</b><br/><em>(get email,SMS etc<br/>for subscriberId)</em>"])
+        end
+
+        subgraph K8s CNPG Cluster
+            DB["<b>Database</b><br/>(Postgres)"]@{ shape: cylinder }
+        end
+
+        subgraph "K8s Deployment: Web API Server (TomEE)"
+            web-api["<b>Web API</b><br/><em>(CRUD & Internal Endpoints)</em>"]
+        end
+
+        subgraph "K8s Deployment: Subscription Processor (JRE / CronJob)"
+            subgraph "Event Sources"
+                ds-src(["'DatasetChanges'<br/>(Solr) event source"])
+                mtrx-src(["'View' & 'Download'<br/>(Metrics) event source"])
+                fut-src(["Future event source"])
+            end
+            subs-proc["<b>Subscription<br/>Processor</b><br/><em>(who's subscribed<br/>to this event?<br/>Update subscription to newPid)</em>"]
+        end
+
+        subgraph "K8s Deployment: NS Consumer (JRE)"
+            consumer["<b>NS Consumer</b><br/><em>(throttling;<br/>batching?<br/>grouping?)</em>"]
+            subgraph Channels
+                email-svc(["<b>Email service</b><br/>chooses template based on<br/>SubscriptionResourceType"])
+                fut-channel(["(Future channels;<br/>eg SMS)"])
+            end
+        end
+
+        metacatui(["MetacatUI<br/>(or other client)"]) --> web-api
+        subs-proc -- "{ subscriberId:myOrcid<br/>newPid:456<br/>SubscriptionResourceType: datasetChanges }" --> Q
+        consumer -- "GET address" --> account-svc
+        Q --> consumer
+        consumer --> fut-channel
+        consumer --> email-svc
+        ds-src -- "{ subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType: datasetChanges }" --> subs-proc
+        mtrx-src --> subs-proc
+        fut-src --> subs-proc
+        ds-src -- "Internal HTTP GET<br/>(lastSuccessfulRuntime)" --> web-api
+        subs-proc -- "Internal HTTP<br/>(POST<br/>lastSuccessfulRuntime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
+        web-api <-- Subscription CRUD --> DB
+
+%%    end
+
+    linkStyle default stroke-width:3px,color:#000000,font-style:italic
+    style ds-src color:#FFFFFF, stroke:#AA0033, fill:#AA0033
+    style mtrx-src color:#FFFFFF, stroke:#006633, fill:#006633
+    style subs-proc color:#FFFFFF, stroke:#0066CC, fill:#0066CC
+    style Q color:#FFFFFF, stroke:#996600, fill:#994400
+    style consumer color:#FFFFFF, stroke:#0066CC, fill:#0066CC
+    style email-svc color:#FFFFFF, stroke:#6699FF, fill:#6699FF
+    style web-api color:#FFFFFF, stroke:#6699FF, fill:#6699FF
+    style fut-channel color:#000000, stroke:#aaaaaa, fill:#aaaaaa
+    style fut-src color:#000000, stroke:#aaaaaa, fill:#aaaaaa
+    style DB color:#FFFFFF, stroke:#6699FF, fill:#003399
+    style account-svc color:#000000, stroke:#779977, fill:#779977
