@@ -8,7 +8,7 @@
         <artifactId>notification-service-project</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>ns-event-source</artifactId>
+    <artifactId>ns-source</artifactId>
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
