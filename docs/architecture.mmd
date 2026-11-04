@@ -41,7 +41,7 @@ flowchart LR
         end
 
         metacatui(["MetacatUI<br/>(or other client)"]) --> web-api
-        subs-proc -- "{ subscriberId:myOrcid<br/>newPid:456<br/>SubscriptionResourceType: datasetChanges }" --> Q
+        subs-proc -- "{ subscriberId:myOrcid<br/>subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType: datasetChanges }" --> Q
         consumer -- "GET address" --> account-svc
         Q --> consumer
         consumer --> fut-channel
