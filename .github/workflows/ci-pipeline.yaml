@@ -32,24 +32,32 @@ jobs:
       - name: Detect changes in helm/ and outside helm/
         id: detect
         run: |
+          BEFORE="${{ github.event.before }}"
+          ZERO_SHA="0000000000000000000000000000000000000000"
+
+          # Fallback if BEFORE is empty or zero-SHA (happens on tag or new branch pushes)
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "$ZERO_SHA" ]; then
+            BEFORE="HEAD~1"
+          fi
+
           check_changed() {
             local status=0
-            git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- "$@" || status=$?
-          
+            git diff --quiet "$BEFORE" ${{ github.sha }} -- "$@" || status=$?
+
             if [ "$status" -gt 1 ]; then
               echo "git diff failed (exit code $status) for: $*" >&2
               return "$status"
             fi
-          
+
             [ "$status" -eq 1 ]
           }
-          
+
           if check_changed helm/; then
             echo "helm_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "helm_changed=false" >> "$GITHUB_OUTPUT"
           fi
-          
+
           if check_changed . ':!helm/'; then
             echo "non_helm_changed=true" >> "$GITHUB_OUTPUT"
           else
@@ -61,14 +69,17 @@ jobs:
     uses: ./.github/workflows/maven-build.yaml
     needs: [detect-changes]
     # Don't need to run maven-build if these are helm-only changes
-    if: needs.detect-changes.outputs.non_helm_changed == 'true'
+    if: (!startsWith(github.ref, 'refs/tags/chart-')) &&
+      (startsWith(github.ref, 'refs/tags/') ||
+      needs.detect-changes.outputs.non_helm_changed == 'true')
 
   docker-publish-web-api:
     uses: ./.github/workflows/docker-publish.yaml
     needs: [maven-build, detect-changes]
     # Run docker-publish for all non-chart tags, or for non-helm code changes
-    if: startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/chart-') ||
-      needs.detect-changes.outputs.non_helm_changed == 'true'
+    if: (!startsWith(github.ref, 'refs/tags/chart-')) &&
+      (startsWith(github.ref, 'refs/tags/') ||
+      needs.detect-changes.outputs.non_helm_changed == 'true')
     with:
       version: ${{ needs.maven-build.outputs.version }}
       imageName: notification-service
@@ -78,8 +89,9 @@ jobs:
     uses: ./.github/workflows/docker-publish.yaml
     needs: [maven-build, detect-changes]
     # Run docker-publish for all non-chart tags, or for non-helm code changes
-    if: startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/chart-') ||
-      needs.detect-changes.outputs.non_helm_changed == 'true'
+    if: (!startsWith(github.ref, 'refs/tags/chart-')) &&
+      (startsWith(github.ref, 'refs/tags/') ||
+      needs.detect-changes.outputs.non_helm_changed == 'true')
     with:
       version: ${{ needs.maven-build.outputs.version }}
       imageName: notification-consumer

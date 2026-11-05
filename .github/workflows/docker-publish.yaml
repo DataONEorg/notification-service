@@ -17,7 +17,7 @@ on:
         type: string
 
 jobs:
-  docker-publish-consumer:
+  docker-build-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
