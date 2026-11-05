@@ -33,7 +33,7 @@
 
     <properties>
         <!-- Single place to set the project version; modules reference ${revision} in their parent blocks -->
-        <revision>0.1.0-alpha1</revision>
+        <revision>0.2.0-SNAPSHOT</revision>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- DEPENDENCY VERSIONS -->
