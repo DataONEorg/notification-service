@@ -2,7 +2,7 @@ package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.util.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

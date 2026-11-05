@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 
 /**
  * An implementation of the AuthProvider interface for the notification service.

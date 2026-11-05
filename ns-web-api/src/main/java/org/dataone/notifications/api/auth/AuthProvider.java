@@ -5,7 +5,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import java.util.List;
 import java.util.Set;
 
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 
 /**
  * An interface for authenticating and authorizing users.

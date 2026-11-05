@@ -28,16 +28,16 @@ ns:
 
 ## Use 'pullPolicy: Never' to pull from locally-build images
 ##
-#image:
-#    tag: feature5
-#    pullPolicy: Never
+image:
+    tag: LOCAL
+    pullPolicy: Never
 
 ## Use 'pullPolicy: Never' to pull from locally-build images
 ##
-#nsconsumer:
-#  image:
-#    tag: feature5
-#    pullPolicy: Never
+nsconsumer:
+  image:
+    tag: LOCAL
+    pullPolicy: Never
 
 emailUtil:
   host: mailpit

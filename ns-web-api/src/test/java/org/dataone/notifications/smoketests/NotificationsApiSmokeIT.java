@@ -1,6 +1,6 @@
 package org.dataone.notifications.smoketests;
 
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
@@ -19,6 +19,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Smoke tests for the public API endpoints. Requires BASE_URL and a valid TOKEN. Usage:
+ *
+ * $ export TOKEN=valid-JWT-token
+ * $ export BASE_URL=http://localhost:8080/notifications/v1
+ * $ mvn clean -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" verify
+ */
 class NotificationsApiSmokeIT {
 
     private static final String URI_PREFIX = "notifications/v1";

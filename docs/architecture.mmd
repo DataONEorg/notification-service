@@ -50,7 +50,7 @@ flowchart LR
         mtrx-src --> subs-proc
         fut-src --> subs-proc
         ds-src -- "Internal HTTP GET<br/>(lastSuccessfulRuntime)" --> web-api
-        subs-proc -- "Internal HTTP<br/>(POST<br/>lastSuccessfulRuntime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
+        subs-proc -- "Internal HTTP<br/>(PUT<br/>lastSuccessfulRuntime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
         web-api <-- Subscription CRUD --> DB
 
     linkStyle default stroke-width:3px,color:#000000,font-style:italic
