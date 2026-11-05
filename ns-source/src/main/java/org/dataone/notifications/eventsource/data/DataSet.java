@@ -1,12 +1,17 @@
 package org.dataone.notifications.eventsource.data;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.dataone.notifications.eventsource.solr.SolrQueryClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +26,9 @@ public class DataSet {
         "http://localhost:8983/solr/metacat-index/select-all";
     private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
 
+    private static final String MN_LATEST_MODIFICATION_FILE_PATH =
+        "./.mn_latest_modification_time_map";
+
 
     /**
      * Poll the solr server and send the candidate objects to the notification queue
@@ -28,7 +36,14 @@ public class DataSet {
      * @throws InterruptedException
      */
     public void poll() throws IOException, InterruptedException {
-        Map<String, String> originalMnLatestModifiedDateMap = getMnLatestMap();
+        List<String> nodeIds = getDistinctAuthoritativeMNs();
+        if (nodeIds.isEmpty()) {
+            log.warn(
+                "The notification service cannot find any nodeIds in the solr service {}. So it "
+                    + "will stop polling.", solrQueryUrl);
+            return;
+        }
+        Map<String, String> originalMnLatestModifiedDateMap = getMnLatestMap(nodeIds);
         if (originalMnLatestModifiedDateMap == null || originalMnLatestModifiedDateMap.isEmpty()) {
             return;
         }
@@ -93,12 +108,40 @@ public class DataSet {
         return ClientUtils.escapeQueryChars(value);
     }
 
-    private Map<String, String> getMnLatestMap() {
-        return null;
+    private Map<String, String> getMnLatestMap(List<String> nodeIds) throws IOException {
+        File file = new File(MN_LATEST_MODIFICATION_FILE_PATH);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> mnLatestMap = new HashMap<>();
+        // Read the existing map if the file exists.
+        if (file.exists()) {
+            mnLatestMap = mapper.readValue(file,
+                                           new TypeReference<Map<String, String>>() {});
+        }
+        // Add new node IDs with the current timestamp.
+        String currentTime = Instant.now().toString();
+        boolean updated = false;
+        for (String nodeId : nodeIds) {
+            if (!mnLatestMap.containsKey(nodeId)) {
+                mnLatestMap.put(nodeId, currentTime);
+                updated = true;
+            }
+        }
+        // Save the map if the file is new or has been updated.
+        if (!file.exists() || updated) {
+            saveMnLatestMap(mnLatestMap);
+        }
+        return mnLatestMap;
     }
 
-    private void saveMnLatestMap(Map<String, String> map) {
-
+    private void saveMnLatestMap(Map<String, String> map) throws IOException {
+        File file = new File(MN_LATEST_MODIFICATION_FILE_PATH);
+        // Create parent directories if they don't exist.
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            Files.createDirectories(parentDir.toPath());
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writerWithDefaultPrettyPrinter().writeValue(file, map);
     }
 
     /**
@@ -129,7 +172,5 @@ public class DataSet {
         log.debug("The list of the distinct authoritative mns is {}", result);
         return result;
     }
-
-
 
 }
