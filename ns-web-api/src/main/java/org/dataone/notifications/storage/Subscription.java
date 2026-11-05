@@ -1,6 +1,6 @@
 package org.dataone.notifications.storage;
 
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 
 import java.util.List;
 

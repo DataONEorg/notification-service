@@ -40,7 +40,7 @@ public class RabbitMqConsumerMain {
 
         // read configuration and create runtime objects
         final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
-        final DatasetEventProcessor processor = new DatasetEventProcessor();
+        final NsEventProcessor processor = new NsEventProcessor();
         consumer = new DatasetEventConsumer(props, processor);
 
         try {

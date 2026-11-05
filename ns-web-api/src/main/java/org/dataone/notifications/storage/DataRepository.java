@@ -2,8 +2,9 @@ package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -22,4 +23,9 @@ public interface DataRepository {
         throws NotAuthorizedException, NotFoundException;
 
     List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws NotAuthorizedException, NotFoundException;
+
+    Instant getLastSuccessfulRuntime(String nodeId, SubscriptionResourceType resourceType);
+
+    void setLastSuccessfulRuntime(
+        Instant timestampEpochMillis, String nodeId, SubscriptionResourceType resourceType);
 }
