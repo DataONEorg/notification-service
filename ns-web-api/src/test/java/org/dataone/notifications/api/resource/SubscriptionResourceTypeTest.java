@@ -1,5 +1,6 @@
 package org.dataone.notifications.api.resource;
 
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

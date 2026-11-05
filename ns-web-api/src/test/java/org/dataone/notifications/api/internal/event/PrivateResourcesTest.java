@@ -3,7 +3,7 @@ package org.dataone.notifications.api.internal.event;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.internal.event.PrivateResources.NotificationResult;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.NsDataRepository;
 import org.junit.jupiter.api.BeforeEach;

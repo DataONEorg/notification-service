@@ -1,8 +1,9 @@
 package org.dataone.notifications.event.consumer;
 
 import com.rabbitmq.client.Delivery;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
-import org.dataone.notifications.event.DatasetEventMessage.DatasetEvent;
+import org.dataone.notifications.resource.SubscriptionResourceType;
+import org.dataone.notifications.event.NsEventMessage;
+import org.dataone.notifications.event.NsEventMessage.NsEvent;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
-class DatasetEventProcessorTest {
+class NsEventProcessorTest {
 
     private static final String ORE = "http://www.openarchives.org/ore/terms";
     private static final String PORTAL_1_0_0 = "https://purl.dataone.org/portals-1.0.0";
@@ -45,7 +46,7 @@ class DatasetEventProcessorTest {
     @SystemStub
     private EnvironmentVariables env;
 
-    private final DatasetEventProcessor processor = new DatasetEventProcessor();
+    private final NsEventProcessor processor = new NsEventProcessor();
 
     @BeforeEach
     void setMessagesServiceEnv() {
@@ -85,7 +86,7 @@ class DatasetEventProcessorTest {
 
     @Test
     void metadataWithResourceMap_isIgnored() {
-        DatasetEvent event = event("METADATA", ORE, RESOURCE_MAP_LIST);
+        NsEvent event = event("METADATA", ORE, RESOURCE_MAP_LIST);
         assertThrows(IgnoredResourceTypeException.class, () -> processor.getResourceType(event));
     }
 
@@ -105,27 +106,27 @@ class DatasetEventProcessorTest {
 
     @Test
     void unknownFormatType_isUnsupported() {
-        DatasetEvent event = event("BOGUS", ORE, null);
+        NsEventMessage.NsEvent event = event("BOGUS", ORE, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
     @Test
     void missingFormatType_isUnsupported() {
-        DatasetEvent event = event(null, ORE, null);
+        NsEventMessage.NsEvent event = event(null, ORE, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
     @Test
     void missingFormatId_isUnsupported() {
-        DatasetEvent event = event("METADATA", null, null);
+        NsEvent event = event("METADATA", null, null);
         assertThrows(UnsupportedResourceTypeException.class,
                      () -> processor.getResourceType(event));
     }
 
-    private static DatasetEvent event(String formatType, String formatId, List<String> resourceMap) {
-        DatasetEvent event = mock(DatasetEvent.class);
+    private static NsEventMessage.NsEvent event(String formatType, String formatId, List<String> resourceMap) {
+        NsEvent event = mock(NsEvent.class);
         lenient().when(event.formatType()).thenReturn(formatType);
         lenient().when(event.formatId()).thenReturn(formatId);
         lenient().when(event.resourceMap()).thenReturn(resourceMap);
@@ -183,7 +184,7 @@ class DatasetEventProcessorTest {
     private static String json(String formatType) {
         return """
             {
-              "datasetEvent": {
+              "nsEvent": {
                 "_version_":1879779856146759680,
                 "id":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",
                 "identifier":"resource_map_urn:uuid:71f96fe5-ed91-4923-89aa-0ab5171d5a01",

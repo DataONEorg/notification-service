@@ -1,6 +1,6 @@
 package org.dataone.notifications.smoketests;
 
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;

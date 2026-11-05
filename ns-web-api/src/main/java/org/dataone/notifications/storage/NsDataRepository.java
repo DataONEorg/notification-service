@@ -6,7 +6,7 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.LoggerFactory;

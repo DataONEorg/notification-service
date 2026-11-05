@@ -3,6 +3,7 @@ package org.dataone.notifications.api.resource;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.auth.AuthProvider;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.NsDataRepository;
 import org.dataone.notifications.storage.Subscription;

@@ -24,12 +24,12 @@ public class DatasetEventConsumer implements AutoCloseable {
     // inlined connection management that was previously in RabbitMqConnectionManager
     private Connection connection;
     private Channel channel;
-    private final DatasetEventProcessor processor;
+    private final NsEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public DatasetEventConsumer(
         RabbitMqProperties properties,
-        DatasetEventProcessor processor) {
+        NsEventProcessor processor) {
         this.properties = properties;
         this.processor = processor;
     }
