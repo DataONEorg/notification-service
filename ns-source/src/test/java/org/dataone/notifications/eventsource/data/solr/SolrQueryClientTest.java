@@ -1,4 +1,4 @@
-package org.dataone.notifications.eventsource.solr;
+package org.dataone.notifications.eventsource.data.solr;
 
 import org.junit.jupiter.api.Test;
 import java.util.Map;

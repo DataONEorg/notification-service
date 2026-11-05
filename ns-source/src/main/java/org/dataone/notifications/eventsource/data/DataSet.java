@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.dataone.notifications.eventsource.solr.SolrQueryClient;
+import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
