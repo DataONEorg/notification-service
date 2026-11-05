@@ -395,7 +395,7 @@ nsconsumer:
   image:
     ## @param nsconsumer.image.repository The nsconsumer image repository
     ##
-    repository: ghcr.io/dataoneorg/nsconsumer
+    repository: ghcr.io/dataoneorg/notification-consumer
 
     ## @param nsconsumer.image.pullPolicy The nsconsumer image pull policy
     ##

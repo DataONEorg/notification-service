@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.dataone.notification-service</groupId>
         <artifactId>notification-service-project</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>ns-web-api</artifactId>
