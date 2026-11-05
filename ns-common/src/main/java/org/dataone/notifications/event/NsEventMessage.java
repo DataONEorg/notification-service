@@ -1,7 +1,7 @@
 package org.dataone.notifications.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.dataone.notifications.api.resource.SubscriptionResourceType;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 
 /**
  * This class represents the structure of a notification event message.
