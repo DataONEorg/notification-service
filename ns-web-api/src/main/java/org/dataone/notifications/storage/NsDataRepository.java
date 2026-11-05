@@ -198,11 +198,40 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public void setLastSuccessfulRuntime(
-        Instant timestampEpochMillis, SubscriptionResourceType resourceType, String nodeId) {
+    public Instant getLastSuccessfulRuntime(String nodeId, SubscriptionResourceType resourceType) {
+        log.debug(
+            "Get lastSuccessfulRuntime for nodeId: {}, resourceType: {}", resourceType,
+            nodeId);
+        validateInput(nodeId, resourceType);
 
-        log.debug("Set lastSuccessfulRuntime to {} for resourceType {} and nodeId {}",
-            timestampEpochMillis, resourceType, nodeId);
+        String sql =
+            "SELECT timestamp FROM last_successful_runtime WHERE resource_type=? AND node_id=?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, resourceType.toString());
+            statement.setString(2, nodeId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getTimestamp("timestamp").toInstant();
+                } else {
+                    log.debug(
+                        "No lastSuccessfulRuntime found for nodeId: {}, resourceType: {}",
+                        nodeId, resourceType);
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Database error: {} retrieving lastSuccessfulRuntime", e.getMessage());
+            throw new PersistenceException("Database error retrieving lastSuccessfulRuntime", e);
+        }
+    }
+
+    @Override
+    public void setLastSuccessfulRuntime(
+        Instant timestampEpochMillis, String nodeId, SubscriptionResourceType resourceType) {
+
+        log.debug("Set lastSuccessfulRuntime to {} for nodeId: {}, resourceType: {}",
+            timestampEpochMillis, nodeId, resourceType);
         validateInput(nodeId, resourceType);
 
         String sql = "INSERT INTO last_successful_runtime (resource_type, node_id, timestamp) "

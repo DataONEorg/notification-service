@@ -24,6 +24,8 @@ public interface DataRepository {
 
     List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws NotAuthorizedException, NotFoundException;
 
+    Instant getLastSuccessfulRuntime(String nodeId, SubscriptionResourceType resourceType);
+
     void setLastSuccessfulRuntime(
-        Instant timestampEpochMillis, SubscriptionResourceType resourceType, String nodeId);
+        Instant timestampEpochMillis, String nodeId, SubscriptionResourceType resourceType);
 }

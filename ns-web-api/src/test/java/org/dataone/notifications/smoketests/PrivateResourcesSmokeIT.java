@@ -17,13 +17,14 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Smoke tests for the private (cluster-only) endpoints. Requires BASE_URL and a valid TOKEN. Usage:
- *  *
- *  * $ export TOKEN=valid-JWT-token
- *  * $ export BASE_URL=http://localhost:8080/notifications/v1
- *  * $ mvn clean -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" verify
+ *
+ * $ export TOKEN=valid-JWT-token
+ * $ export BASE_URL=http://localhost:8080/notifications/v1
+ * $ mvn clean -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" verify
  */
 class PrivateResourcesSmokeIT {
 
@@ -107,6 +108,65 @@ class PrivateResourcesSmokeIT {
             int status = r.getStatus();
             assertEquals(4, status / 100, "unexpected status: " + status);
         }
+    }
+
+    @Test
+    void getLastRuntime_afterSet_returnsSetTimestamp() throws Exception {
+        long timestamp = Instant.now().minusSeconds(120).toEpochMilli();
+        String type = SubscriptionResourceType.datasetChanges.name();
+        try (Response r = put(form(String.valueOf(timestamp), type, TEST_NODE_ID))) {
+            assertEquals(200, r.getStatus(), "unexpected PUT status");
+        }
+
+        try (Response r = get(TEST_NODE_ID, type)) {
+            String body = r.readEntity(String.class);
+            log.debug("GET status={}, body={}", r.getStatus(), body);
+            assertEquals(200, r.getStatus(), "unexpected GET status");
+
+            JsonNode root = MAPPER.readTree(body);
+            assertEquals(type, root.get("resourceType").asString());
+            assertEquals(TEST_NODE_ID, root.get("nodeId").asString());
+            JsonNode ts = root.get("timestampEpochMillis");
+            assertNotNull(ts, "timestamp missing from response");
+            assertEquals(timestamp, toInstant(ts).toEpochMilli(), "timestamp mismatch");
+        }
+    }
+
+    @Test
+    void getLastRuntime_invalidResourceType_returnsClientError() {
+        try (Response r = get(TEST_NODE_ID, "notAResourceType")) {
+            int status = r.getStatus();
+            assertEquals(4, status / 100, "unexpected status: " + status);
+        }
+    }
+
+    @Test
+    void getLastRuntime_noEntry_returnsNotFound() {
+        String unknownNode = "urn:node:SMOKE_TEST_UNKNOWN_" + System.nanoTime();
+        try (Response r = get(unknownNode, SubscriptionResourceType.datasetChanges.name())) {
+            assertEquals(404, r.getStatus(), "unexpected status");
+        }
+    }
+
+    private Response get(String nodeId, String resourceType) {
+        return client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(PRIVATE_PATH)
+            .path(LAST_RUNTIME_PATH)
+            .path(nodeId)
+            .path(resourceType)
+            .request()
+            .get();
+    }
+
+    // Jackson serializes Instant as either epoch seconds (decimal) or an ISO-8601 string
+    private static Instant toInstant(JsonNode ts) {
+        if (ts.isNumber()) {
+            java.math.BigDecimal secs = ts.decimalValue();
+            return Instant.ofEpochSecond(secs.longValue(),
+                secs.remainder(java.math.BigDecimal.ONE).movePointRight(9).longValue());
+        }
+        return Instant.parse(ts.asString());
     }
 
     private Response put(Form form) {

@@ -3,7 +3,10 @@ package org.dataone.notifications.api.internal.event;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.PathParam;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
@@ -44,23 +47,44 @@ public class PrivateResources {
         this.dataRepository = dataRepository;
     }
 
+    @GET
+    @Path("/lastSuccessfulRuntime/{nodeId}/{resourceType}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Record getLastRuntime(
+        @NotNull @PathParam("nodeId") String nodeId,
+        @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType
+    ){
+        log.debug(
+            "Request to get lastSuccessfulRuntime for nodeId: {}, resourceType: {}",
+            nodeId, resourceType);
+        Instant timestampUtc = dataRepository.getLastSuccessfulRuntime(nodeId, resourceType);
+        if (timestampUtc == null) {
+            throw new NotFoundException(
+                "No lastSuccessfulRuntime found for nodeId: " + nodeId + ", resourceType: "
+                    + resourceType);
+        }
+        log.debug("Got lastSuccessfulRuntime of: {} for nodeId: {}, resourceType: {}",
+                  timestampUtc, nodeId, resourceType);
+        return new NotificationResult(timestampUtc, nodeId, resourceType);
+    }
+
     @PUT
     @Path("/lastSuccessfulRuntime")
     @Produces(MediaType.APPLICATION_JSON)
     public Record setLastRuntime(
         @NotNull @FormParam("timestamp") Long timestampEpochMillis,
-        @NotNull @FormParam("resourceType") SubscriptionResourceType resourceType,
-        @NotNull @FormParam("nodeId") String nodeId
-        ){
+        @NotNull @FormParam("nodeId") String nodeId,
+        @NotNull @FormParam("resourceType") SubscriptionResourceType resourceType) {
         log.debug(
-            "Request to set lastSuccessfulRuntime to timestamp: {}; resourceType: {}, nodeId: {}",
-            timestampEpochMillis, resourceType, nodeId);
+            "Request to set lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
+            timestampEpochMillis, nodeId, resourceType);
         Instant timestampUtc = Instant.ofEpochMilli(timestampEpochMillis);
         validateTimestamp(timestampUtc);
-        dataRepository.setLastSuccessfulRuntime(timestampUtc, resourceType, nodeId);
-        log.debug("Updated lastSuccessfulRuntime to timestamp: {}; resourceType: {}, nodeId: {}",
-                timestampEpochMillis, resourceType, nodeId);
-        return new NotificationResult(timestampUtc, resourceType, nodeId);
+        dataRepository.setLastSuccessfulRuntime(timestampUtc, nodeId, resourceType);
+        log.debug(
+            "Updated lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
+            timestampEpochMillis, nodeId, resourceType);
+        return new NotificationResult(timestampUtc, nodeId, resourceType);
     }
 
     private void validateTimestamp(Instant timestampUtc) {
@@ -71,6 +95,6 @@ public class PrivateResources {
     }
 
     public record NotificationResult(Instant timestampEpochMillis,
-                                     SubscriptionResourceType resourceType, String nodeId) {
+                                     String nodeId, SubscriptionResourceType resourceType) {
     }
 }
