@@ -17,6 +17,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -194,6 +195,30 @@ public class NsDataRepository implements DataRepository {
                 "Database error retrieving subscriptions", e);
         }
         return subscriptions;
+    }
+
+    @Override
+    public void setLastSuccessfulRuntime(
+        Instant timestampEpochMillis, SubscriptionResourceType resourceType, String nodeId) {
+
+        log.debug("Set lastSuccessfulRuntime to {} for resourceType {} and nodeId {}",
+            timestampEpochMillis, resourceType, nodeId);
+        validateInput(nodeId, resourceType);
+
+        String sql = "INSERT INTO last_successful_runtime (resource_type, node_id, timestamp) "
+            + "VALUES (?, ?, ?) "
+            + "ON CONFLICT (resource_type, node_id) DO UPDATE SET timestamp = EXCLUDED.timestamp";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, resourceType.toString());
+            statement.setString(2, nodeId);
+            statement.setTimestamp(3, java.sql.Timestamp.from(timestampEpochMillis));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Database error: {} setting lastSuccessfulRuntime", e.getMessage());
+            throw new PersistenceException("Database error setting lastSuccessfulRuntime", e);
+        }
     }
 
     private void validateInput(String subject, Object resource) {

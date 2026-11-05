@@ -1,4 +1,4 @@
-package org.dataone.notifications;
+package org.dataone.notifications.event.notifier;
 
 import org.dataone.notifications.exception.NotificationDeliveryException;
 

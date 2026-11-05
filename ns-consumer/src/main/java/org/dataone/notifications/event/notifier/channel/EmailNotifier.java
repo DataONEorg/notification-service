@@ -10,7 +10,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.util.Properties;
 
-import org.dataone.notifications.NotificationListener;
+import org.dataone.notifications.event.notifier.NotificationListener;
 import org.dataone.notifications.exception.NotificationDeliveryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

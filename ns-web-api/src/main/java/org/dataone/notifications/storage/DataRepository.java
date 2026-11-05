@@ -4,6 +4,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.api.resource.SubscriptionResourceType;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -22,4 +23,7 @@ public interface DataRepository {
         throws NotAuthorizedException, NotFoundException;
 
     List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type) throws NotAuthorizedException, NotFoundException;
+
+    void setLastSuccessfulRuntime(
+        Instant timestampEpochMillis, SubscriptionResourceType resourceType, String nodeId);
 }
