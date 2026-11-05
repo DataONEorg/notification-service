@@ -24,7 +24,7 @@ public class SolrQueryClient {
     private static final Logger log = LoggerFactory.getLogger(SolrQueryClient.class);
     private static final Set<String> ALLOWED_PARAMS =
         Set.of("q", "fl", "sort", "rows", "cursorMark", "start", "fq", "wt", "facet",
-               "facet.field", "facet.limit", "facet.mincount");
+               "facet.field", "facet.limit", "facet.mincount", "json.facet");
     private static final String JSON = "json";
     private static final String WT = "wt";
     private final String solrQueryUrl;

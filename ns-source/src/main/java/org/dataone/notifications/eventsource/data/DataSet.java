@@ -36,14 +36,16 @@ public class DataSet {
      * @throws InterruptedException
      */
     public void poll() throws IOException, InterruptedException {
-        List<String> nodeIds = getDistinctAuthoritativeMNs();
-        if (nodeIds.isEmpty()) {
+        Map<String, String> nodeIdWithEarliestModificationFromSolr =
+            getMNEarliestModificationMap();
+        if (nodeIdWithEarliestModificationFromSolr.isEmpty()) {
             log.warn(
                 "The notification service cannot find any nodeIds in the solr service {}. So it "
                     + "will stop polling.", solrQueryUrl);
             return;
         }
-        Map<String, String> originalMnLatestModifiedDateMap = getMnLatestMap(nodeIds);
+        Map<String, String> originalMnLatestModifiedDateMap =
+            getRecordedMnLatestMap(nodeIdWithEarliestModificationFromSolr);
         if (originalMnLatestModifiedDateMap == null || originalMnLatestModifiedDateMap.isEmpty()) {
             return;
         }
@@ -108,7 +110,19 @@ public class DataSet {
         return ClientUtils.escapeQueryChars(value);
     }
 
-    private Map<String, String> getMnLatestMap(List<String> nodeIds) throws IOException {
+
+    /**
+     * Read the recorded map from the file/database if the file/database exist. The map has a key
+     * of node id and the value of the latest modification date. It also handles the scenarios of
+     * fresh start (no record file or database) or a new node id found in the solr docs.
+     * @param nodeIdWithEarliestModificationFromSolr  a map from solr which may contain the new
+     *                                               node id
+     * @return the map with nodeId/latestModficationDate
+     * @throws IOException
+     */
+    private Map<String, String> getRecordedMnLatestMap(
+        Map<String, String> nodeIdWithEarliestModificationFromSolr) throws IOException {
+        boolean freshStart = false;
         File file = new File(MN_LATEST_MODIFICATION_FILE_PATH);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> mnLatestMap = new HashMap<>();
@@ -116,14 +130,34 @@ public class DataSet {
         if (file.exists()) {
             mnLatestMap = mapper.readValue(file,
                                            new TypeReference<Map<String, String>>() {});
+        } else {
+            freshStart = true;
         }
-        // Add new node IDs with the current timestamp.
+        // Add new node IDs
         String currentTime = Instant.now().toString();
         boolean updated = false;
-        for (String nodeId : nodeIds) {
-            if (!mnLatestMap.containsKey(nodeId)) {
+        // Handle the scenarios of a fresh start or a new node id was found in the solr doc.
+        for (String nodeId : nodeIdWithEarliestModificationFromSolr.keySet()) {
+            if (nodeId == null || nodeId.isBlank()) {
+                log.debug("The node id is null or blank, skip it");
+                continue;
+            }
+            if (freshStart) {
+                log.debug("This a fresh start (no recorded file or database). Node id {} and "
+                              + "current time {} will be put into map.", nodeId, currentTime);
                 mnLatestMap.put(nodeId, currentTime);
                 updated = true;
+            } else {
+                if (!mnLatestMap.containsKey(nodeId)) {
+                    String ealriestModficationTime =
+                        nodeIdWithEarliestModificationFromSolr.get(nodeId);
+                    log.debug(
+                        "Found a new node id (it is not in the recorded file or database). Node "
+                            + "id {} and the earliest modification {} will be put into map.",
+                        nodeId, ealriestModficationTime);
+                    mnLatestMap.put(nodeId, ealriestModficationTime);
+                    updated = true;
+                }
             }
         }
         // Save the map if the file is new or has been updated.
@@ -145,31 +179,34 @@ public class DataSet {
     }
 
     /**
-     * Get the list of the distinct authoritativeMN id from the solr server
-     * @return a list of the distinct authoritativeMN. An empty list will be returned if there is
-     * no result.
+     * Get a map, whose key is a distinct mn id and the value is the earliest modification date,
+     * from solr
+     * @return an empty map if it finds nothing
      * @throws IOException
      * @throws InterruptedException
      */
-    protected List<String> getDistinctAuthoritativeMNs() throws IOException, InterruptedException {
+    protected Map<String, String> getMNEarliestModificationMap()
+        throws IOException, InterruptedException {
         Map<String, String> params = new HashMap<>();
         params.put("q", "*:*");
         params.put("rows", "0");
-        params.put("facet", "true");
-        params.put("facet.field", "authoritativeMN");
-        params.put("facet.limit", "-1");
-        params.put("facet.mincount", "1");
+        params.put("json.facet",
+                   "{mns:{type:terms,field:authoritativeMN,limit:-1," +
+                       "facet:{earliestDateModified:'min(dateModified)'}}}");
         params.put("wt", "json");
         JsonNode response = solrQueryClient.query(params);
-        List<String> result = new ArrayList<>();
-        JsonNode values =
-            response.path("facet_counts").path("facet_fields").path("authoritativeMN");
-        if (values.isArray()) {
-            for (int i = 0; i < values.size(); i += 2) {
-                result.add(values.get(i).asText());
+        Map<String, String> result = new HashMap<>();
+        JsonNode buckets = response.path("facets").path("mns").path("buckets");
+        if (buckets.isArray()) {
+            for (JsonNode bucket : buckets) {
+                String mnId = bucket.path("val").asText();
+                String earliestDateModified =
+                    bucket.path("earliestDateModified").asText();
+                result.put(mnId, earliestDateModified);
             }
         }
-        log.debug("The list of the distinct authoritative mns is {}", result);
+        log.debug("The distinct authoritative MNs and their earliest " +
+                      "dateModified values are {}", result);
         return result;
     }
 
