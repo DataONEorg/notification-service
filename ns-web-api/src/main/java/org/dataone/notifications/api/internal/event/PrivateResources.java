@@ -19,6 +19,14 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 
+/**
+ * A class that provides internal API endpoints for managing private resources. It enables various
+ * components of the system to read or write database records, without needing individual components
+ * to have direct access to the database.
+ *
+ * IMPORTANT: The endpoints defined in this class are intended for internal use within the cluster
+ * only, and should never be exposed to external clients.
+ */
 @RequestScoped
 @Path("/private")
 public class PrivateResources {

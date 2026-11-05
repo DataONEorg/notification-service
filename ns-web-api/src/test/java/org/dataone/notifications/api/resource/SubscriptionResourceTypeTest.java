@@ -8,14 +8,35 @@ class SubscriptionResourceTypeTest {
 
     @Test
     void fromString() {
-        assertEquals(SubscriptionResourceType.datasetChanges, SubscriptionResourceType.fromString("datasetChanges"));
-        assertEquals(SubscriptionResourceType.datasetChanges, SubscriptionResourceType.fromString("dataset-changes"));
-        assertEquals(SubscriptionResourceType.datasetChanges, SubscriptionResourceType.fromString("DATASETCHANGES"));
-        assertEquals(SubscriptionResourceType.citations, SubscriptionResourceType.fromString("citations"));
-        assertEquals(SubscriptionResourceType.citations, SubscriptionResourceType.fromString("cit-ations"));
-        assertEquals(SubscriptionResourceType.citations, SubscriptionResourceType.fromString("citATIONS"));
+        assertEquals(
+            SubscriptionResourceType.datasetChanges,
+            SubscriptionResourceType.fromString("datasetChanges"));
+        assertEquals(
+            SubscriptionResourceType.datasetChanges,
+            SubscriptionResourceType.fromString("dataset-changes"));
+        assertEquals(
+            SubscriptionResourceType.datasetChanges,
+            SubscriptionResourceType.fromString("DATASETCHANGES"));
+
+        assertEquals(
+            SubscriptionResourceType.portalMetaChanges,
+            SubscriptionResourceType.fromString("portalMetaChanges"));
+        assertEquals(
+            SubscriptionResourceType.portalMetaChanges,
+            SubscriptionResourceType.fromString("portal-meta-changes"));
+        assertEquals(
+            SubscriptionResourceType.portalMetaChanges,
+            SubscriptionResourceType.fromString("PORTALMETACHANGES"));
+
+        assertEquals(
+            SubscriptionResourceType.citations, SubscriptionResourceType.fromString("citations"));
+        assertEquals(
+            SubscriptionResourceType.citations, SubscriptionResourceType.fromString("cit-ations"));
+        assertEquals(
+            SubscriptionResourceType.citations, SubscriptionResourceType.fromString("citATIONS"));
 
         assertThrows(
-            IllegalArgumentException.class, () -> SubscriptionResourceType.fromString("not-a-real-resource"));
+            IllegalArgumentException.class,
+            () -> SubscriptionResourceType.fromString("not-a-real-resource"));
     }
 }
