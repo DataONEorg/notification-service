@@ -28,7 +28,8 @@ ns:
     existingSecret: nsdb-cnpg-app
 
 image:
-    pullPolicy: Always
+  tag: develop
+  pullPolicy: Always
 
 tomcat:
   jmxEnabled: true
@@ -55,6 +56,7 @@ ingress:
 
 nsconsumer:
   image:
+    tag: develop
     pullPolicy: Always
 
 rmq:
