@@ -149,13 +149,13 @@ public class DataSet {
                 updated = true;
             } else {
                 if (!mnLatestMap.containsKey(nodeId)) {
-                    String ealriestModficationTime =
+                    String earliestModficationTime =
                         nodeIdWithEarliestModificationFromSolr.get(nodeId);
                     log.debug(
                         "Found a new node id (it is not in the recorded file or database). Node "
                             + "id {} and the earliest modification {} will be put into map.",
-                        nodeId, ealriestModficationTime);
-                    mnLatestMap.put(nodeId, ealriestModficationTime);
+                        nodeId, earliestModficationTime);
+                    mnLatestMap.put(nodeId, earliestModficationTime);
                     updated = true;
                 }
             }
