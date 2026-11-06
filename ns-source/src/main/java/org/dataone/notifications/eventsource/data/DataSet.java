@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
@@ -79,7 +80,9 @@ public class DataSet {
         while (true) {
             Map<String, String> params = new HashMap<>();
             params.put("q", q);
-            params.put("fl", "id,authoritativeMN,obsoletedBy,dateModified");
+            params.put(
+                "fl",
+                "id,authoritativeMN,obsoletedBy,dateModified,formatId,formatType,resourceMap");
             params.put("sort", "dateModified desc,id asc");
             params.put("cursorMark", cursorMark);
             params.put("rows", "1000");
@@ -93,6 +96,25 @@ public class DataSet {
                 String newId = doc.path("obsoletedBy").asText(null);
                 String nodeId = doc.path("authoritativeMN").asText(null);
                 String modifiedDate = doc.path("dateModified").asText(null);
+                String formatId = doc.path("formatId").asText(null);
+                String formatType = doc.path("formatType").asText(null);
+                List<String> resourceMaps = new ArrayList<>();
+                JsonNode resourceMapNode = doc.path("resourceMap");
+                if (resourceMapNode.isArray()) {
+                    for (JsonNode node : resourceMapNode) {
+                        resourceMaps.add(node.asText());
+                    }
+                }
+                SubscriptionResourceType subscriptionResourceType = null;
+                try {
+                    subscriptionResourceType = getResourceType(formatType, formatId, resourceMaps);
+                } catch (Exception e) {
+                    log.warn("Can't get the subscription resource type for {} since {}, and this "
+                                 + "object is ignored.", guid, e.getMessage());
+                }
+                if (subscriptionResourceType != null) {
+                    NsEventMessage message = new NsEventMessage(null);
+                }
                 // Since the modficationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
                     latestModifiedMap.putIfAbsent(nodeId, modifiedDate);
