@@ -2,9 +2,14 @@ package org.dataone.notifications.eventsource.data;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.solr.client.solrj.util.ClientUtils;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
+import org.dataone.notifications.exception.IgnoredResourceTypeException;
+import org.dataone.notifications.exception.UnsupportedResourceTypeException;
+import org.dataone.notifications.resource.SubscriptionResourceType;
+
+import org.dataone.notifications.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,11 +21,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * The class to poll the solr server and find the candidate objects for the notification service
  */
 public class DataSet {
+    private static final Pattern PORTAL_FORMAT_ID_PATTERN =
+        Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
     private static final String solrQueryUrl =
         "http://localhost:8983/solr/metacat-index/select-all";
@@ -208,6 +216,65 @@ public class DataSet {
         log.debug("The distinct authoritative MNs and their earliest " +
                       "dateModified values are {}", result);
         return result;
+    }
+
+    /// Extracts the SubscriptionResourceType from the given parameters.
+    ///
+    /// `formatType` can be `RESOURCE`, `DATA`, or `METADATA`:
+    /// - `DATA` can be ignored because there will always be another event for the corresponding
+    ///   resourceMap update, and we don't want to alert twice for the same thing.
+    /// - `RESOURCE` is a resourceMap, which is always a dataset, so return
+    ///   `SubscriptionResourceType.datasetChanges`.
+    /// - For `METADATA`:
+    ///   - If `formatId` matches `https://purl.dataone.org/portals-.*`, return
+    ///     `SubscriptionResourceType.portalMetaChanges` (portals do not have a resourceMap).
+    ///   - If a `resourceMap` field exists, ignore the event because there will be another event
+    ///     for the corresponding resourceMap update, and we don't want to alert twice for the same
+    ///     thing.
+    ///   - If a `resourceMap` field does not exist, this is a science-metadata-only dataset; return
+    ///     `SubscriptionResourceType.datasetChanges`.
+    ///
+    /// References:
+    ///
+    /// - List of available formats: [DataONE formats](https://cn.dataone.org/cn/v2/formats)
+    /// - Enumeration of available resource types:
+    /// [org.dataone.notifications.api.resource.SubscriptionResourceType]
+    ///
+    /// @param formatType  the format type of the data object, it can be DATA, METADATA, or RESOURCE
+    /// @param formatId  the format id of the data object
+    /// @param resourceMap  the list of resourceMap aggregates the object
+    /// @return The resource type as a SubscriptionResourceType
+    /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
+    /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
+    ///
+    protected static SubscriptionResourceType getResourceType(
+        String formatType, String formatId, List<String> resourceMap)
+        throws IgnoredResourceTypeException, UnsupportedResourceTypeException {
+        if (StringUtils.isBlank(formatType)) {
+            throw new IllegalArgumentException("FormatType parameter cannot be blank.");
+        }
+        if (StringUtils.isBlank(formatId)) {
+            throw new IllegalArgumentException("FormatId parameter cannot be blank.");
+        }
+        return switch (formatType) {
+            case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");
+            case "RESOURCE" -> SubscriptionResourceType.datasetChanges;
+            case "METADATA" -> {
+                if (PORTAL_FORMAT_ID_PATTERN.matcher(formatId).matches()) {
+                    log.debug("formatId: {} matches portal pattern -> portalMetaChanges", formatId);
+                    yield SubscriptionResourceType.portalMetaChanges;
+                }
+                if (resourceMap != null && !resourceMap.isEmpty() && !StringUtils.isBlank(
+                    resourceMap.getFirst())) {
+                    log.debug("resourceMap: {} exists -> ignore to avoid duplicate", resourceMap);
+                    throw new IgnoredResourceTypeException(
+                        "formatType: METADATA with resourceMap is ignored");
+                }
+                yield SubscriptionResourceType.datasetChanges;
+            }
+            default ->
+                throw new UnsupportedResourceTypeException("Unsupported formatType: " + formatType);
+        };
     }
 
 }
