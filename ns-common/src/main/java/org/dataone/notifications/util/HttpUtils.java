@@ -2,10 +2,14 @@ package org.dataone.notifications.util;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
+import java.util.stream.Collectors;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -84,6 +88,47 @@ public class HttpUtils {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Interrupted during GET " + path, e);
+        }
+    }
+
+    /**
+     * Sends an HTTP PUT with an application/x-www-form-urlencoded body to the internal api
+     * service.
+     *
+     * @param requestUri path (plus optional query) appended to the base URL, e.g.
+     *                   "/lastSuccessfulRuntime". Callers are responsible for URL-encoding any
+     *                   path segments.
+     * @param formFields form field names and values; values are converted with toString() and
+     *                   URL-encoded here. Null values are skipped.
+     * @return the response body (JSON) as a String
+     * @throws IOException if the request fails or the server returns a non-2xx status
+     */
+    public static String doPut(String requestUri, Map<String, ?> formFields) throws IOException {
+
+        String path = requestUri.startsWith("/") ? requestUri : "/" + requestUri;
+
+        String form = formFields.entrySet().stream().filter(e -> e.getValue() != null).map(
+            e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(
+                e.getValue().toString(), StandardCharsets.UTF_8)).collect(Collectors.joining("&"));
+
+        HttpRequest request = HttpRequest.newBuilder(URI.create(BASE_URL + path))
+            .timeout(TIMEOUT)
+            .header("Accept", "application/json")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .PUT(HttpRequest.BodyPublishers.ofString(form))
+            .build();
+        try {
+            HttpResponse<String> response =
+                CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            if (status < 200 || status >= 300) {
+                throw new IOException(
+                    "PUT " + path + " failed with HTTP " + status + ": " + response.body());
+            }
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted during PUT " + path, e);
         }
     }
 
