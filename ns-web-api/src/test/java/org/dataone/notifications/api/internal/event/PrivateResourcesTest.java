@@ -2,7 +2,7 @@ package org.dataone.notifications.api.internal.event;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.api.internal.event.PrivateResources.NotificationResult;
+import org.dataone.notifications.event.LastSuccessfulRuntimeResponse;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.NsDataRepository;
@@ -47,7 +47,7 @@ class PrivateResourcesTest {
     void validTimestamp_persistsAndReturnsResult() {
         Instant timestamp = Instant.now().minusSeconds(60).truncatedTo(ChronoUnit.MILLIS);
 
-        NotificationResult result = (NotificationResult) privateResources.setLastRuntime(
+        LastSuccessfulRuntimeResponse result = (LastSuccessfulRuntimeResponse) privateResources.setLastRuntime(
             timestamp.toEpochMilli(), NODE_ID, RESOURCE_TYPE);
 
         assertEquals(timestamp, result.timestampEpochMillis());
@@ -120,8 +120,8 @@ class PrivateResourcesTest {
         Instant timestamp = Instant.now().minusSeconds(60).truncatedTo(ChronoUnit.MILLIS);
         when(mockDataRepo.getLastSuccessfulRuntime(NODE_ID, RESOURCE_TYPE)).thenReturn(timestamp);
 
-        NotificationResult result =
-            (NotificationResult) privateResources.getLastRuntime(NODE_ID, RESOURCE_TYPE);
+        LastSuccessfulRuntimeResponse result =
+            (LastSuccessfulRuntimeResponse) privateResources.getLastRuntime(NODE_ID, RESOURCE_TYPE);
 
         assertEquals(timestamp, result.timestampEpochMillis());
         assertEquals(RESOURCE_TYPE, result.resourceType());
