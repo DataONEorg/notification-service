@@ -20,9 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Smoke tests for the private (cluster-only) endpoints. Requires BASE_URL and a valid TOKEN. Usage:
+ * NOTE EXPECTED TO FAIL (BY DESIGN) IF USED AGAINST PUBLIC INGRESS! THESE ENDPOINTS MUST NEVER BE
+ * EXPOSED TO THE PUBLIC INTERNET.
  *
- * $ export TOKEN=valid-JWT-token
+ * Smoke tests for the private (cluster-only) endpoints.
+ * Requires BASE_URL, but no TOKEN. Usage:
+ *
  * $ export BASE_URL=http://localhost:8080/notifications/v1
  * $ mvn clean -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" verify
  */

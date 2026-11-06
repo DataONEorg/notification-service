@@ -7,6 +7,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
+import org.dataone.notifications.event.LastSuccessfulRuntimeResponse;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,7 @@ public class PrivateResources {
         }
         log.debug("Got lastSuccessfulRuntime of: {} for nodeId: {}, resourceType: {}",
                   timestampUtc, nodeId, resourceType);
-        return new NotificationResult(timestampUtc, nodeId, resourceType);
+        return new LastSuccessfulRuntimeResponse(timestampUtc, nodeId, resourceType);
     }
 
     @PUT
@@ -84,7 +85,7 @@ public class PrivateResources {
         log.debug(
             "Updated lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
             timestampEpochMillis, nodeId, resourceType);
-        return new NotificationResult(timestampUtc, nodeId, resourceType);
+        return new LastSuccessfulRuntimeResponse(timestampUtc, nodeId, resourceType);
     }
 
     private void validateTimestamp(Instant timestampUtc) {
@@ -94,7 +95,4 @@ public class PrivateResources {
         }
     }
 
-    public record NotificationResult(Instant timestampEpochMillis,
-                                     String nodeId, SubscriptionResourceType resourceType) {
-    }
 }
