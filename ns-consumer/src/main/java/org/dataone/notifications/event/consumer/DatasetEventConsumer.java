@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ public class DatasetEventConsumer implements AutoCloseable {
 
     private final RabbitMqProperties properties;
     // inlined connection management that was previously in RabbitMqConnectionManager
-    private Connection connection;
+    private RabbitMqConnection connection;
     private Channel channel;
     private final NsEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -46,7 +47,7 @@ public class DatasetEventConsumer implements AutoCloseable {
         log.info("Starting DatasetEventConsumer for queue {}",
             properties.queueName());
         try {
-            final Channel ch = newChannel();
+            final Channel ch = connection.newChannel();
             channel = ch;
             DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(ch, delivery);
             ch.basicConsume(properties.queueName(), false, callback,
@@ -86,47 +87,7 @@ public class DatasetEventConsumer implements AutoCloseable {
         shutdown();
     }
 
-    /**
-     * Create and return a new channel, lazily creating the connection if needed.
-     */
-    private synchronized Channel newChannel() throws IOException, TimeoutException {
-        if (connection == null || !connection.isOpen()) {
-            connection = createConnection();
-        }
-        Channel ch = connection.createChannel();
-        ch.queueDeclare(properties.queueName(), true, false, false, null);
-        ch.basicQos(properties.prefetchCount());
-        return ch;
-    }
 
-    private Connection createConnection() throws IOException, TimeoutException {
-        try{
-            log.info("Creating connection factory");
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(properties.host());
-            factory.setPort(properties.port());
-            factory.setUsername(System.getenv("RABBITMQ_USERNAME") != null ? System.getenv("RABBITMQ_USERNAME") : properties.username());
-            factory.setPassword(System.getenv("RABBITMQ_PASSWORD") != null ? System.getenv("RABBITMQ_PASSWORD") : properties.password());
-            factory.setVirtualHost(properties.virtualHost());
-            factory.setAutomaticRecoveryEnabled(true);
-            factory.setNetworkRecoveryInterval(5000);
-            factory.setRequestedHeartbeat(30);
-            log.info("Attempting to create RabbitMQ connection to " +
-                " {}:{} with virtual host '{}'",
-                properties.host(), properties.port(), properties.virtualHost());
-            return factory.newConnection();
-        }catch(IOException e){
-            log.info("IOException in createConnection: {}", e.getMessage());
-            throw e;
-        }catch(TimeoutException e){
-            log.info("TimeoutException in createConnection: {}", e.getMessage());
-            throw e;
-        }catch(Exception e){
-            log.info("Unexpected Exception in createConnection: {}", e.getMessage());
-            throw new RuntimeException("Failed to create RabbitMQ connection", e);
-        }
-
-    }
 
     public synchronized void shutdown() {
         try {
@@ -153,7 +114,7 @@ public class DatasetEventConsumer implements AutoCloseable {
      * Quick check whether an active connection exists.
      */
     public synchronized boolean isConnected() {
-        boolean isOpen = connection != null && connection.isOpen();
+        boolean isOpen = connection.isConnected();
         log.trace("connection={}, connection.isOpen={}", connection, isOpen);
         return isOpen;
     }
