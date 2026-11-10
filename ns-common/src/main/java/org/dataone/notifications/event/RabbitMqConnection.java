@@ -9,9 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 
 /**
  * A RabbitMQ connection class can be shared by both submitters and consumers
@@ -21,8 +28,9 @@ public class RabbitMqConnection {
     private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
     private static final long healthPollIntervalSeconds = 15L;
     private final RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
+    private static ScheduledExecutorService healthScheduler;
     // inlined connection management that was previously in RabbitMqConnectionManager
-    private Connection connection;
+    private static Connection connection;
 
     /**
      * Constructor of the class
@@ -52,8 +60,12 @@ public class RabbitMqConnection {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(properties.host());
             factory.setPort(properties.port());
-            factory.setUsername(System.getenv("RABBITMQ_USERNAME") != null ? System.getenv("RABBITMQ_USERNAME") : properties.username());
-            factory.setPassword(System.getenv("RABBITMQ_PASSWORD") != null ? System.getenv("RABBITMQ_PASSWORD") : properties.password());
+            factory.setUsername(
+                System.getenv("RABBITMQ_USERNAME") != null ? System.getenv("RABBITMQ_USERNAME")
+                                                           : properties.username());
+            factory.setPassword(
+                System.getenv("RABBITMQ_PASSWORD") != null ? System.getenv("RABBITMQ_PASSWORD")
+                                                           : properties.password());
             factory.setVirtualHost(properties.virtualHost());
             factory.setAutomaticRecoveryEnabled(true);
             factory.setNetworkRecoveryInterval(5000);
@@ -77,7 +89,7 @@ public class RabbitMqConnection {
     /**
      * Quick check whether an active connection exists.
      */
-    public synchronized boolean isConnected() {
+    public static synchronized boolean isConnected() {
         boolean isOpen = connection != null && connection.isOpen();
         log.trace("connection={}, connection.isOpen={}", connection, isOpen);
         return isOpen;
@@ -87,9 +99,71 @@ public class RabbitMqConnection {
      * Close the connection
      * @throws IOException
      */
-    public void close() throws IOException {
+    public static void close() throws IOException {
         if (connection != null) {
             connection.close();
+        }
+    }
+
+    /**
+     * Start the health probe.
+     */
+    public static synchronized void startHealthProbe() {
+        if (healthScheduler != null) {
+            return;
+        }
+        healthScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "rmq-health-poller");
+            t.setDaemon(true);
+            return t;
+        });
+        healthScheduler.scheduleAtFixedRate(
+            () -> refreshProbeIfConnected(RabbitMqConnection::isConnected, healthProbeFile), 0,
+            healthPollIntervalSeconds, TimeUnit.SECONDS);
+
+        log.info(
+            "Health file probe started for {} with interval {} sec", healthProbeFile,
+            healthPollIntervalSeconds);
+    }
+
+    /**
+     * Stop the health probe.
+     */
+    public static synchronized void stopHealthProbe() {
+        if (healthScheduler != null) {
+            healthScheduler.shutdownNow();
+            healthScheduler = null;
+        }
+    }
+
+    static void refreshProbeIfConnected(BooleanSupplier connectionStatus, Path probeFile) {
+        try {
+            if (connectionStatus.getAsBoolean()) {
+                writeProbeFile(probeFile);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Health probe failed: {}", e.getMessage());
+        }
+    }
+
+    public static void writeProbeFile(Path probeFile) {
+        try {
+            String content = Long.toString(Instant.now().getEpochSecond());
+            Path tmp =
+                probeFile.resolveSibling(probeFile.getFileName().toString() + ".tmp");
+            Files.writeString(tmp, content);
+            Files.move(
+                tmp, probeFile, StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            log.warn("writeProbeFile() falling  back to non atomic write");
+            try {
+                Files.writeString(probeFile, Long.toString(Instant.now().getEpochSecond()));
+            } catch (IOException ex) {
+                log.warn("Failed to write probe file {}: {}", probeFile, ex.getMessage());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to update probe file {}: {}", probeFile, e.getMessage());
         }
     }
 }
