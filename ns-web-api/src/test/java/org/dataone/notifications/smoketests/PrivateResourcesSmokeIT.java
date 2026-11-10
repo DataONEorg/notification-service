@@ -34,7 +34,12 @@ class PrivateResourcesSmokeIT {
     private static final String URI_PREFIX = "notifications/v1";
     private static final String PRIVATE_PATH = "private";
     private static final String LAST_RUNTIME_PATH = "lastSuccessfulRuntime";
+    // Constant (resourceType, nodeId) keys: the first run inserts these rows, and every later run
+    // only updates their timestamps, so the live DB never grows beyond these rows.
     private static final String TEST_NODE_ID = "urn:node:SMOKE_TEST";
+    private static final String TEST_NODE_ID_2 = "urn:node:SMOKE_TEST_2";
+    // Never written by any test, so it has no rows
+    private static final SubscriptionResourceType EMPTY_TYPE = SubscriptionResourceType.testNoType;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
@@ -64,15 +69,17 @@ class PrivateResourcesSmokeIT {
         log.debug("PUT lastSuccessfulRuntime, timestamp={}", timestamp);
 
         try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.datasetChanges.name(), TEST_NODE_ID))) {
+                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
             assertEquals(200, r.getStatus(), "unexpected status");
             String body = r.readEntity(String.class);
             log.debug("Response body: {}", body);
 
-            JsonNode root = MAPPER.readTree(body);
-            assertEquals(SubscriptionResourceType.datasetChanges.name(),
-                         root.get("resourceType").asString());
-            assertEquals(TEST_NODE_ID, root.get("nodeId").asString());
+            JsonNode entries = MAPPER.readTree(body).get("entries");
+            assertNotNull(entries, "entries missing from response");
+            assertEquals(1, entries.size(), "expected exactly one entry");
+            assertEquals(TEST_NODE_ID, entries.get(0).get("nodeId").asString());
+            assertEquals(timestamp, toInstant(entries.get(0).get("timestamp")).toEpochMilli(),
+                         "timestamp mismatch");
         }
     }
 
@@ -80,7 +87,7 @@ class PrivateResourcesSmokeIT {
     void setLastRuntime_timestampInFuture_returnsBadRequest() {
         long timestamp = Instant.now().plusSeconds(3600).toEpochMilli();
         try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.datasetChanges.name(), TEST_NODE_ID))) {
+                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
             assertEquals(400, r.getStatus(), "future timestamp should be rejected");
         }
     }
@@ -89,7 +96,7 @@ class PrivateResourcesSmokeIT {
     void setLastRuntime_timestampTooOld_returnsBadRequest() {
         long timestamp = Instant.now().minusSeconds(8L * 24 * 60 * 60).toEpochMilli();
         try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.datasetChanges.name(), TEST_NODE_ID))) {
+                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
             assertEquals(400, r.getStatus(), "timestamp older than 7 days should be rejected");
         }
     }
@@ -98,7 +105,7 @@ class PrivateResourcesSmokeIT {
     void setLastRuntime_missingParam_returnsBadRequest() {
         Form noNodeId = new Form()
             .param("timestamp", String.valueOf(Instant.now().toEpochMilli()))
-            .param("resourceType", SubscriptionResourceType.datasetChanges.name());
+            .param("resourceType", SubscriptionResourceType.testType.name());
         try (Response r = put(noNodeId)) {
             assertEquals(400, r.getStatus(), "missing nodeId should be rejected");
         }
@@ -116,47 +123,75 @@ class PrivateResourcesSmokeIT {
     @Test
     void getLastRuntime_afterSet_returnsSetTimestamp() throws Exception {
         long timestamp = Instant.now().minusSeconds(120).toEpochMilli();
-        String type = SubscriptionResourceType.datasetChanges.name();
+        String type = SubscriptionResourceType.testType.name();
         try (Response r = put(form(String.valueOf(timestamp), type, TEST_NODE_ID))) {
             assertEquals(200, r.getStatus(), "unexpected PUT status");
         }
 
-        try (Response r = get(TEST_NODE_ID, type)) {
+        try (Response r = get(type)) {
             String body = r.readEntity(String.class);
             log.debug("GET status={}, body={}", r.getStatus(), body);
             assertEquals(200, r.getStatus(), "unexpected GET status");
 
+            JsonNode entry = findEntry(MAPPER.readTree(body), TEST_NODE_ID);
+            assertNotNull(entry, "no entry for " + TEST_NODE_ID + " in: " + body);
+            assertEquals(timestamp, toInstant(entry.get("timestamp")).toEpochMilli(),
+                         "timestamp mismatch");
+        }
+    }
+
+    @Test
+    void getLastRuntime_returnsAllTestNodes() throws Exception {
+        String type = SubscriptionResourceType.testType.name();
+        long timestamp = Instant.now().minusSeconds(90).toEpochMilli();
+        for (String nodeId : new String[] {TEST_NODE_ID, TEST_NODE_ID_2}) {
+            try (Response r = put(form(String.valueOf(timestamp), type, nodeId))) {
+                assertEquals(200, r.getStatus(), "unexpected PUT status");
+            }
+        }
+
+        try (Response r = get(type)) {
+            String body = r.readEntity(String.class);
+            assertEquals(200, r.getStatus(), "unexpected GET status");
+
             JsonNode root = MAPPER.readTree(body);
-            assertEquals(type, root.get("resourceType").asString());
-            assertEquals(TEST_NODE_ID, root.get("nodeId").asString());
-            JsonNode ts = root.get("timestampEpochMillis");
-            assertNotNull(ts, "timestamp missing from response");
-            assertEquals(timestamp, toInstant(ts).toEpochMilli(), "timestamp mismatch");
+            assertNotNull(findEntry(root, TEST_NODE_ID), "missing " + TEST_NODE_ID + ": " + body);
+            assertNotNull(findEntry(root, TEST_NODE_ID_2),
+                          "missing " + TEST_NODE_ID_2 + ": " + body);
         }
     }
 
     @Test
     void getLastRuntime_invalidResourceType_returnsClientError() {
-        try (Response r = get(TEST_NODE_ID, "notAResourceType")) {
+        try (Response r = get("notAResourceType")) {
             int status = r.getStatus();
             assertEquals(4, status / 100, "unexpected status: " + status);
         }
     }
 
     @Test
-    void getLastRuntime_noEntry_returnsNotFound() {
-        String unknownNode = "urn:node:SMOKE_TEST_UNKNOWN_" + System.nanoTime();
-        try (Response r = get(unknownNode, SubscriptionResourceType.datasetChanges.name())) {
+    void getLastRuntime_noEntries_returnsNotFound() {
+        try (Response r = get(EMPTY_TYPE.name())) {
             assertEquals(404, r.getStatus(), "unexpected status");
         }
     }
 
-    private Response get(String nodeId, String resourceType) {
+    private static JsonNode findEntry(JsonNode root, String nodeId) {
+        JsonNode entries = root.get("entries");
+        assertNotNull(entries, "entries missing from response");
+        for (JsonNode entry : entries) {
+            if (nodeId.equals(entry.get("nodeId").asString())) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private Response get(String resourceType) {
         return client.target(baseUrl)
             .path(URI_PREFIX)
             .path(PRIVATE_PATH)
             .path(LAST_RUNTIME_PATH)
-            .path(nodeId)
             .path(resourceType)
             .request()
             .get();

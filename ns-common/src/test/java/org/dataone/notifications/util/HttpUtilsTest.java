@@ -29,15 +29,13 @@ import org.mockito.MockedStatic;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 /**
- * Tests HttpUtils with a mocked HttpClient. HttpUtils builds its HttpClient and reads the base URL
- * env var once, at class-initialization time, so both are set up in @BeforeAll before HttpUtils is
- * first touched.
+ * Tests HttpUtils with a mocked HttpClient
  */
 class HttpUtilsTest {
 
-    record Result(String nodeId, long timestamp) {}
+    private record Result(String nodeId, long timestamp) {}
 
-    private static final String BASE_URL = "http://ns-api.test:8080";
+    private static final String BASE_URL = "http://localhost:8080/notifications/v1/private";
     private static final String JSON = "{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}";
 
     private static EnvironmentVariables env;
@@ -48,10 +46,6 @@ class HttpUtilsTest {
 
     @BeforeAll
     static void initHttpUtilsWithMockClient() throws Exception {
-        // trailing slash verifies that it is stripped
-        env = new EnvironmentVariables(HttpUtils.BASE_URL_ENV_VAR, BASE_URL + "/");
-        env.setup();
-
         client = mock(HttpClient.class);
         HttpClient.Builder builder = mock(HttpClient.Builder.class);
         when(builder.connectTimeout(any())).thenReturn(builder);
@@ -60,11 +54,6 @@ class HttpUtilsTest {
             httpClient.when(HttpClient::newBuilder).thenReturn(builder);
             Class.forName(HttpUtils.class.getName());   // triggers static init
         }
-    }
-
-    @AfterAll
-    static void tearDown() throws Exception {
-        env.teardown();
     }
 
     @BeforeEach

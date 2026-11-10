@@ -17,6 +17,13 @@ ns:
   ## (trace, debug, info, warn, error, fatal)
   logLevel: warn
 
+  api:
+    ## @param ns.api.privateApiPath Path for private API endpoints (will be appended to hostname)
+    ## USE A LEADING SLASH, BUT NO TRAILING SLASH! Should include context and API version. Example:
+    ## privateApiPath: /notifications/v1/private
+    ##
+    privateApiPath: /notifications/v1/private
+
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API

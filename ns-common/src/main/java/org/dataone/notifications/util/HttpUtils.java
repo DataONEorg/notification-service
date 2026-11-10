@@ -10,6 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.dataone.notifications.NsConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,20 +24,19 @@ import tools.jackson.databind.ObjectMapper;
  */
 public class HttpUtils {
 
-    /** Env var holding the base URL of the internal K8s service, e.g. http://ns-api:8080 */
-    public static final String BASE_URL_ENV_VAR = "NS_API_INTERNAL_BASE_URL";
-
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
+    private static final Duration TIMEOUT_SEC = Duration.ofSeconds(10);
     private static final HttpClient CLIENT =
-        HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
+        HttpClient.newBuilder().connectTimeout(TIMEOUT_SEC).build();
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String BASE_URL = loadBaseUrl();
 
     private static String loadBaseUrl() {
-        String value = System.getenv(BASE_URL_ENV_VAR);
+        String value = NsConfig.getConfig().getString("ns.api.privateBaseUrl");
+        log.info("Loaded base URL from config: {}", value);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(
-                "Environment variable not set: " + BASE_URL_ENV_VAR);
+                "ns.api.privateBaseUrl not set: " + value);
         }
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
@@ -60,9 +63,10 @@ public class HttpUtils {
     /**
      * Sends an HTTP GET to the internal api service.
      *
-     * @param requestUri path (plus optional query) appended to the base URL, e.g.
-     *                   "/lastSuccessfulRuntime/datasetChanges". Callers are responsible for
-     *                   URL-encoding any path segments.
+     * @param requestUri path (plus optional query) E.g. "/lastSuccessfulRuntime/datasetChanges".
+     *                   Will be appended to the base URL (see ns.api.privateBaseUrl in
+     *                   config/properties.yaml).  Callers are responsible for URL-encoding any path
+     *                   segments.
      * @return the response body (JSON) as a String
      * @throws IOException if the base URL env var is not set, the request fails, or the server
      *                     returns a non-2xx status
@@ -72,7 +76,7 @@ public class HttpUtils {
         String path = requestUri.startsWith("/") ? requestUri : "/" + requestUri;
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(BASE_URL + path))
-            .timeout(TIMEOUT)
+            .timeout(TIMEOUT_SEC)
             .header("Accept", "application/json")
             .GET()
             .build();
@@ -95,9 +99,10 @@ public class HttpUtils {
      * Sends an HTTP PUT with an application/x-www-form-urlencoded body to the internal api
      * service.
      *
-     * @param requestUri path (plus optional query) appended to the base URL, e.g.
-     *                   "/lastSuccessfulRuntime". Callers are responsible for URL-encoding any
-     *                   path segments.
+     * @param requestUri path (plus optional query) E.g. "/lastSuccessfulRuntime/datasetChanges".
+     *                   Will be appended to the base URL (see ns.api.privateBaseUrl in
+     *                   config/properties.yaml).  Callers are responsible for URL-encoding any path
+     *                   segments.
      * @param formFields form field names and values; values are converted with toString() and
      *                   URL-encoded here. Null values are skipped.
      * @return the response body (JSON) as a String
@@ -111,12 +116,11 @@ public class HttpUtils {
             e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(
                 e.getValue().toString(), StandardCharsets.UTF_8)).collect(Collectors.joining("&"));
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(BASE_URL + path))
-            .timeout(TIMEOUT)
-            .header("Accept", "application/json")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .PUT(HttpRequest.BodyPublishers.ofString(form))
-            .build();
+        HttpRequest request =
+            HttpRequest.newBuilder(URI.create(BASE_URL + path)).timeout(TIMEOUT_SEC)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .PUT(HttpRequest.BodyPublishers.ofString(form)).build();
         try {
             HttpResponse<String> response =
                 CLIENT.send(request, HttpResponse.BodyHandlers.ofString());

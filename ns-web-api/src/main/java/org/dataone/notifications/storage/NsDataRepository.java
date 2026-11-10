@@ -6,17 +6,20 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +47,9 @@ public class NsDataRepository implements DataRepository {
 
         try (Connection connection = source.getConnection()) {
             DatabaseMetaData dbMeta = connection.getMetaData();
-            log.info("Connected to database: {} {}", dbMeta.getDatabaseProductName(),
-                     dbMeta.getDatabaseProductVersion());
+            log.info(
+                "Connected to database: {} {}", dbMeta.getDatabaseProductName(),
+                dbMeta.getDatabaseProductVersion());
         } catch (SQLException e) {
             log.error("* * * * * *  Database connection error: {}  * * * * * *", e.getMessage());
             throw new PersistenceException(
@@ -61,7 +65,7 @@ public class NsDataRepository implements DataRepository {
 
     @Override
     public List<String> getSubscriptions(String subject, SubscriptionResourceType resourceType)
-        throws NotAuthorizedException, NotFoundException {
+        throws NotAuthorizedException, NotFoundException, PersistenceException {
 
         log.debug("Get subscriptions to {} for {}", resourceType, subject);
         validateInput(subject, resourceType);
@@ -87,7 +91,9 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public Subscription addSubscription(String subject, SubscriptionResourceType resourceType, String pid) {
+    public Subscription addSubscription(
+        String subject, SubscriptionResourceType resourceType,
+        String pid) {
 
         log.debug("Add new subscription to {}/{} for {}", resourceType, pid, subject);
         validateInput(subject, resourceType, pid);
@@ -109,7 +115,8 @@ public class NsDataRepository implements DataRepository {
 
     @Override
     public Subscription deleteSubscriptions(
-        String subject, SubscriptionResourceType resourceType, List<String> pidList) {
+        String subject, SubscriptionResourceType resourceType,
+        List<String> pidList) throws PersistenceException {
 
         log.debug("Delete {} subscriptions for {}, to pids {}", resourceType, subject, pidList);
         validateInput(subject, resourceType);
@@ -140,12 +147,10 @@ public class NsDataRepository implements DataRepository {
 
     @Override
     public List<String> getResourceTypesByPid(String subject, String pid)
-        throws NotAuthorizedException, NotFoundException {
+        throws NotAuthorizedException, NotFoundException, PersistenceException {
 
         log.debug("Get ResourceTypes subscribed to with pid {} by user {}", pid, subject);
         validateInput(pid, subject);
-
-        List<String> pids = new ArrayList<>();
 
         String sql = "SELECT DISTINCT resource_type FROM subscriptions WHERE pid=? AND subject=?";
 
@@ -168,9 +173,9 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public List<Subscription> getSubscriptionsByPid(String pid,
-        SubscriptionResourceType type) throws  NotFoundException {
-        log.debug("Get subscriptions to {} for pid {}", type, pid);
+    public List<Subscription> getSubscriptionsByPid(String pid, SubscriptionResourceType type)
+        throws NotFoundException, PersistenceException {
+        log.debug("Get subscriptions by pid {} to resourceType {}", pid, type);
         validateInput(pid, type);
 
         List<Subscription> subscriptions = new ArrayList<>();
@@ -183,43 +188,48 @@ public class NsDataRepository implements DataRepository {
             statement.setString(2, pid);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    subscriptions.add(new Subscription(
-                        resultSet.getString("subject"),
-                        type, List.of(pid)));
+                    subscriptions.add(
+                        new Subscription(resultSet.getString("subject"), type, List.of(pid)));
                 }
             }
         } catch (SQLException e) {
-            log.error("Database error: {} retrieving subscriptions",
-                e.getMessage());
-            throw new PersistenceException(
-                "Database error retrieving subscriptions", e);
+            log.error(
+                "Database error retrieving {} subscriptions by pid {}. Error message: {}",
+                type, pid, e.getMessage());
+            throw new PersistenceException("Database error retrieving subscriptions by pid", e);
         }
         return subscriptions;
     }
 
     @Override
-    public Instant getLastSuccessfulRuntime(String nodeId, SubscriptionResourceType resourceType) {
-        log.debug(
-            "Get lastSuccessfulRuntime for nodeId: {}, resourceType: {}", resourceType,
-            nodeId);
-        validateInput(nodeId, resourceType);
+    public LastSuccessfulRuntimes getLastSuccessfulRuntimes(SubscriptionResourceType resourceType)
+        throws PersistenceException {
 
-        String sql =
-            "SELECT timestamp FROM last_successful_runtime WHERE resource_type=? AND node_id=?";
+        log.debug("Get lastSuccessfulRuntime for resourceType: {}", resourceType);
+        validateInput(resourceType);
+        String sql = "SELECT timestamp,node_id FROM last_successful_runtime WHERE resource_type=?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            List<LastSuccessfulRuntimes.Entry> entries = new ArrayList<>();
             statement.setString(1, resourceType.toString());
-            statement.setString(2, nodeId);
             try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getTimestamp("timestamp").toInstant();
-                } else {
+                while (resultSet.next()) {
+                    Instant ts = resultSet.getTimestamp("timestamp").toInstant();
+                    String nodeId = resultSet.getString("node_id");
                     log.debug(
-                        "No lastSuccessfulRuntime found for nodeId: {}, resourceType: {}",
-                        nodeId, resourceType);
-                    return null;
+                        "ResourceType {}: lastSuccessfulRuntime was {} for nodeId={}",
+                        resourceType, ts, nodeId);
+                    entries.add(new LastSuccessfulRuntimes.Entry(ts, nodeId));
+                }
+                if (entries.isEmpty()) {
+                    log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+                    throw new NotFoundException(
+                        "No lastSuccessfulRuntimes found for resourceType: " + resourceType);
                 }
             }
+            return new LastSuccessfulRuntimes(entries);
+
         } catch (SQLException e) {
             log.error("Database error: {} retrieving lastSuccessfulRuntime", e.getMessage());
             throw new PersistenceException("Database error retrieving lastSuccessfulRuntime", e);
@@ -227,26 +237,57 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public void setLastSuccessfulRuntime(
-        Instant timestampEpochMillis, String nodeId, SubscriptionResourceType resourceType) {
+    public void setLastSuccessfulRuntimes(
+        SubscriptionResourceType resourceType,
+        List<LastSuccessfulRuntimes.Entry> entries)
+        throws IllegalArgumentException, PersistenceException {
 
-        log.debug("Set lastSuccessfulRuntime to {} for nodeId: {}, resourceType: {}",
-            timestampEpochMillis, nodeId, resourceType);
-        validateInput(nodeId, resourceType);
+        log.debug(
+            "Set lastSuccessfulRuntimes for resourceType: {} to List: {}", resourceType, entries);
+        validateInput(resourceType);
+        if (entries == null) {
+            log.error("List<LastSuccessfulRuntimes.Entry> is null");
+            throw new IllegalArgumentException("List<LastSuccessfulRuntimes.Entry> is null");
+        }
+        if (entries.isEmpty()) {
+            return;
+        }
 
+        String[] nodeIds =
+            entries.stream().map(LastSuccessfulRuntimes.Entry::nodeId).toArray(String[]::new);
+        Timestamp[] timestamps =
+            entries.stream().map(e -> Timestamp.from(e.timestamp())).toArray(Timestamp[]::new);
+
+        // Single round trip for all rows. GROUP BY keeps the latest timestamp per node, since one
+        // upsert can't touch the same row twice
         String sql = "INSERT INTO last_successful_runtime (resource_type, node_id, timestamp) "
-            + "VALUES (?, ?, ?) "
+            + "SELECT ?, t.node_id, MAX(t.ts) FROM unnest(?, ?) AS t(node_id, ts) "
+            + "GROUP BY t.node_id "
             + "ON CONFLICT (resource_type, node_id) DO UPDATE SET timestamp = EXCLUDED.timestamp";
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, resourceType.toString());
-            statement.setString(2, nodeId);
-            statement.setTimestamp(3, java.sql.Timestamp.from(timestampEpochMillis));
-            statement.executeUpdate();
+            Array nodeIdArray = connection.createArrayOf("varchar", nodeIds);
+            Array timestampArray = connection.createArrayOf("timestamptz", timestamps);
+            try {
+                statement.setString(1, resourceType.toString());
+                statement.setArray(2, nodeIdArray);
+                statement.setArray(3, timestampArray);
+                statement.executeUpdate();
+            } finally {
+                nodeIdArray.free();
+                timestampArray.free();
+            }
         } catch (SQLException e) {
             log.error("Database error: {} setting lastSuccessfulRuntime", e.getMessage());
             throw new PersistenceException("Database error setting lastSuccessfulRuntime", e);
+        }
+    }
+
+    private void validateInput(Object resource) {
+        if (resource == null) {
+            log.error("resource is null");
+            throw new NotFoundException("resource is null");
         }
     }
 
@@ -255,14 +296,10 @@ public class NsDataRepository implements DataRepository {
             log.error("Subject is null or empty");
             throw new NotAuthorizedException("Subject is null or empty");
         }
-        if (resource == null) {
-            log.error("resource is null");
-            throw new NotFoundException("resource is null");
-        }
+        validateInput(resource);
     }
 
-    private void validateInput(String subject,
-        SubscriptionResourceType resourceType, String pid) {
+    private void validateInput(String subject, SubscriptionResourceType resourceType, String pid) {
 
         validateInput(subject, resourceType);
 

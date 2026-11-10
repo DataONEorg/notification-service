@@ -2,16 +2,19 @@ package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.util.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,22 +28,19 @@ class DataRepositoryIT {
     private static final Subscription EXPECTED_RECORD =
         new Subscription(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges, List.of(EXPECTED_PID));
     private static PostgreSQLContainer<?> pg;
-    private DataRepository dataRepo;
+    private static DataRepository dataRepo;
 
     @BeforeAll
     static void oneTimeSetUp() {
         pg = TestUtils.getTestDb();
+        // one pool for the whole class: a pool per test exhausts Postgres max_connections
+        dataRepo = TestUtils.getTestDataRepository(pg);
     }
 
     @AfterAll
-    static void oneTimeTearDown() throws InterruptedException {
+    static void oneTimeTearDown() {
         assertNotNull(pg, "Postgres Instance is null - cannot shut down cleanly!");
         pg.stop();
-    }
-
-    @BeforeEach
-    void perTestSetUp() {
-        dataRepo = TestUtils.getTestDataRepository(pg);
     }
 
     @Test
@@ -130,5 +130,84 @@ class DataRepositoryIT {
         pids = dataRepo.getSubscriptions(testSubject, SubscriptionResourceType.datasetChanges);
         assertNotNull(pids);
         assertTrue(pids.isEmpty());
+    }
+
+    @Test
+    void getLastSuccessfulRuntimesNoData() {
+        // citations is not used by any other last-runtime test, so it has no rows
+        assertThrows(NotFoundException.class,
+                     () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+    }
+
+    @Test
+    void getLastSuccessfulRuntimesNullResourceType() {
+        assertThrows(NotFoundException.class, () -> dataRepo.getLastSuccessfulRuntimes(null));
+    }
+
+    @Test
+    void setLastSuccessfulRuntimesNullArguments() {
+        List<LastSuccessfulRuntimes.Entry> entries =
+            List.of(new LastSuccessfulRuntimes.Entry(Instant.now(), "urn:node:NULLARGS"));
+        assertThrows(NotFoundException.class,
+                     () -> dataRepo.setLastSuccessfulRuntimes(null, entries));
+        assertThrows(IllegalArgumentException.class,
+                     () -> dataRepo.setLastSuccessfulRuntimes(
+                         SubscriptionResourceType.portalMetaChanges, null));
+    }
+
+    @Test
+    void setLastSuccessfulRuntimesEmptyListIsNoOp() {
+        // citations is never populated by any test, so it must still have no rows afterwards
+        assertDoesNotThrow(() -> dataRepo.setLastSuccessfulRuntimes(
+            SubscriptionResourceType.citations, List.of()));
+        assertThrows(NotFoundException.class,
+                     () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+    }
+
+    @Test
+    void testLastSuccessfulRuntimesInsertAndUpdate() {
+        final SubscriptionResourceType type = SubscriptionResourceType.datasetChanges;
+        final Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        final LastSuccessfulRuntimes.Entry node1 =
+            new LastSuccessfulRuntimes.Entry(now.minusSeconds(300), "urn:node:INS1");
+        final LastSuccessfulRuntimes.Entry node2 =
+            new LastSuccessfulRuntimes.Entry(now.minusSeconds(200), "urn:node:INS2");
+
+        // Insert several rows in one call
+        dataRepo.setLastSuccessfulRuntimes(type, List.of(node1, node2));
+        List<LastSuccessfulRuntimes.Entry> stored =
+            dataRepo.getLastSuccessfulRuntimes(type).entries();
+        assertEquals(2, stored.size());
+        assertTrue(stored.contains(node1), "Expected " + node1 + " to be in: " + stored);
+        assertTrue(stored.contains(node2), "Expected " + node2 + " to be in: " + stored);
+
+        // Update one existing node & insert a new one: existing node updated, others untouched
+        final LastSuccessfulRuntimes.Entry node1Updated =
+            new LastSuccessfulRuntimes.Entry(now, node1.nodeId());
+        final LastSuccessfulRuntimes.Entry node3 =
+            new LastSuccessfulRuntimes.Entry(now.minusSeconds(100), "urn:node:INS3");
+        dataRepo.setLastSuccessfulRuntimes(type, List.of(node1Updated, node3));
+        stored = dataRepo.getLastSuccessfulRuntimes(type).entries();
+        assertEquals(3, stored.size());
+        assertTrue(stored.contains(node1Updated), "Expected " + node1Updated + " in: " + stored);
+        assertFalse(stored.contains(node1), "Old entry should have been replaced: " + stored);
+        assertTrue(stored.contains(node2), "Expected " + node2 + " to be in: " + stored);
+        assertTrue(stored.contains(node3), "Expected " + node3 + " to be in: " + stored);
+    }
+
+    @Test
+    void setLastSuccessfulRuntimesDuplicateNodeKeepsLatestTimestamp() {
+        final SubscriptionResourceType type = SubscriptionResourceType.portalMetaChanges;
+        final String nodeId = "urn:node:DUP";
+        final Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        final Instant latest = now.minusSeconds(10);
+
+        dataRepo.setLastSuccessfulRuntimes(type, List.of(
+            new LastSuccessfulRuntimes.Entry(latest, nodeId),
+            new LastSuccessfulRuntimes.Entry(now.minusSeconds(500), nodeId)));
+
+        List<LastSuccessfulRuntimes.Entry> stored =
+            dataRepo.getLastSuccessfulRuntimes(type).entries();
+        assertEquals(List.of(new LastSuccessfulRuntimes.Entry(latest, nodeId)), stored);
     }
 }

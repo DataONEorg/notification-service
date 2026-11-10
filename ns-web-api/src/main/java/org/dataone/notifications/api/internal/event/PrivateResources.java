@@ -7,7 +7,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
-import org.dataone.notifications.event.LastSuccessfulRuntimeResponse;
+import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import java.util.List;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
@@ -48,25 +49,35 @@ public class PrivateResources {
         this.dataRepository = dataRepository;
     }
 
+    /*
+     * Gets the last successful runtime timestamp and nodeId pairs for a given resourceType.
+     *
+     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds
+     * @return a record containing the last successful runtime timestamp and nodeId pairs for the
+     *         specified resourceType
+     */
     @GET
-    @Path("/lastSuccessfulRuntime/{nodeId}/{resourceType}")
+    @Path("/lastSuccessfulRuntime/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
     public Record getLastRuntime(
-        @NotNull @PathParam("nodeId") String nodeId,
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType
     ){
-        log.debug(
-            "Request to get lastSuccessfulRuntime for nodeId: {}, resourceType: {}",
-            nodeId, resourceType);
-        Instant timestampUtc = dataRepository.getLastSuccessfulRuntime(nodeId, resourceType);
-        if (timestampUtc == null) {
-            throw new NotFoundException(
-                "No lastSuccessfulRuntime found for nodeId: " + nodeId + ", resourceType: "
-                    + resourceType);
+        log.debug("Request to get last successful source runtimes for resourceType: {}",
+            resourceType);
+        LastSuccessfulRuntimes response = dataRepository.getLastSuccessfulRuntimes(resourceType);
+        if (response == null) {
+            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+            throw new IllegalArgumentException(
+                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
         }
-        log.debug("Got lastSuccessfulRuntime of: {} for nodeId: {}, resourceType: {}",
-                  timestampUtc, nodeId, resourceType);
-        return new LastSuccessfulRuntimeResponse(timestampUtc, nodeId, resourceType);
+        if (response.entries().isEmpty()) {
+            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+            throw new NotFoundException(
+                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
+        }
+        log.debug("Got lastSuccessfulRuntime list for resourceType: {}. List: {}",
+                  resourceType, response);
+        return response;
     }
 
     @PUT
@@ -81,11 +92,13 @@ public class PrivateResources {
             timestampEpochMillis, nodeId, resourceType);
         Instant timestampUtc = Instant.ofEpochMilli(timestampEpochMillis);
         validateTimestamp(timestampUtc);
-        dataRepository.setLastSuccessfulRuntime(timestampUtc, nodeId, resourceType);
+        List<LastSuccessfulRuntimes.Entry> entries =
+            List.of(new LastSuccessfulRuntimes.Entry(timestampUtc, nodeId));
+        dataRepository.setLastSuccessfulRuntimes(resourceType, entries);
         log.debug(
             "Updated lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
             timestampEpochMillis, nodeId, resourceType);
-        return new LastSuccessfulRuntimeResponse(timestampUtc, nodeId, resourceType);
+        return new LastSuccessfulRuntimes(entries);
     }
 
     private void validateTimestamp(Instant timestampUtc) {
