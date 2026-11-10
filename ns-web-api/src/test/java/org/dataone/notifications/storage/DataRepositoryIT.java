@@ -10,8 +10,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -26,7 +24,9 @@ class DataRepositoryIT {
     public static final String EXPECTED_SUBJECT = "https://orcid.org/0000-1234-5678-999X";
     public static final String EXPECTED_PID = "pid1";
     private static final Subscription EXPECTED_RECORD =
-        new Subscription(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges, List.of(EXPECTED_PID));
+        new Subscription(
+            EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges,
+                         List.of(EXPECTED_PID));
     private static PostgreSQLContainer<?> pg;
     private static DataRepository dataRepo;
 
@@ -45,30 +45,37 @@ class DataRepositoryIT {
 
     @Test
     void addSubscriptionValidData() {
-        assertEquals(EXPECTED_RECORD,
-                     dataRepo.addSubscription(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges,
-                                              EXPECTED_PID));
+        assertEquals(
+            EXPECTED_RECORD, dataRepo.addSubscription(
+                EXPECTED_SUBJECT,
+                SubscriptionResourceType.datasetChanges,
+                EXPECTED_PID));
     }
 
     @Test
     void addSubscriptionInvalidSubject() {
         String blankSubject = "";
-        assertThrows(NotAuthorizedException.class,
-                     () -> dataRepo.addSubscription(blankSubject, SubscriptionResourceType.datasetChanges,
-                                                    EXPECTED_PID));
+        assertThrows(
+            NotAuthorizedException.class, () -> dataRepo.addSubscription(
+                blankSubject,
+                SubscriptionResourceType.datasetChanges,
+                EXPECTED_PID));
     }
 
     @Test
     void addSubscriptionInvalidData() {
         String blankPid = "";
-        assertThrows(NotFoundException.class,
-                     () -> dataRepo.addSubscription(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges,
-                                                    blankPid));
+        assertThrows(
+            NotFoundException.class, () -> dataRepo.addSubscription(
+                EXPECTED_SUBJECT,
+                SubscriptionResourceType.datasetChanges,
+                blankPid));
     }
 
     @Test
     void getSubscriptionsValidSubject() {
-        List<String> pids = dataRepo.getSubscriptions(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges);
+        List<String> pids =
+            dataRepo.getSubscriptions(EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges);
         assertNotNull(pids);
         assertFalse(pids.isEmpty());
         assertEquals(3, pids.size());
@@ -77,14 +84,15 @@ class DataRepositoryIT {
     @Test
     void getSubscriptionsInvalidSubject() {
         String subject = "";
-        assertThrows(NotAuthorizedException.class,
-                     () -> dataRepo.getSubscriptions(subject, SubscriptionResourceType.datasetChanges));
+        assertThrows(
+            NotAuthorizedException.class,
+            () -> dataRepo.getSubscriptions(subject, SubscriptionResourceType.datasetChanges));
     }
 
     @Test
     void getSubscriptionsInvalidResourceType() {
-        assertThrows(NotFoundException.class,
-                     () -> dataRepo.getSubscriptions(EXPECTED_SUBJECT, null));
+        assertThrows(
+            NotFoundException.class, () -> dataRepo.getSubscriptions(EXPECTED_SUBJECT, null));
     }
 
     @Test
@@ -92,9 +100,12 @@ class DataRepositoryIT {
         final String testSubject = "https://orcid.org/0000-4444-5555-6666";
         final String testPid = "urn:pid:0000-4444-5555-6666";
 
-        assertEquals(new Subscription(testSubject, SubscriptionResourceType.datasetChanges, List.of(testPid)),
-                     dataRepo.deleteSubscriptions(testSubject, SubscriptionResourceType.datasetChanges,
-                                                  List.of(testPid, "nonexistent_pid")));
+        assertEquals(
+            new Subscription(
+                testSubject, SubscriptionResourceType.datasetChanges, List.of(testPid)),
+            dataRepo.deleteSubscriptions(
+                testSubject, SubscriptionResourceType.datasetChanges,
+                List.of(testPid, "nonexistent_pid")));
     }
 
     @Test
@@ -109,16 +120,18 @@ class DataRepositoryIT {
         dataRepo.addSubscription(testSubject, SubscriptionResourceType.datasetChanges, testPid2);
 
         // Retrieve the subscription
-        List<String> pids = dataRepo.getSubscriptions(testSubject, SubscriptionResourceType.datasetChanges);
+        List<String> pids =
+            dataRepo.getSubscriptions(testSubject, SubscriptionResourceType.datasetChanges);
         assertNotNull(pids);
         assertEquals(2, pids.size());
         assertTrue(pids.contains(testPid1), "Expected " + testPid1 + " to be in: " + pids);
         assertTrue(pids.contains(testPid2), "Expected " + testPid2 + " to be in: " + pids);
 
         // Delete the subscription
-        Subscription confirmation = dataRepo.deleteSubscriptions(testSubject, SubscriptionResourceType.datasetChanges,
-                                                                 List.of(testPid1, testPid2,
-                                                                         "nonexistent_pid"));
+        Subscription confirmation =
+            dataRepo.deleteSubscriptions(
+                testSubject, SubscriptionResourceType.datasetChanges,
+                List.of(testPid1, testPid2, "nonexistent_pid"));
         assertNotNull(confirmation);
         assertEquals(testSubject, confirmation.subject());
         assertEquals(SubscriptionResourceType.datasetChanges, confirmation.resourceType());
@@ -134,9 +147,9 @@ class DataRepositoryIT {
 
     @Test
     void getLastSuccessfulRuntimesNoData() {
-        // citations is not used by any other last-runtime test, so it has no rows
-        assertThrows(NotFoundException.class,
-                     () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+        assertThrows(
+            NotFoundException.class,
+            () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
     }
 
     @Test
@@ -146,37 +159,41 @@ class DataRepositoryIT {
 
     @Test
     void setLastSuccessfulRuntimesNullArguments() {
-        List<LastSuccessfulRuntimes.Entry> entries =
-            List.of(new LastSuccessfulRuntimes.Entry(Instant.now(), "urn:node:NULLARGS"));
-        assertThrows(NotFoundException.class,
-                     () -> dataRepo.setLastSuccessfulRuntimes(null, entries));
-        assertThrows(IllegalArgumentException.class,
-                     () -> dataRepo.setLastSuccessfulRuntimes(
-                         SubscriptionResourceType.portalMetaChanges, null));
+        LastSuccessfulRuntimes runtimes = new LastSuccessfulRuntimes(
+            List.of(new LastSuccessfulRuntimes.Entry(System.currentTimeMillis(), "urn:node:NULL")));
+        assertThrows(
+            NotFoundException.class, () -> dataRepo.setLastSuccessfulRuntimes(null, runtimes));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> dataRepo.setLastSuccessfulRuntimes(
+                SubscriptionResourceType.portalMetaChanges,
+                null));
     }
 
     @Test
     void setLastSuccessfulRuntimesEmptyListIsNoOp() {
-        // citations is never populated by any test, so it must still have no rows afterwards
-        assertDoesNotThrow(() -> dataRepo.setLastSuccessfulRuntimes(
-            SubscriptionResourceType.citations, List.of()));
-        assertThrows(NotFoundException.class,
-                     () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+        assertDoesNotThrow(
+            () -> dataRepo.setLastSuccessfulRuntimes(
+                SubscriptionResourceType.citations,
+                new LastSuccessfulRuntimes(List.of())));
+        assertThrows(
+            NotFoundException.class,
+            () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
     }
 
     @Test
     void testLastSuccessfulRuntimesInsertAndUpdate() {
         final SubscriptionResourceType type = SubscriptionResourceType.datasetChanges;
-        final Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        final long now = System.currentTimeMillis();
         final LastSuccessfulRuntimes.Entry node1 =
-            new LastSuccessfulRuntimes.Entry(now.minusSeconds(300), "urn:node:INS1");
+            new LastSuccessfulRuntimes.Entry(now - 300_000, "urn:node:INS1");
         final LastSuccessfulRuntimes.Entry node2 =
-            new LastSuccessfulRuntimes.Entry(now.minusSeconds(200), "urn:node:INS2");
+            new LastSuccessfulRuntimes.Entry(now - 200_000, "urn:node:INS2");
 
         // Insert several rows in one call
-        dataRepo.setLastSuccessfulRuntimes(type, List.of(node1, node2));
+        dataRepo.setLastSuccessfulRuntimes(type, new LastSuccessfulRuntimes(List.of(node1, node2)));
         List<LastSuccessfulRuntimes.Entry> stored =
-            dataRepo.getLastSuccessfulRuntimes(type).entries();
+            dataRepo.getLastSuccessfulRuntimes(type).runtimes();
         assertEquals(2, stored.size());
         assertTrue(stored.contains(node1), "Expected " + node1 + " to be in: " + stored);
         assertTrue(stored.contains(node2), "Expected " + node2 + " to be in: " + stored);
@@ -185,9 +202,10 @@ class DataRepositoryIT {
         final LastSuccessfulRuntimes.Entry node1Updated =
             new LastSuccessfulRuntimes.Entry(now, node1.nodeId());
         final LastSuccessfulRuntimes.Entry node3 =
-            new LastSuccessfulRuntimes.Entry(now.minusSeconds(100), "urn:node:INS3");
-        dataRepo.setLastSuccessfulRuntimes(type, List.of(node1Updated, node3));
-        stored = dataRepo.getLastSuccessfulRuntimes(type).entries();
+            new LastSuccessfulRuntimes.Entry(now - 100_000, "urn:node:INS3");
+        dataRepo.setLastSuccessfulRuntimes(
+            type, new LastSuccessfulRuntimes(List.of(node1Updated, node3)));
+        stored = dataRepo.getLastSuccessfulRuntimes(type).runtimes();
         assertEquals(3, stored.size());
         assertTrue(stored.contains(node1Updated), "Expected " + node1Updated + " in: " + stored);
         assertFalse(stored.contains(node1), "Old entry should have been replaced: " + stored);
@@ -199,15 +217,16 @@ class DataRepositoryIT {
     void setLastSuccessfulRuntimesDuplicateNodeKeepsLatestTimestamp() {
         final SubscriptionResourceType type = SubscriptionResourceType.portalMetaChanges;
         final String nodeId = "urn:node:DUP";
-        final Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        final Instant latest = now.minusSeconds(10);
+        final long now = System.currentTimeMillis();
+        final long latest = now - 10_000;
 
-        dataRepo.setLastSuccessfulRuntimes(type, List.of(
-            new LastSuccessfulRuntimes.Entry(latest, nodeId),
-            new LastSuccessfulRuntimes.Entry(now.minusSeconds(500), nodeId)));
+        dataRepo.setLastSuccessfulRuntimes(
+            type, new LastSuccessfulRuntimes(List.of(
+                new LastSuccessfulRuntimes.Entry(latest, nodeId),
+                new LastSuccessfulRuntimes.Entry(now - 500_000, nodeId))));
 
         List<LastSuccessfulRuntimes.Entry> stored =
-            dataRepo.getLastSuccessfulRuntimes(type).entries();
+            dataRepo.getLastSuccessfulRuntimes(type).runtimes();
         assertEquals(List.of(new LastSuccessfulRuntimes.Entry(latest, nodeId)), stored);
     }
 }

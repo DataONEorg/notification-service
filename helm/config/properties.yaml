@@ -1,6 +1,6 @@
 ns:
   api:
-    privateBaseUrl: {{ include notifications.private.api.url . }}
+    privateBaseUrl: {{ include "notifications.private.api.url" . }}
   auth:
     api:
       baseUrl: {{ .Values.ns.auth.api.baseUrl | default "https://cn-sandbox.test.dataone.org/cn/v2" }}

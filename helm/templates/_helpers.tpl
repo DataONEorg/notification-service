@@ -27,19 +27,13 @@ If release name contains chart name it will be used as a full name.
 Generate the URL for the private API endpoint
 */}}
 {{- define "notifications.private.api.url" }}
-{{ .Values.ns.api.privateApiPath | default "/notifications/v1/private" }}
 {{- $path := required ".Values.ns.api.privateApiPath IS REQUIRED" .Values.ns.api.privateApiPath }}
-{{- $host := .Values.ns.api.privateApiHostname }}
+{{- $host := .Values.ns.api.privateApiBaseUrl }}
 {{- if $host }}
 {{- printf "%s%s" $host $path }}
 {{- else }}
-{{- printf "%s%s" .Release.Name $path }}
+{{- printf "http://%s:%s%s" ( include "notifications.fullname" . ) ( .Values.service.port | toString ) $path }}
 {{- end }}
-{{- end }}
-
-{{/*
-
-{{- printf "%s-%s" .Release.Name $name }}
 {{- end }}
 
 {{/*

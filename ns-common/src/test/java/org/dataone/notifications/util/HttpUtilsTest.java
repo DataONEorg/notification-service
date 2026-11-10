@@ -17,28 +17,25 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.Flow;
-import org.junit.jupiter.api.AfterAll;
+import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Tests HttpUtils with a mocked HttpClient
  */
 class HttpUtilsTest {
 
-    private record Result(String nodeId, long timestamp) {}
-
     private static final String BASE_URL = "http://localhost:8080/notifications/v1/private";
     private static final String JSON = "{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}";
 
-    private static EnvironmentVariables env;
     private static HttpClient client;
 
     @SuppressWarnings("unchecked")
@@ -117,7 +114,13 @@ class HttpUtilsTest {
 
     @Test
     void doGet_typed_deserializesResponse() throws IOException {
-        assertEquals(new Result("urn:node:KNB", 123L), HttpUtils.doGet("/x", Result.class));
+        when(response.body()).thenReturn(
+            "{\"runtimes\":[{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}]}");
+
+        assertEquals(
+            new LastSuccessfulRuntimes(
+                List.of(new LastSuccessfulRuntimes.Entry(123L, "urn:node:KNB"))),
+            HttpUtils.doGet("/x", LastSuccessfulRuntimes.class));
     }
 
     @Test
@@ -135,7 +138,7 @@ class HttpUtilsTest {
     void doGet_typed_unparseableBody_throwsIOException() {
         when(response.body()).thenReturn("not json");
 
-        assertThrows(IOException.class, () -> HttpUtils.doGet("/x", Result.class));
+        assertThrows(IOException.class, () -> HttpUtils.doGet("/x", LastSuccessfulRuntimes.class));
     }
 
     @Test
@@ -162,41 +165,38 @@ class HttpUtilsTest {
     }
 
     @Test
-    void doPut_sendsUrlEncodedFormFields() throws Exception {
-        Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("timestamp", 1700000000000L);
-        fields.put("nodeId", "urn:node:KNB");
-        fields.put("note", "a b&c=d");
-
-        String json = HttpUtils.doPut("/lastSuccessfulRuntime", fields);
+    void doPut_sendsJsonBodyForLastSuccessfulRuntimeEndpoint() throws Exception {
+        String json = HttpUtils.doPut("/lastSuccessfulRuntime/datasetChanges", List.of(
+            new LastSuccessfulRuntimes.Entry(1700000000000L, "urn:node:KNB"),
+            new LastSuccessfulRuntimes.Entry(1700000060000L, "urn:node:ARCTIC")));
 
         assertEquals(JSON, json);
         HttpRequest request = sentRequest();
         assertEquals("PUT", request.method());
-        assertEquals(BASE_URL + "/lastSuccessfulRuntime", request.uri().toString());
-        assertEquals("application/x-www-form-urlencoded",
-                     request.headers().firstValue("Content-Type").orElse(null));
+        assertEquals(BASE_URL + "/lastSuccessfulRuntime/datasetChanges", request.uri().toString());
+        assertEquals("application/json", request.headers().firstValue("Content-Type").orElse(null));
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
-        assertEquals("timestamp=1700000000000&nodeId=urn%3Anode%3AKNB&note=a+b%26c%3Dd",
-                     bodyOf(request));
+        JsonNode sent = new ObjectMapper().readTree(bodyOf(request));
+        assertEquals(2, sent.get("runtimes").size());
+        assertEquals(1700000000000L, sent.get("runtimes").get(0).get("timestamp").asLong());
+        assertTrue(sent.get("runtimes").get(0).get("timestamp").isIntegralNumber());
+        assertEquals("urn:node:KNB", sent.get("runtimes").get(0).get("nodeId").asString());
+        assertEquals(1700000060000L, sent.get("runtimes").get(1).get("timestamp").asLong());
+        assertEquals("urn:node:ARCTIC", sent.get("runtimes").get(1).get("nodeId").asString());
     }
 
     @Test
-    void doPut_skipsNullValues() throws Exception {
-        Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("a", "1");
-        fields.put("b", null);
+    void doPut_emptyEntries_sendsEmptyEntriesArray() throws Exception {
+        HttpUtils.doPut("/x", List.of());
 
-        HttpUtils.doPut("/x", fields);
-
-        assertEquals("a=1", bodyOf(sentRequest()));
+        assertEquals("{\"runtimes\":[]}", bodyOf(sentRequest()));
     }
 
     @Test
-    void doPut_emptyFields_sendsEmptyBody() throws Exception {
-        HttpUtils.doPut("/x", Map.of());
+    void doPut_uriWithoutLeadingSlash_isNormalized() throws Exception {
+        HttpUtils.doPut("some/path", List.of());
 
-        assertEquals("", bodyOf(sentRequest()));
+        assertEquals(BASE_URL + "/some/path", sentRequest().uri().toString());
     }
 
     @Test
@@ -204,7 +204,7 @@ class HttpUtilsTest {
         when(response.statusCode()).thenReturn(400);
         when(response.body()).thenReturn("bad timestamp");
 
-        IOException e = assertThrows(IOException.class, () -> HttpUtils.doPut("/x", Map.of()));
+        IOException e = assertThrows(IOException.class, () -> HttpUtils.doPut("/x", List.of()));
 
         assertTrue(e.getMessage().contains("400"));
         assertTrue(e.getMessage().contains("bad timestamp"));

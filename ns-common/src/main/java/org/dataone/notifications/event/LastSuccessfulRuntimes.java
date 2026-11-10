@@ -1,13 +1,17 @@
 package org.dataone.notifications.event;
 
-import java.time.Instant;
 import java.util.List;
 
-public record LastSuccessfulRuntimes(List<Entry> entries) {
+public record LastSuccessfulRuntimes(List<Entry> runtimes) {
 
     public LastSuccessfulRuntimes {
-        entries = List.copyOf(entries);
+        runtimes = List.copyOf(runtimes);
     }
 
-    public record Entry(Instant timestamp, String nodeId) {}
+    /**
+     * @param timestamp the last successful runtime, in milliseconds since the epoch (UTC). A
+     *                  boxed Long so that a missing JSON value is null, rather than 0
+     * @param nodeId    the DataONE node identifier, e.g. "urn:node:KNB"
+     */
+    public record Entry(Long timestamp, String nodeId) {}
 }

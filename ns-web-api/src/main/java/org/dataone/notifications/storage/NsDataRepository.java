@@ -20,7 +20,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -215,7 +214,7 @@ public class NsDataRepository implements DataRepository {
             statement.setString(1, resourceType.toString());
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    Instant ts = resultSet.getTimestamp("timestamp").toInstant();
+                    long ts = resultSet.getTimestamp("timestamp").getTime();
                     String nodeId = resultSet.getString("node_id");
                     log.debug(
                         "ResourceType {}: lastSuccessfulRuntime was {} for nodeId={}",
@@ -239,24 +238,24 @@ public class NsDataRepository implements DataRepository {
     @Override
     public void setLastSuccessfulRuntimes(
         SubscriptionResourceType resourceType,
-        List<LastSuccessfulRuntimes.Entry> entries)
+        LastSuccessfulRuntimes runtimes)
         throws IllegalArgumentException, PersistenceException {
 
         log.debug(
-            "Set lastSuccessfulRuntimes for resourceType: {} to List: {}", resourceType, entries);
+            "Set lastSuccessfulRuntimes for resourceType: {} to List: {}", resourceType, runtimes);
         validateInput(resourceType);
-        if (entries == null) {
-            log.error("List<LastSuccessfulRuntimes.Entry> is null");
-            throw new IllegalArgumentException("List<LastSuccessfulRuntimes.Entry> is null");
+        if (runtimes == null) {
+            log.error("LastSuccessfulRuntimes is null");
+            throw new IllegalArgumentException("LastSuccessfulRuntimes is null");
         }
+        List<LastSuccessfulRuntimes.Entry> entries = runtimes.runtimes();
         if (entries.isEmpty()) {
             return;
         }
-
         String[] nodeIds =
             entries.stream().map(LastSuccessfulRuntimes.Entry::nodeId).toArray(String[]::new);
         Timestamp[] timestamps =
-            entries.stream().map(e -> Timestamp.from(e.timestamp())).toArray(Timestamp[]::new);
+            entries.stream().map(e -> new Timestamp(e.timestamp())).toArray(Timestamp[]::new);
 
         // Single round trip for all rows. GROUP BY keeps the latest timestamp per node, since one
         // upsert can't touch the same row twice

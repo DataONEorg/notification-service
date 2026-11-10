@@ -70,6 +70,6 @@ public interface DataRepository {
      *                                  store
      */
     void setLastSuccessfulRuntimes(
-        SubscriptionResourceType resourceType, List<LastSuccessfulRuntimes.Entry> entries)
+        SubscriptionResourceType resourceType, LastSuccessfulRuntimes entries)
         throws IllegalArgumentException, PersistenceException;
 }

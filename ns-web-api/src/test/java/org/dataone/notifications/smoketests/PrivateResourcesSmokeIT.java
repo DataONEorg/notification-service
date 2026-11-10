@@ -3,7 +3,6 @@ package org.dataone.notifications.smoketests;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.AfterEach;
@@ -13,11 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * NOTE EXPECTED TO FAIL (BY DESIGN) IF USED AGAINST PUBLIC INGRESS! THESE ENDPOINTS MUST NEVER BE
@@ -38,6 +40,7 @@ class PrivateResourcesSmokeIT {
     // only updates their timestamps, so the live DB never grows beyond these rows.
     private static final String TEST_NODE_ID = "urn:node:SMOKE_TEST";
     private static final String TEST_NODE_ID_2 = "urn:node:SMOKE_TEST_2";
+    private static final String TYPE = SubscriptionResourceType.testType.name();
     // Never written by any test, so it has no rows
     private static final SubscriptionResourceType EMPTY_TYPE = SubscriptionResourceType.testNoType;
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -64,100 +67,96 @@ class PrivateResourcesSmokeIT {
     }
 
     @Test
-    void setLastRuntime_validRequest_returnsResult() throws Exception {
-        long timestamp = Instant.now().minusSeconds(60).toEpochMilli();
-        log.debug("PUT lastSuccessfulRuntime, timestamp={}", timestamp);
+    void setLastRuntime_multipleEntries_returnsNoContent() {
+        long now = Instant.now().toEpochMilli();
+        log.debug("PUT lastSuccessfulRuntime, timestamps={}", now);
 
-        try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
-            assertEquals(200, r.getStatus(), "unexpected status");
-            String body = r.readEntity(String.class);
-            log.debug("Response body: {}", body);
-
-            JsonNode entries = MAPPER.readTree(body).get("entries");
-            assertNotNull(entries, "entries missing from response");
-            assertEquals(1, entries.size(), "expected exactly one entry");
-            assertEquals(TEST_NODE_ID, entries.get(0).get("nodeId").asString());
-            assertEquals(timestamp, toInstant(entries.get(0).get("timestamp")).toEpochMilli(),
-                         "timestamp mismatch");
+        try (Response r = put(TYPE,
+                              body(entry(now - 60_000, TEST_NODE_ID),
+                                   entry(now - 90_000, TEST_NODE_ID_2)))) {
+            assertEquals(204, r.getStatus(), "unexpected status");
         }
     }
 
     @Test
     void setLastRuntime_timestampInFuture_returnsBadRequest() {
-        long timestamp = Instant.now().plusSeconds(3600).toEpochMilli();
-        try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
+        long now = Instant.now().toEpochMilli();
+        try (Response r = put(TYPE,
+                              body(entry(now, TEST_NODE_ID),
+                                   entry(now + 3_600_000, TEST_NODE_ID_2)))) {
             assertEquals(400, r.getStatus(), "future timestamp should be rejected");
         }
     }
 
     @Test
     void setLastRuntime_timestampTooOld_returnsBadRequest() {
-        long timestamp = Instant.now().minusSeconds(8L * 24 * 60 * 60).toEpochMilli();
-        try (Response r = put(form(String.valueOf(timestamp),
-                                   SubscriptionResourceType.testType.name(), TEST_NODE_ID))) {
+        long now = Instant.now().toEpochMilli();
+        long eightDaysMs = 8L * 24 * 60 * 60 * 1000;
+        try (Response r = put(TYPE,
+                              body(entry(now, TEST_NODE_ID),
+                                   entry(now - eightDaysMs, TEST_NODE_ID_2)))) {
             assertEquals(400, r.getStatus(), "timestamp older than 7 days should be rejected");
         }
     }
 
     @Test
-    void setLastRuntime_missingParam_returnsBadRequest() {
-        Form noNodeId = new Form()
-            .param("timestamp", String.valueOf(Instant.now().toEpochMilli()))
-            .param("resourceType", SubscriptionResourceType.testType.name());
-        try (Response r = put(noNodeId)) {
+    void setLastRuntime_missingNodeId_returnsBadRequest() {
+        ObjectNode noNodeId = MAPPER.createObjectNode().put("timestamp", Instant.now().toEpochMilli());
+        try (Response r = put(TYPE, body(entry(Instant.now().toEpochMilli(), TEST_NODE_ID),
+                                         noNodeId))) {
             assertEquals(400, r.getStatus(), "missing nodeId should be rejected");
         }
     }
 
     @Test
-    void setLastRuntime_invalidResourceType_returnsClientError() {
-        try (Response r = put(form(String.valueOf(Instant.now().toEpochMilli()),
-                                   "notAResourceType", TEST_NODE_ID))) {
+    void setLastRuntime_blankNodeId_returnsBadRequest() {
+        try (Response r = put(TYPE, body(entry(Instant.now().toEpochMilli(), " ")))) {
+            assertEquals(400, r.getStatus(), "blank nodeId should be rejected");
+        }
+    }
+
+    @Test
+    void setLastRuntime_missingTimestamp_returnsBadRequest() {
+        ObjectNode noTimestamp = MAPPER.createObjectNode().put("nodeId", TEST_NODE_ID);
+        try (Response r = put(TYPE, body(noTimestamp))) {
+            assertEquals(400, r.getStatus(), "missing timestamp should be rejected");
+        }
+    }
+
+    @Test
+    void setLastRuntime_malformedBody_returnsClientError() {
+        try (Response r = put(TYPE, "{\"runtimes\": \"not-a-list\"}")) {
             int status = r.getStatus();
             assertEquals(4, status / 100, "unexpected status: " + status);
         }
     }
 
     @Test
-    void getLastRuntime_afterSet_returnsSetTimestamp() throws Exception {
-        long timestamp = Instant.now().minusSeconds(120).toEpochMilli();
-        String type = SubscriptionResourceType.testType.name();
-        try (Response r = put(form(String.valueOf(timestamp), type, TEST_NODE_ID))) {
-            assertEquals(200, r.getStatus(), "unexpected PUT status");
-        }
-
-        try (Response r = get(type)) {
-            String body = r.readEntity(String.class);
-            log.debug("GET status={}, body={}", r.getStatus(), body);
-            assertEquals(200, r.getStatus(), "unexpected GET status");
-
-            JsonNode entry = findEntry(MAPPER.readTree(body), TEST_NODE_ID);
-            assertNotNull(entry, "no entry for " + TEST_NODE_ID + " in: " + body);
-            assertEquals(timestamp, toInstant(entry.get("timestamp")).toEpochMilli(),
-                         "timestamp mismatch");
+    void setLastRuntime_invalidResourceType_returnsClientError() {
+        try (Response r = put("notAResourceType",
+                              body(entry(Instant.now().toEpochMilli(), TEST_NODE_ID)))) {
+            int status = r.getStatus();
+            assertEquals(4, status / 100, "unexpected status: " + status);
         }
     }
 
     @Test
-    void getLastRuntime_returnsAllTestNodes() throws Exception {
-        String type = SubscriptionResourceType.testType.name();
-        long timestamp = Instant.now().minusSeconds(90).toEpochMilli();
-        for (String nodeId : new String[] {TEST_NODE_ID, TEST_NODE_ID_2}) {
-            try (Response r = put(form(String.valueOf(timestamp), type, nodeId))) {
-                assertEquals(200, r.getStatus(), "unexpected PUT status");
-            }
+    void getLastRuntime_afterSet_returnsAllEntriesWithEpochMillis() {
+        long now = Instant.now().toEpochMilli();
+        long ts1 = now - 120_000;
+        long ts2 = now - 90_000;
+        try (Response r = put(TYPE, body(entry(ts1, TEST_NODE_ID), entry(ts2, TEST_NODE_ID_2)))) {
+            assertEquals(204, r.getStatus(), "unexpected PUT status");
         }
 
-        try (Response r = get(type)) {
+        try (Response r = get(TYPE)) {
             String body = r.readEntity(String.class);
+            log.debug("GET status={}, body={}", r.getStatus(), body);
             assertEquals(200, r.getStatus(), "unexpected GET status");
 
             JsonNode root = MAPPER.readTree(body);
-            assertNotNull(findEntry(root, TEST_NODE_ID), "missing " + TEST_NODE_ID + ": " + body);
-            assertNotNull(findEntry(root, TEST_NODE_ID_2),
-                          "missing " + TEST_NODE_ID_2 + ": " + body);
+            assertTimestamp(ts1, findEntry(root, TEST_NODE_ID), body);
+            assertTimestamp(ts2, findEntry(root, TEST_NODE_ID_2), body);
         }
     }
 
@@ -177,8 +176,8 @@ class PrivateResourcesSmokeIT {
     }
 
     private static JsonNode findEntry(JsonNode root, String nodeId) {
-        JsonNode entries = root.get("entries");
-        assertNotNull(entries, "entries missing from response");
+        JsonNode entries = root.get("runtimes");
+        assertNotNull(entries, "runtimes missing from response");
         for (JsonNode entry : entries) {
             if (nodeId.equals(entry.get("nodeId").asString())) {
                 return entry;
@@ -197,29 +196,34 @@ class PrivateResourcesSmokeIT {
             .get();
     }
 
-    // Jackson serializes Instant as either epoch seconds (decimal) or an ISO-8601 string
-    private static Instant toInstant(JsonNode ts) {
-        if (ts.isNumber()) {
-            java.math.BigDecimal secs = ts.decimalValue();
-            return Instant.ofEpochSecond(secs.longValue(),
-                secs.remainder(java.math.BigDecimal.ONE).movePointRight(9).longValue());
-        }
-        return Instant.parse(ts.asString());
+    // Timestamps are Instants, exchanged as integer milliseconds since the epoch
+    private static void assertTimestamp(long expectedEpochMillis, JsonNode entry, String body) {
+        assertNotNull(entry, "missing entry in: " + body);
+        JsonNode ts = entry.get("timestamp");
+        assertNotNull(ts, "timestamp missing in: " + body);
+        assertTrue(ts.isIntegralNumber(), "timestamp must be epoch millis, but was: " + ts);
+        assertEquals(expectedEpochMillis, ts.asLong(), "timestamp mismatch");
     }
 
-    private Response put(Form form) {
+    private static ObjectNode entry(long epochMillis, String nodeId) {
+        return MAPPER.createObjectNode().put("timestamp", epochMillis).put("nodeId", nodeId);
+    }
+
+    private static String body(ObjectNode... entries) {
+        ArrayNode array = MAPPER.createArrayNode();
+        for (ObjectNode e : entries) {
+            array.add(e);
+        }
+        return MAPPER.createObjectNode().set("runtimes", array).toString();
+    }
+
+    private Response put(String resourceType, String jsonBody) {
         return client.target(baseUrl)
             .path(URI_PREFIX)
             .path(PRIVATE_PATH)
             .path(LAST_RUNTIME_PATH)
+            .path(resourceType)
             .request()
-            .put(Entity.form(form));
-    }
-
-    private static Form form(String timestamp, String resourceType, String nodeId) {
-        return new Form()
-            .param("timestamp", timestamp)
-            .param("resourceType", resourceType)
-            .param("nodeId", nodeId);
+            .put(Entity.json(jsonBody));
     }
 }
