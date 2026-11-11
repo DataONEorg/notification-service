@@ -30,6 +30,7 @@ COPY ./ns-web-api/target/ns-web-api-${NS_VERSION}.war ./webapps/notifications.wa
 
 RUN mkdir -p ./webapps/notifications && \
     unzip ./webapps/notifications.war -d ./webapps/notifications && \
+    rm -f ./webapps/notifications.war && \
     chown -R notifier:notifier .
 
 USER $UID
@@ -40,5 +41,11 @@ LABEL org.opencontainers.image.version=${TAG}
 LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notification-service"
 
 EXPOSE 8080
+
+# These options are to save on startup time:
+# scan.packages: scan for CDI beans here, instead of scanning all classes in the WAR
+# jarsToSkip: stop running TldScanner across all bundled JARs looking for JSP tag libraries
+#
+ENV CATALINA_OPTS="${CATALINA_OPTS} -Dtomee.mp.scan.packages=org.dataone.notifications -Dtomcat.util.scan.StandardJarScanFilter.jarsToSkip=*.jar"
 
 CMD ["catalina.sh", "run"]
