@@ -4,7 +4,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
-import org.dataone.notifications.util.TestUtils;
+import org.dataone.notifications.util.DbTestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,10 +31,10 @@ class DataRepositoryIT {
     private static DataRepository dataRepo;
 
     @BeforeAll
-    static void oneTimeSetUp() {
-        pg = TestUtils.getTestDb();
+    static void oneTimeSetUp() throws Exception {
+        pg = DbTestUtils.getTestDb();
         // one pool for the whole class: a pool per test exhausts Postgres max_connections
-        dataRepo = TestUtils.getTestDataRepository(pg);
+        dataRepo = DbTestUtils.getTestDataRepository(pg);
     }
 
     @AfterAll

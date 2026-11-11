@@ -19,6 +19,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Flow;
+
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +35,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 class HttpUtilsTest {
 
-    private static final String BASE_URL = "http://localhost:8080/notifications/v1/private";
+    private static final String BASE_URL = NsConfig.getConfig().getString("ns.api.privateBaseUrl");
     private static final String JSON = "{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}";
 
     private static HttpClient client;
