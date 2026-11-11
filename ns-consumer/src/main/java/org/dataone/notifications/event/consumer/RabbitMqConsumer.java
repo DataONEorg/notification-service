@@ -20,16 +20,16 @@ import org.slf4j.LoggerFactory;
 public class RabbitMqConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConsumer.class);
-    private final RabbitMqProperties properties;
+    private final String queueName;
     private final NsEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private RabbitMqConnection connection;
     private Channel channel;
 
     RabbitMqConsumer(
-        RabbitMqProperties properties, NsEventProcessor processor, RabbitMqConnection connection) {
+        String queueName, NsEventProcessor processor, RabbitMqConnection connection) {
 
-        this.properties = properties;
+        this.queueName = queueName;
         this.processor = processor;
         this.connection = connection;
     }
@@ -39,7 +39,8 @@ public class RabbitMqConsumer {
         final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
         final NsEventProcessor processor = new NsEventProcessor();
         RabbitMqConnection connection = new RabbitMqConnection(props);
-        final RabbitMqConsumer consumer = new RabbitMqConsumer(props, processor, connection);
+        final String queueName = props.queueName();
+        final RabbitMqConsumer consumer = new RabbitMqConsumer(queueName, processor, connection);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received. Stopping RMQ connection health Probe...");
@@ -72,22 +73,31 @@ public class RabbitMqConsumer {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting RabbitMqConsumer for queue {}", properties.queueName());
+        log.info("Starting RabbitMqConsumer for queue {}", queueName);
         try {
-            if (connection == null) {
-                connection = new RabbitMqConnection(properties);
-            }
+            validateResources();
             final Channel ch = connection.newChannel();
             channel = ch;
             DeliverCallback callback = (_, delivery) -> handleDelivery(ch, delivery);
-            ch.basicConsume(
-                properties.queueName(), false, callback,
+            ch.basicConsume(queueName, false, callback,
                 consumerTag -> log.warn("Consumer {} cancelled by broker", consumerTag));
-            log.info("Consuming messages from queue {}", properties.queueName());
+            log.info("Consuming messages from queue {}", queueName);
         } catch (Exception e) {
             running.set(false);
             shutdown();
             throw new IllegalStateException("Failed to start consumer", e);
+        }
+    }
+
+    private void validateResources() throws IllegalStateException {
+        if (connection == null) {
+            throw new IllegalStateException("RabbitMqConnection is null");
+        }
+        if (processor == null) {
+            throw new IllegalStateException("RabbitMqConsumer processor is null");
+        }
+        if (queueName == null || queueName.isBlank()) {
+            throw new IllegalStateException("RabbitMqConsumer queue name not provided");
         }
     }
 

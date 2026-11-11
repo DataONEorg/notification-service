@@ -7,7 +7,6 @@ import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.Envelope;
 import org.dataone.notifications.event.RabbitMqConnection;
-import org.dataone.notifications.event.RabbitMqProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,9 +45,7 @@ class RabbitMqConsumerTest {
 
     @BeforeEach
     void setUp() {
-        RabbitMqProperties properties =
-            new RabbitMqProperties("localhost", 5672, "user", "password", "/", QUEUE_NAME, 10);
-        consumer = new RabbitMqConsumer(properties, processor, connection);
+        consumer = new RabbitMqConsumer(QUEUE_NAME, processor, connection);
     }
 
     @Test
@@ -121,6 +119,43 @@ class RabbitMqConsumerTest {
         assertEquals("Failed to start consumer", error.getMessage());
         assertEquals(cause, error.getCause());
         verify(connection).close();
+    }
+
+    @Test
+    void startFailureWhenQueueNameNullOrBlank() {
+        consumer = new RabbitMqConsumer(null, processor, connection);
+        IllegalStateException error1 =
+            assertThrows(IllegalStateException.class, () -> consumer.start());
+        assertEquals("Failed to start consumer", error1.getMessage());
+        assertInstanceOf(IllegalStateException.class, error1.getCause());
+        assertEquals("RabbitMqConsumer queue name not provided", error1.getCause().getMessage());
+
+        consumer = new RabbitMqConsumer(" ", processor, connection);
+        IllegalStateException error2 =
+            assertThrows(IllegalStateException.class, () -> consumer.start());
+        assertEquals("Failed to start consumer", error2.getMessage());
+        assertInstanceOf(IllegalStateException.class, error2.getCause());
+        assertEquals("RabbitMqConsumer queue name not provided", error2.getCause().getMessage());
+    }
+
+    @Test
+    void startFailureWhenProcessorNull() {
+        consumer = new RabbitMqConsumer(QUEUE_NAME, null, connection);
+        IllegalStateException error =
+            assertThrows(IllegalStateException.class, () -> consumer.start());
+        assertEquals("Failed to start consumer", error.getMessage());
+        assertInstanceOf(IllegalStateException.class, error.getCause());
+        assertEquals("RabbitMqConsumer processor is null", error.getCause().getMessage());
+    }
+
+    @Test
+    void startFailureWhenConnectionNull() {
+        consumer = new RabbitMqConsumer(QUEUE_NAME, processor, null);
+        IllegalStateException error =
+            assertThrows(IllegalStateException.class, () -> consumer.start());
+        assertEquals("Failed to start consumer", error.getMessage());
+        assertInstanceOf(IllegalStateException.class, error.getCause());
+        assertEquals("RabbitMqConnection is null", error.getCause().getMessage());
     }
 
     private static Delivery delivery() {
