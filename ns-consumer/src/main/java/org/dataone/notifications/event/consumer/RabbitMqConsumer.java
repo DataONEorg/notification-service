@@ -3,6 +3,7 @@ package org.dataone.notifications.event.consumer;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,23 +17,50 @@ import org.slf4j.LoggerFactory;
 /**
  * Minimal RabbitMQ queue consumer that runs until the container shuts down.
  */
-public class RabbitMqConsumer implements AutoCloseable {
+public class RabbitMqConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConsumer.class);
-    private static RabbitMqConsumer instance = null;
     private final RabbitMqProperties properties;
-    // inlined connection management that was previously in RabbitMqConnectionManager
-    private RabbitMqConnection connection;
-    private Channel channel;
     private final NsEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private RabbitMqConnection connection;
+    private Channel channel;
 
-    public RabbitMqConsumer(
-        RabbitMqProperties properties,
-        NsEventProcessor processor) throws IOException, TimeoutException {
+    RabbitMqConsumer(
+        RabbitMqProperties properties, NsEventProcessor processor, RabbitMqConnection connection) {
+
         this.properties = properties;
         this.processor = processor;
-        connection = new RabbitMqConnection(properties);
+        this.connection = connection;
+    }
+
+    static void main(String[] args) throws IOException, TimeoutException {
+
+        final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
+        final NsEventProcessor processor = new NsEventProcessor();
+        RabbitMqConnection connection = new RabbitMqConnection(props);
+        final RabbitMqConsumer consumer = new RabbitMqConsumer(props, processor, connection);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received. Stopping RMQ connection health Probe...");
+            connection.stopHealthProbe();
+            log.info("Stopping RabbitMQ Consumer...");
+            consumer.stop();
+        }));
+
+        try {
+            consumer.start();
+            log.info("Consumer started");
+            connection.startHealthProbe();
+            log.info("Consumer RMQ connection health probe started");
+        } catch (Exception e) {
+            log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
+            connection.stopHealthProbe();
+            consumer.stop();
+            System.exit(1);
+        }
+        log.info(
+            "RabbitMQ consumer main thread exiting; consumer and health probe should keep running");
     }
 
     /**
@@ -44,13 +72,16 @@ public class RabbitMqConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting RabbitMqConsumer for queue {}",
-            properties.queueName());
+        log.info("Starting RabbitMqConsumer for queue {}", properties.queueName());
         try {
+            if (connection == null) {
+                connection = new RabbitMqConnection(properties);
+            }
             final Channel ch = connection.newChannel();
             channel = ch;
-            DeliverCallback callback = (consumerTag, delivery) -> handleDelivery(ch, delivery);
-            ch.basicConsume(properties.queueName(), false, callback,
+            DeliverCallback callback = (_, delivery) -> handleDelivery(ch, delivery);
+            ch.basicConsume(
+                properties.queueName(), false, callback,
                 consumerTag -> log.warn("Consumer {} cancelled by broker", consumerTag));
             log.info("Consuming messages from queue {}", properties.queueName());
         } catch (Exception e) {
@@ -82,7 +113,6 @@ public class RabbitMqConsumer implements AutoCloseable {
         close();
     }
 
-    @Override
     public void close() {
         shutdown();
     }
@@ -106,45 +136,5 @@ public class RabbitMqConsumer implements AutoCloseable {
         } finally {
             connection = null;
         }
-    }
-
-    /**
-     * Quick check whether an active connection exists.
-     */
-    public synchronized boolean isConnected() {
-        boolean isOpen = connection.isConnected();
-        log.trace("connection={}, connection.isOpen={}", connection, isOpen);
-        return isOpen;
-    }
-
-    static void main(String[] args) throws IOException, TimeoutException {
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutdown signal received, stopping consumer");
-            RabbitMqConnection.stopHealthProbe();
-            log.info("Stopped Health Probe");
-            if (instance != null) {
-                instance.stop();
-            }
-        }));
-
-        final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
-        final NsEventProcessor processor = new NsEventProcessor();
-        instance = new RabbitMqConsumer(props, processor);
-
-        try {
-            instance.start();
-            log.info("Consumer started");
-            RabbitMqConnection.startHealthProbe();
-        } catch (Exception e) {
-            log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
-            RabbitMqConnection.stopHealthProbe();
-            if (instance != null) {
-                instance.stop();
-            }
-            System.exit(1);
-        }
-        log.info(
-            "RabbitMQ consumer main thread exiting, consumer and health probe should keep running");
     }
 }
