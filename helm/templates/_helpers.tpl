@@ -24,6 +24,19 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Generate the URL for the private API endpoint
+*/}}
+{{- define "notifications.private.api.url" }}
+{{- $path := required ".Values.ns.api.privateApiPath IS REQUIRED" .Values.ns.api.privateApiPath }}
+{{- $host := .Values.ns.api.privateApiBaseUrl }}
+{{- if $host }}
+{{- printf "%s%s" $host $path }}
+{{- else }}
+{{- printf "http://%s:%s%s" ( include "notifications.fullname" . ) ( .Values.service.port | toString ) $path }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create a default fully qualified app name for the embedded RabbitMQ Cluster Operator Deployment.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec)
 */}}

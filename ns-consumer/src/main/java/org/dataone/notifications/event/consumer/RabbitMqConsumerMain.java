@@ -6,6 +6,9 @@ import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 
 /**
  * Entry point that starts the consumer and a file-based health probe.
@@ -16,7 +19,7 @@ public class RabbitMqConsumerMain {
     private static DatasetEventConsumer consumer;
 
 
-    static void main(String[] args) {
+    static void main(String[] args) throws IOException, TimeoutException {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received, stopping consumer");
             RabbitMqConnection.stopHealthProbe();
