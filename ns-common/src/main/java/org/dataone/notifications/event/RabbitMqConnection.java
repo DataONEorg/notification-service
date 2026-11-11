@@ -27,7 +27,7 @@ public class RabbitMqConnection {
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
     private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
     private static final long healthPollIntervalSeconds = 15L;
-    private final RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
+    private RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
     private static ScheduledExecutorService healthScheduler;
     // inlined connection management that was previously in RabbitMqConnectionManager
     private static Connection connection;
@@ -37,8 +37,9 @@ public class RabbitMqConnection {
      * @throws IOException
      * @throws TimeoutException
      */
-    public RabbitMqConnection() throws IOException, TimeoutException {
+    public RabbitMqConnection(RabbitMqProperties properties) throws IOException, TimeoutException {
         connection = createConnection();
+        this.properties = properties;
     }
 
     /**

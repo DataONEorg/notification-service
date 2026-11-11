@@ -9,16 +9,21 @@ import org.dataone.notifications.storage.NsDataRepository;
 import org.dataone.notifications.storage.NsDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Duration;
 
-public class TestUtils {
+public class DbTestUtils {
 
-    public static PostgreSQLContainer<?> getTestDb() {
+    public static PostgreSQLContainer<?> getTestDb() throws Exception {
 
+        EnvironmentVariables env = new EnvironmentVariables(
+            "NS_PROPERTIES_YAML_PATH", "../ns-common/src/test/resources/properties.yaml");
+        env.setup();
+        NsConfig.reload();
         Configuration nsConfig = NsConfig.getConfig();
         PostgreSQLContainer<?> pg =
             new PostgreSQLContainer<>("postgres:" + nsConfig.getString("ns.database.test.version"))

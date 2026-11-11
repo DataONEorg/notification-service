@@ -17,6 +17,22 @@ ns:
   ## (trace, debug, info, warn, error, fatal)
   logLevel: warn
 
+  api:
+    ## @param ns.api.privateApiBaseUrl Override private API base URL. Leave unset for auto-complete.
+    ## Include protocol, hostname, port, and NO trailing slash. Example:
+    ## https://my-service:8080
+    ##
+    ## IMPORTANT: calls to this API are made without authentication, so it must never be exposed to
+    ## the public internet. It is intended for internal use only, by the notification service.
+    ##
+    privateApiBaseUrl: ""
+
+    ## @param ns.api.privateApiPath Path for private API endpoints (will be appended to hostname)
+    ## USE A LEADING SLASH, BUT NO TRAILING SLASH! Should include context and API version. Example:
+    ## privateApiPath: /notifications/v1/private
+    ##
+    privateApiPath: /notifications/v1/private
+
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
@@ -40,7 +56,7 @@ ns:
     ##
     existingSecret: "nsdb-cnpg-app"
 
-    ## @param ns.database.jdbcHost (REQUIRED) database connection hostname (postgresql k8s service)
+    ## @param ns.database.jdbcHost (REQUIRED) database connection hostname (PostgreSQL k8s service)
     ## Typically <cnpg-release-name>-cnpg-rw
     ##
     jdbcHost: "nsdb-cnpg-rw"
@@ -318,7 +334,7 @@ tomcat:
   ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
   ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
   ##
-  ## (extraCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## (extraCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   extraCatalinaOpts:
@@ -357,7 +373,7 @@ tomcat:
   ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
   ##    to localhost:9011)
   ##
-  ## (jmxCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## (jmxCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   jmxCatalinaOpts:
@@ -513,7 +529,7 @@ rmq:
     ##
     hostname: "ns-rmq-4-1-3" # TODO: autopopulate if not provided
 
-    ## @param rmq.rmqConnection.port RMQ amqp port
+    ## @param rmq.rmqConnection.port RMQ AMQP port
     ##
     port: "5672"
 
@@ -556,26 +572,26 @@ rmq:
     ##
     enabled: true
 
-    ## @param rmq.rmqOperator.nameOverride REQUIRED partial override for resourcename used for pods, PVCs etc
-    ## Automatically prepends the release name, so the resulting resource name for the pods etc. will
-    ## begin:  <myrelease>-<rabbitmq.nameOverride>-...
+    ## @param rmq.rmqOperator.nameOverride REQUIRED partial override for resource name used for pods, PVCs etc
+    ## Automatically prepends the release name, so the resulting resource name for the
+    ## pods etc. will begin:  <myrelease>-<rabbitmq.nameOverride>-...
     ##
     ## We change this with every change in RabbitMQ app version, so that we can use a new PV/PVC for
-    ## each release. This means each new installation is a fresh install, instead of being an upgrade,
-    ## which would be a lot more onerous (see rabbitMQ docs).
+    ## each release. This means each new installation is a fresh install, instead of being an
+    ## upgrade, which would be a lot more onerous (see RabbitMQ docs).
     ##
-    ## Convention is to use 'rmq', followed by the rabbitmq app version, with periods replaced by
+    ## Convention is to use 'rmq', followed by the RabbitMQ app version, with periods replaced by
     ## dashes; e.g.:
-    ##  nameOverride: "rmq-4-1-3"  ## for rabbitmq app version 4.1.3
+    ##  nameOverride: "rmq-4-1-3"  ## for RabbitMQ app version 4.1.3
     ##
     nameOverride: "rmq-4-1-3"
 
-    ## @param rmq.rmqOperator.replicaCount Number of desired rabbitmq pods (always use an odd number)
+    ## @param rmq.rmqOperator.replicaCount Number of desired RabbitMQ pods (always use an odd number)
     ## see: https://www.rabbitmq.com/docs/clustering#node-count
     ##
     replicaCount: 1
 
-    ## Resource requests and limits for rabbitmq pods (OVERRIDE THESE!)
+    ## Resource requests and limits for RabbitMQ pods (OVERRIDE THESE!)
     ##
     ## NOTE:
     ##   CPU: For production, the ABSOLUTE MINIMUM is 2 CPUs per RabbitMQ node (and 4 CPUs
@@ -613,7 +629,7 @@ rmq:
       ##
       size: 10Gi
 
-    ## @param rmq.rmqOperator.envConfig Additional rabbitmq environment variable settings
+    ## @param rmq.rmqOperator.envConfig Additional RabbitMQ environment variable settings
     ## See:
     ##   https://www.rabbitmq.com/kubernetes/operator/using-operator#env-config
     ##   https://www.rabbitmq.com/docs/configure#customise-environment
@@ -622,7 +638,7 @@ rmq:
     ##     RABBITMQ_USE_LONGNAME: "true"
     envConfig: {}
 
-    ## Additional rabbitmq configuration settings
+    ## Additional RabbitMQ configuration settings
     ## See:
     ##   https://www.rabbitmq.com/docs/configure#config-items
     ##   https://www.rabbitmq.com/docs/production-checklist
