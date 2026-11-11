@@ -195,23 +195,12 @@ ingress:
 ## If the startupProbe fails more than 'failureThreshold' times, the container is restarted.
 ##
 ## @param startupProbe.enabled Enable readinessProbe for notifications container
-## @param startupProbe.enabled Enable startupProbe for the notifications container
-## @param startupProbe.httpGet.path The url path to probe during startup
-## @param startupProbe.httpGet.port The containerPort to probe
-## @param startupProbe.successThreshold Min consecutive successes for probe to be successful
-## @param startupProbe.failureThreshold No. of consecutive failures before the container restarted
-## @param startupProbe.periodSeconds Interval (in seconds) between startup checks
-## @param startupProbe.timeoutSeconds Timeout (in seconds) for each startup check
+##
+## Default is disabled, because Tomee doesn't respond to HTTP requests until ~60s after startup, so
+## pod appears stuck in "ContainerCreating" state
 ##
 startupProbe:
-  enabled: true
-  httpGet:
-    path: /
-    port: 8080
-  periodSeconds: 2
-  timeoutSeconds: 2
-  successThreshold: 1
-  failureThreshold: 75
+  enabled: false
 
 ## Liveness Probe
 ## Periodic probe of container service liveness. If the probe fails, container will be restarted
@@ -257,6 +246,28 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 50
   successThreshold: 1
+
+## Lifecycle hooks to configure on the web api container. Set to null to disable.
+##
+lifecycleHooks:
+  postStart:
+    exec:
+      ## @skip lifecycleHooks.postStart.exec.command initialize the service
+      ## App will not initialize until it receives a request. This means the first user request will
+      ## be slow, because it will include the time to initialize the service. To avoid this, we can
+      #3 use a postStart hook to make a request to the service. Calling /datasetChanges with no
+      ## token returns HTTP 401, but still initializes the service/loads the classes...
+      ##
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initializing app..." >> /tmp/postStart.log
+          until curl -s -o /dev/null http://localhost:8080/notifications/v1/datasetChanges; do
+            echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - waiting for app to initialize..." >> /tmp/postStart.log
+            sleep 1
+          done
+          echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initialization done..." >> /tmp/postStart.log
 
 ## CURRENTLY IGNORED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
 ## This section is for setting up autoscaling. More information can be found here:
@@ -313,14 +324,14 @@ resources:
   requests:
     ## @param resources.requests.cpu CPU requested for the nsconsumer container
     ##
-    cpu: 100m
+    cpu: 500m
     ## @param resources.requests.memory Memory requested for the nsconsumer container
     ##
     memory: 512Mi
   limits:
     ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
     ##
-    cpu: 500m
+    cpu: 1000m
     ## @param resources.limits.memory Maximum memory the nsconsumer container may use
     ##
     memory: 1Gi
@@ -448,7 +459,7 @@ nsconsumer:
   ## from service endpoints (but will not be restarted unless livenessProbe fails)
   ##
   ## @param nsconsumer.readinessProbe.enabled Enable readinessProbe for container
-  ## @param nsconsumer.readinessProbe.initialDelay delay after container start before probing
+  ## @param nsconsumer.readinessProbe.initialDelaySeconds delay after container start before probing
   ## @param nsconsumer.readinessProbe.exec.command checks the consumer's readiness file is <30s old
   ## Optional values:
   ## @param nsconsumer.readinessProbe.periodSeconds Period seconds for readinessProbe
