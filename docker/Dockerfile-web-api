@@ -23,11 +23,14 @@ RUN apt-get update \
     postgresql-client \
     procps            \
     telnet            \
+    unzip             \
     vim
 
 COPY ./ns-web-api/target/ns-web-api-${NS_VERSION}.war ./webapps/notifications.war
 
-RUN chown -R notifier:notifier .
+RUN mkdir -p ./webapps/notifications && \
+    unzip ./webapps/notifications.war -d ./webapps/notifications && \
+    chown -R notifier:notifier .
 
 USER $UID
 
