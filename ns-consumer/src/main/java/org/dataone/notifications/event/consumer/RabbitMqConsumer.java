@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.slf4j.Logger;
@@ -15,10 +16,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Minimal RabbitMQ queue consumer that runs until the container shuts down.
  */
-public class DatasetEventConsumer implements AutoCloseable {
+public class RabbitMqConsumer implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(DatasetEventConsumer.class);
-
+    private static final Logger log = LoggerFactory.getLogger(RabbitMqConsumer.class);
+    private static RabbitMqConsumer instance = null;
     private final RabbitMqProperties properties;
     // inlined connection management that was previously in RabbitMqConnectionManager
     private RabbitMqConnection connection;
@@ -26,7 +27,7 @@ public class DatasetEventConsumer implements AutoCloseable {
     private final NsEventProcessor processor;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public DatasetEventConsumer(
+    public RabbitMqConsumer(
         RabbitMqProperties properties,
         NsEventProcessor processor) throws IOException, TimeoutException {
         this.properties = properties;
@@ -43,7 +44,7 @@ public class DatasetEventConsumer implements AutoCloseable {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        log.info("Starting DatasetEventConsumer for queue {}",
+        log.info("Starting RabbitMqConsumer for queue {}",
             properties.queueName());
         try {
             final Channel ch = connection.newChannel();
@@ -86,8 +87,6 @@ public class DatasetEventConsumer implements AutoCloseable {
         shutdown();
     }
 
-
-
     public synchronized void shutdown() {
         try {
             if (channel != null) {
@@ -116,5 +115,36 @@ public class DatasetEventConsumer implements AutoCloseable {
         boolean isOpen = connection.isConnected();
         log.trace("connection={}, connection.isOpen={}", connection, isOpen);
         return isOpen;
+    }
+
+    static void main(String[] args) throws IOException, TimeoutException {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received, stopping consumer");
+            RabbitMqConnection.stopHealthProbe();
+            log.info("Stopped Health Probe");
+            if (instance != null) {
+                instance.stop();
+            }
+        }));
+
+        final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
+        final NsEventProcessor processor = new NsEventProcessor();
+        instance = new RabbitMqConsumer(props, processor);
+
+        try {
+            instance.start();
+            log.info("Consumer started");
+            RabbitMqConnection.startHealthProbe();
+        } catch (Exception e) {
+            log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
+            RabbitMqConnection.stopHealthProbe();
+            if (instance != null) {
+                instance.stop();
+            }
+            System.exit(1);
+        }
+        log.info(
+            "RabbitMQ consumer main thread exiting, consumer and health probe should keep running");
     }
 }
