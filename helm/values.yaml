@@ -313,14 +313,14 @@ resources:
   requests:
     ## @param resources.requests.cpu CPU requested for the nsconsumer container
     ##
-    cpu: 100m
+    cpu: 500m
     ## @param resources.requests.memory Memory requested for the nsconsumer container
     ##
     memory: 512Mi
   limits:
     ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
     ##
-    cpu: 500m
+    cpu: 1000m
     ## @param resources.limits.memory Maximum memory the nsconsumer container may use
     ##
     memory: 1Gi
