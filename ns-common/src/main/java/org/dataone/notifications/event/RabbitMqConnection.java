@@ -23,25 +23,11 @@ import java.util.function.BooleanSupplier;
  * A RabbitMQ connection class can be shared by both submitters and consumers
  */
 public class RabbitMqConnection {
-<<<<<<< Updated upstream
-    private static final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
-    private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
-    private static final long healthPollIntervalSeconds = 15L;
-    private RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
-    private static ScheduledExecutorService healthScheduler;
-||||||| Stash base
-    private static final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
-    private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
-    private static final long healthPollIntervalSeconds = 15L;
-    private final RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
-    private static ScheduledExecutorService healthScheduler;
-=======
     private final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
     private final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
     private final long healthPollIntervalSeconds = 15L;
     private final RabbitMqProperties properties;
     private ScheduledExecutorService healthScheduler;
->>>>>>> Stashed changes
     // inlined connection management that was previously in RabbitMqConnectionManager
     private Connection connection;
 
@@ -53,13 +39,9 @@ public class RabbitMqConnection {
     public RabbitMqConnection(RabbitMqProperties properties) throws IOException, TimeoutException {
         connection = createConnection();
         this.properties = properties;
-<<<<<<< Updated upstream
-||||||| Stash base
-=======
         if (properties == null) {
             throw new IllegalArgumentException("RabbitMqProperties cannot be null");
         }
->>>>>>> Stashed changes
     }
 
     /**
