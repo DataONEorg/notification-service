@@ -142,7 +142,6 @@ helm upgrade --install ns -n notify --create-namespace \
 | ------------------------------- | ---------------------------------------------------------- | ---------- |
 | `emailUtil.host`                | The hostname of the SMTP server to use for sending emails. | `ADD_HOST` |
 | `emailUtil.port`                | The port of the SMTP server to use for sending emails.     | `1025`     |
-| `emailUtil.auth.enabled`        | Enable or disable SMTP authentication.                     | `true`     |
 | `emailUtil.auth.existingSecret` | Secret holding SMTP credentials. This won't be             | `""`       |
 
 ### RabbitMQ Connection Configuration

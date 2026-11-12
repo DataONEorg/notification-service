@@ -515,8 +515,6 @@ emailUtil:
   ## @param emailUtil.port The port of the SMTP server to use for sending emails.
   port: 1025
   auth:
-    ## @param emailUtil.auth.enabled Enable or disable SMTP authentication.
-    enabled: true
     ## @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
     ## created automatically if you don't provide one, so you have to either
     ## create it manually or reference a secret created by the email service chart.

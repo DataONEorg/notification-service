@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +35,22 @@ public class RabbitMqConsumer {
         this.connection = connection;
     }
 
+    /**
+     * Main method to start the RabbitMQ consumer. It initializes the RabbitMQ connection and
+     * registers a shutdown hook to stop the consumer and health probe on application shutdown.
+     *
+     * @param args Command line arguments, expected to contain class names for one or more
+     *             {@link org.dataone.notifications.event.notifier.NotificationListener}
+     *             implementations. These listeners encapsulate the logic for handling notifications
+     *             based on the consumed messages (e.g. see
+     *             {@link org.dataone.notifications.event.notifier.channel.EmailNotifier}).
+     * @throws IOException If an I/O error occurs during consumer startup.
+     * @throws TimeoutException If a timeout occurs while establishing the RabbitMQ connection.
+     */
     static void main(String[] args) throws IOException, TimeoutException {
 
         final RabbitMqProperties props = RabbitMqProperties.from(NsConfig.getConfig());
-        final NsEventProcessor processor = new NsEventProcessor();
+        final NsEventProcessor processor = new NsEventProcessor(args);
         RabbitMqConnection connection = new RabbitMqConnection(props);
         final String queueName = props.queueName();
         final RabbitMqConsumer consumer = new RabbitMqConsumer(queueName, processor, connection);
