@@ -8,8 +8,15 @@ import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Properties;
 
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.event.notifier.NotificationListener;
 import org.dataone.notifications.exception.NotificationDeliveryException;
@@ -20,6 +27,11 @@ import org.slf4j.LoggerFactory;
 @Default
 public class EmailNotifier implements NotificationListener {
     private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
+    private static final Duration AS_HTTP_TIMEOUT_SEC = Duration.ofSeconds(
+        NsConfig.getConfig().getInt("ns.messaging.accountSvc.connectTimeoutSec", 10));
+    private static final HttpClient AS_HTTP_CLIENT =
+        HttpClient.newBuilder().connectTimeout(AS_HTTP_TIMEOUT_SEC).build();
+    private final String AS_URL;
     Session session;
 
     /**
@@ -27,31 +39,33 @@ public class EmailNotifier implements NotificationListener {
      * Uses EMAIL_USERNAME and EMAIL_PASSWORD for authentication.
      */
     public EmailNotifier() {
-        Properties props = new Properties();
-        String emailHost = System.getenv("EMAIL_HOST");
-        String emailPort = System.getenv("EMAIL_PORT");
-        props.put("mail.smtp.host", emailHost);
-        props.put("mail.smtp.port", emailPort);
+        String emailHost = NsConfig.getConfig().getString("ns.messaging.email.host");
+        String emailPort = NsConfig.getConfig().getString("ns.messaging.email.port", "1025");
         String emailUsername = System.getenv("EMAIL_USERNAME");
         String emailPassword = System.getenv("EMAIL_PASSWORD");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
 
+        Properties sessionProps = new Properties();
+        sessionProps.put("mail.smtp.host", emailHost);
+        sessionProps.put("mail.smtp.port", emailPort);
+        sessionProps.put("mail.smtp.auth", "true");
+        sessionProps.put("mail.smtp.starttls.enable", "true");
         String displayPasswd =
             emailPassword != null && !emailPassword.isBlank() ? "********" : "NOT SET!";
         log.debug(
             "Initializing EmailNotifier with SMTP host: {}, port: {}, "
-                + "username: {}, and password: {}", emailHost, emailPort,
-                emailUsername, displayPasswd);
+                + "username: {}, and password: {}", emailHost, emailPort, emailUsername,
+            displayPasswd);
 
         session = Session.getInstance(
-            props, new jakarta.mail.Authenticator() {
+            sessionProps, new jakarta.mail.Authenticator() {
                 protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
-                    return new jakarta.mail.PasswordAuthentication(
-                        emailUsername, emailPassword);
+                    return new jakarta.mail.PasswordAuthentication(emailUsername, emailPassword);
                 }
             });
-        }
+
+        //URL for retrieving email addresses from the account service
+        AS_URL = NsConfig.getConfig().getString("ns.messaging.accountSvc.url");
+    }
 
     @Override
     public String handleNotification(NsEventMessage.NsEvent event)
@@ -72,35 +86,54 @@ public class EmailNotifier implements NotificationListener {
             message.setRecipient(Message.RecipientType.TO, recipientEmail);
 
             // TODO: get body, specific to resourceType, from config/env
-            String emailText =
-                """
-                You subscribed to notifications for action: %s on the dataset with identifier: %s.
-                A new version is available at: https://search-sandbox.test.dataone.org/view/%s
-                """.formatted(resourceType, subscribedPid, newPid);
+            String emailText = """
+                               You subscribed to notifications for action: %s on the dataset with identifier: %s.
+                               A new version is available at: https://search-sandbox.test.dataone.org/view/%s
+                               """.formatted(resourceType, subscribedPid, newPid);
 
             // TODO: get subject from config/env
             message.setSubject("DataONE Event Notification");
             message.setText(emailText);
             Transport.send(message);
-            log.debug(
-                "Email sent to recipientEmail: {} for event: {}", recipientEmail, event);
+            log.debug("Email sent to recipientEmail: {} for event: {}", recipientEmail, event);
         } catch (Exception e) {
-            String errMsg = "Failed to send email to recipientEmail: " + recipientEmail
-                + " for event: " + event + ", due to error: " + e.getMessage();
+            String errMsg =
+                "Failed to send email to recipientEmail: " + recipientEmail + " for event: " + event
+                    + ", due to error: " + e.getMessage();
             log.error(errMsg);
             throw new NotificationDeliveryException(errMsg, e);
         }
         return recipientEmail.getAddress();
     }
 
-    private InternetAddress getEmailForOrcid(String subscriber) throws AddressException {
+    private InternetAddress getEmailForOrcid(String subscriber)
+        throws AddressException, IOException {
 
-        log.debug("Retrieving email for ORCID: {}", subscriber);
+        // Remove any leading http:// or https:// from the subscriber string
+        subscriber = subscriber.replaceAll("https?://", "");
 
-        // Placeholder implementation for retrieving email address based on subject (ORCID)
-        // TODO: query the account service and/or ORCID API
+        URI asUri = URI.create(AS_URL + subscriber);
+        log.debug("Retrieving email for ORCID: {} using Account Svc GET: {}", subscriber, asUri);
 
-        return new InternetAddress(
-            subscriber.replaceAll("https?://", "").replace('/', '-') + "@example.com"); //
+        HttpRequest asRequest = HttpRequest.newBuilder(asUri)
+            .timeout(AS_HTTP_TIMEOUT_SEC)
+            .header("Accept", "application/json")
+            .GET()
+            .build();
+
+        try {
+            HttpResponse<String> response =
+                AS_HTTP_CLIENT.send(asRequest, HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            log.debug("Response from Account Service: HTTP {}: {}", status, response.body());
+            if (status < 200 || status >= 300) {
+                throw new IOException(
+                    "GET " + asUri + " failed with HTTP " + status + ": " + response.body());
+            }
+            return new InternetAddress(response.body().trim());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted during GET " + asUri, e);
+        }
     }
 }

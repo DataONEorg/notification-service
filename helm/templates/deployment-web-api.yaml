@@ -72,10 +72,10 @@ spec:
                   name: {{ $pgSecret }}
                   key: password
             - name: EMAIL_HOST
-              value: {{ .Values.emailUtil.host }}
+              value: {{ .Values.email.host }}
             - name: EMAIL_PORT
-              value: {{ .Values.emailUtil.port | quote }}
-            {{- $emailAuthSecret :=  required "emailUtil.auth.existingSecret IS REQUIRED" .Values.emailUtil.auth.existingSecret }}
+              value: {{ .Values.email.port | quote }}
+            {{- $emailAuthSecret :=  required "nsconsumer.email.auth.existingSecret IS REQUIRED" .Values.email.auth.existingSecret }}
             - name: EMAIL_USERNAME
               valueFrom:
                 secretKeyRef:

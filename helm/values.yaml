@@ -43,7 +43,7 @@ ns:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
-      userAgent: "DataONE notification-service/1.0"
+      userAgent: &userAgent "DataONE notification-service/1.0"
       connectTimeoutMilliSec: 5000
       readTimeoutMilliSec: 5000
 
@@ -508,18 +508,32 @@ nsconsumer:
   ##   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
-## @section Configuration for the SMTP server used to send email notifications
-emailUtil:
-  ## @param emailUtil.host The hostname of the SMTP server to use for sending emails.
-  host: ADD_HOST
-  ## @param emailUtil.port The port of the SMTP server to use for sending emails.
-  port: 1025
-  auth:
-    ## @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
-    ## created automatically if you don't provide one, so you have to either
-    ## create it manually or reference a secret created by the email service chart.
-    ##
-    existingSecret: ""
+  ## @section Configuration for the SMTP server used to send email notifications
+  email:
+    ## @param nsconsumer.email.host The hostname of the SMTP server to use for sending emails.
+    host: ADD_HOST
+    ## @param nsconsumer.email.port The port of the SMTP server to use for sending emails.
+    port: 1025
+    auth:
+      ## @param nsconsumer.email.auth.existingSecret Secret holding SMTP credentials. This won't be
+      ## created automatically if you don't provide one, so you have to either
+      ## create it manually or reference a secret created by the email service chart.
+      ##
+      existingSecret: ""
+    accountSvc:
+      ## @param nsconsumer.email.accountSvc.url The full URL for querying the account service API
+      ## in order to obtain the email address for a given subject. This is typically the CN account
+      ## service API.
+      ##
+      url: https://cn.dataone.org/cn/v2/account
+
+      ## @param nsconsumer.email.accountSvc.userAgent User-Agent string to use for requests to API
+      ##
+      userAgent: *userAgent
+
+      ## @param nsconsumer.email.accountSvc.connectTimeoutMilliSec Timeout limit for API connection
+      ##
+      connectTimeoutSec: 10
 
 ## @section RabbitMQ Connection Configuration
 ## (This section does NOT affect the RabbitMQ Operator installation itself.)

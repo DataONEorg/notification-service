@@ -23,3 +23,10 @@ ns:
       virtualHost: {{ default "/" .Values.rmq.rmqConnection.virtualHost | quote }}
       queueName: {{ required "rmq.rmqConnection.queueName IS REQUIRED" .Values.rmq.rmqConnection.queueName }}
       prefetchCount: {{ default 25 .Values.rmq.rmqConnection.prefetchCount | quote }}
+    email:
+      host: {{ required "email.host IS REQUIRED" .Values.email.host }}
+      port: {{ .Values.email.port | default 1025 }}
+    accountSvc:
+      url: {{ .Values.nsconsumer.email.accountSvc.url | default "https://cn-sandbox.test.dataone.org/cn/v2/account" }}
+      userAgent: {{ .Values.nsconsumer.email.accountSvc.userAgent | default "DataONE notification-service/1.0" }}
+      connectTimeoutSec: {{ .Values.nsconsumer.email.accountSvc.connectTimeoutSec | default "10" }}

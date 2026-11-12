@@ -39,7 +39,7 @@ nsconsumer:
     tag: LOCAL
     pullPolicy: Never
 
-emailUtil:
+email:
   host: mailpit
   port: 1025
   auth:
