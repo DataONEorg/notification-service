@@ -43,7 +43,6 @@ emailUtil:
   host: mailpit
   port: 1025
   auth:
-    enabled: true
     existingSecret: "mailpit-auth"
 
     ## After applying the above, add this entry to /etc/hosts file:
