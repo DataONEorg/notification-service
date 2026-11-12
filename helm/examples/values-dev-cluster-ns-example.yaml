@@ -66,8 +66,6 @@ nsconsumer:
     port: 1025
     # @section nsconsumer.email.auth Configuration for SMTP authentication.
     auth:
-      # @param nsconsumer.email.auth.enabled Enable or disable SMTP authentication.
-      enabled: true
       # @param nsconsumer.email.auth.existingSecret Secret holding SMTP credentials. This won't be
       # created automatically if you don't provide one, so you have to either
       # create it manually or via some other chart. The mailpit chart creates it automatically,

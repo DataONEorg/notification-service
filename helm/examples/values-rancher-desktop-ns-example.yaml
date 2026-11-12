@@ -38,12 +38,11 @@ nsconsumer:
   image:
     tag: LOCAL
     pullPolicy: Never
-
-email:
-  host: mailpit
-  port: 1025
-  auth:
-    existingSecret: "mailpit-auth"
+  email:
+    host: mailpit
+    port: 1025
+    auth:
+      existingSecret: "mailpit-auth"
 
     ## After applying the above, add this entry to /etc/hosts file:
     ##
@@ -51,7 +50,13 @@ email:
     ##
     ## Now you can access the notifications service at:
     ##   http://notifications.local/notifications/metrics/ping
-
+    accountSvc:
+      ## @param nsconsumer.email.accountSvc.url The full URL for querying the account service API
+      ## in order to obtain the email address for a given subject. This is typically the CN account
+      ## service API, and includes the ?query= parameter; e.g.
+      ##   url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
+      ##
+      url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
 rmq:
   rmqOperator:
     persistence:
