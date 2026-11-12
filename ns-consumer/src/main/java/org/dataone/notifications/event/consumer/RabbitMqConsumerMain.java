@@ -20,9 +20,10 @@ public class RabbitMqConsumerMain {
 
 
     static void main(String[] args) throws IOException, TimeoutException {
+        RabbitMqConnection connection = new RabbitMqConnection(RabbitMqProperties.from(NsConfig.getConfig()));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received, stopping consumer");
-            RabbitMqConnection.stopHealthProbe();
+            connection.stopHealthProbe();
             log.info("Stopped Health Probe");
             if (consumer != null) {
                 consumer.stop();
@@ -37,10 +38,10 @@ public class RabbitMqConsumerMain {
         try {
             consumer.start();
             log.info("Consumer started");
-            RabbitMqConnection.startHealthProbe();
+            connection.startHealthProbe();
         } catch (Exception e) {
             log.error("Failed to start RabbitMQ consumer. Stopping health probe.", e);
-            RabbitMqConnection.stopHealthProbe();
+            connection.stopHealthProbe();
             if (consumer != null) {
                 consumer.stop();
             }
