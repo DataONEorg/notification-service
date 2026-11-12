@@ -71,21 +71,6 @@ spec:
                 secretKeyRef:
                   name: {{ $pgSecret }}
                   key: password
-            - name: EMAIL_HOST
-              value: {{ .Values.email.host }}
-            - name: EMAIL_PORT
-              value: {{ .Values.email.port | quote }}
-            {{- $emailAuthSecret :=  required "nsconsumer.email.auth.existingSecret IS REQUIRED" .Values.email.auth.existingSecret }}
-            - name: EMAIL_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $emailAuthSecret }}
-                  key: username
-            - name: EMAIL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $emailAuthSecret }}
-                  key: password
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

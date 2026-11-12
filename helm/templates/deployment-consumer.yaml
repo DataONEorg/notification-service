@@ -52,10 +52,17 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
-            - name: NS_MESSAGES_HOST
-              value: {{ include "notifications.fullname" . }}
-            - name: NS_MESSAGES_PORT
-              value: {{ .Values.service.port | quote }}
+          {{- $emailAuthSecret :=  required "nsconsumer.email.auth.existingSecret IS REQUIRED" .Values.nsconsumer.email.auth.existingSecret }}
+            - name: EMAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $emailAuthSecret }}
+                  key: username
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $emailAuthSecret }}
+                  key: password
             {{- range $k, $v := .Values.nsconsumer.extraEnvVars }}
             - name: {{ $k }}
               value: {{ $v | quote }}
