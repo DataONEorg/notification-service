@@ -3,6 +3,8 @@
 ####################
 ##
 ns:
+  api:
+    privateBaseUrl: http://bogus-localhost:8080/notifications/v1/private
   auth:
     api:
       baseUrl: https://bogus-cn-host.test.dataone.org/cn/v2
@@ -15,12 +17,17 @@ ns:
     username: notifications_test_user
     password: notifications_test_password
     name: notifications_test_db
+    jdbcHost: localhost
+    jdbcPort: 5432
+    ##  See HikariCP configuration options at:
+    ##  https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+    driverClassName: org.postgresql.Driver
     test:
       version: 17
       camelCaseTestKey: yaml-value-for-testing-only
   messaging:
     rabbitmq:
-      enabled: false
+      enabled: true
       host: localhost
       port: 5672
       username: guest

@@ -1,13 +1,16 @@
 package org.dataone.notifications;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SystemStubsExtension.class)
 class NsConfigTest {
@@ -25,7 +28,7 @@ class NsConfigTest {
 
         // Test that specific properties are present
         assertTrue(NsConfig.getConfig().containsKey(yamlKey),
-                   "Database name should be defined in the configuration");
+                              "Database name should be defined in the configuration");
         assertEquals(expectedYamlValue, NsConfig.getConfig().getString(yamlKey));
 
         String expectedEnvValue = "test-env-override";

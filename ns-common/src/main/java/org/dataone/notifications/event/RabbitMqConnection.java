@@ -4,7 +4,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-import org.dataone.notifications.NsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,21 +23,25 @@ import java.util.function.BooleanSupplier;
  * A RabbitMQ connection class can be shared by both submitters and consumers
  */
 public class RabbitMqConnection {
-    private static final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
-    private static final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
-    private static final long healthPollIntervalSeconds = 15L;
-    private final RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
-    private static ScheduledExecutorService healthScheduler;
+    private final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
+    private final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
+    private final long healthPollIntervalSeconds = 15L;
+    private final RabbitMqProperties properties;
+    private ScheduledExecutorService healthScheduler;
     // inlined connection management that was previously in RabbitMqConnectionManager
-    private static Connection connection;
+    private Connection connection;
 
     /**
      * Constructor of the class
      * @throws IOException
      * @throws TimeoutException
      */
-    public RabbitMqConnection() throws IOException, TimeoutException {
+    public RabbitMqConnection(RabbitMqProperties properties) throws IOException, TimeoutException {
         connection = createConnection();
+        this.properties = properties;
+        if (properties == null) {
+            throw new IllegalArgumentException("RabbitMqProperties cannot be null");
+        }
     }
 
     /**
@@ -89,7 +92,7 @@ public class RabbitMqConnection {
     /**
      * Quick check whether an active connection exists.
      */
-    public static synchronized boolean isConnected() {
+    public synchronized boolean isConnected() {
         boolean isOpen = connection != null && connection.isOpen();
         log.trace("connection={}, connection.isOpen={}", connection, isOpen);
         return isOpen;
@@ -99,7 +102,7 @@ public class RabbitMqConnection {
      * Close the connection
      * @throws IOException
      */
-    public static void close() throws IOException {
+    public void close() throws IOException {
         if (connection != null) {
             connection.close();
         }
@@ -108,7 +111,7 @@ public class RabbitMqConnection {
     /**
      * Start the health probe.
      */
-    public static synchronized void startHealthProbe() {
+    public synchronized void startHealthProbe() {
         if (healthScheduler != null) {
             return;
         }
@@ -118,7 +121,7 @@ public class RabbitMqConnection {
             return t;
         });
         healthScheduler.scheduleAtFixedRate(
-            () -> refreshProbeIfConnected(RabbitMqConnection::isConnected, healthProbeFile), 0,
+            () -> refreshProbeIfConnected(this::isConnected, healthProbeFile), 0,
             healthPollIntervalSeconds, TimeUnit.SECONDS);
 
         log.info(
@@ -129,14 +132,14 @@ public class RabbitMqConnection {
     /**
      * Stop the health probe.
      */
-    public static synchronized void stopHealthProbe() {
+    public synchronized void stopHealthProbe() {
         if (healthScheduler != null) {
             healthScheduler.shutdownNow();
             healthScheduler = null;
         }
     }
 
-    static void refreshProbeIfConnected(BooleanSupplier connectionStatus, Path probeFile) {
+    void refreshProbeIfConnected(BooleanSupplier connectionStatus, Path probeFile) {
         try {
             if (connectionStatus.getAsBoolean()) {
                 writeProbeFile(probeFile);
@@ -146,7 +149,7 @@ public class RabbitMqConnection {
         }
     }
 
-    public static void writeProbeFile(Path probeFile) {
+    public void writeProbeFile(Path probeFile) {
         try {
             String content = Long.toString(Instant.now().getEpochSecond());
             Path tmp =

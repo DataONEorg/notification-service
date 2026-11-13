@@ -1,8 +1,6 @@
 package org.dataone.notifications.event.consumer;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import java.io.IOException;
@@ -30,9 +28,10 @@ public class DatasetEventConsumer implements AutoCloseable {
 
     public DatasetEventConsumer(
         RabbitMqProperties properties,
-        NsEventProcessor processor) {
+        NsEventProcessor processor) throws IOException, TimeoutException {
         this.properties = properties;
         this.processor = processor;
+        connection = new RabbitMqConnection(properties);
     }
 
     /**

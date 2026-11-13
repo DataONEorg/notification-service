@@ -30,14 +30,16 @@ helm upgrade --install ns -n notify --create-namespace \
 | Name                                            | Description                                                                  | Value                                     |
 | ----------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------- |
 | `ns.logLevel`                                   | The log level for the notification service.                                  | `warn`                                    |
+| `ns.api.privateApiBaseUrl`                      | Override private API base URL. Leave unset for auto-complete.                | `""`                                      |
+| `ns.api.privateApiPath`                         | Path for private API endpoints (will be appended to hostname)                | `/notifications/v1/private`               |
 | `ns.auth.api.baseUrl`                           | The base URL for the authentication API (typically the CN)                   | `https://cn.dataone.org/cn/v2`            |
 | `ns.auth.api.authenticate`                      | The endpoint for authentication (CN uses '/diag/subject')                    | `/diag/subject`                           |
 | `ns.auth.api.userAgent`                         | The User-Agent string to use when making requests to the auth API            | `DataONE notification-service/1.0`        |
-| `ns.auth.api.connectTimeoutMilliSec`            | The timeout limit for opening a connection to the auth API                   | `10000`                                   |
-| `ns.auth.api.readTimeoutMilliSec`               | The timeout limit for reading data from the auth API                         | `20000`                                   |
+| `ns.auth.api.connectTimeoutMilliSec`            | Timeout limit for opening connection to the auth API                         | `5000`                                    |
+| `ns.auth.api.readTimeoutMilliSec`               | Timeout limit for reading data from the auth API                             | `5000`                                    |
 | `ns.database.dbName`                            | The name of the database used by the notification service.                   | `notifications`                           |
 | `ns.database.existingSecret`                    | (REQUIRED) Basic Auth Secret name for DB username & password                 | `nsdb-cnpg-app`                           |
-| `ns.database.jdbcHost`                          | (REQUIRED) database connection hostname (postgresql k8s service)             | `nsdb-cnpg-rw`                            |
+| `ns.database.jdbcHost`                          | (REQUIRED) database connection hostname (PostgreSQL k8s service)             | `nsdb-cnpg-rw`                            |
 | `ns.database.jdbcPort`                          | The port for the database connection.                                        | `5432`                                    |
 | `replicaCount`                                  | The number of replicas for the notification web-api service deployment.      | `1`                                       |
 | `image.repository`                              | image repository                                                             | `ghcr.io/dataoneorg/notification-service` |
@@ -62,14 +64,7 @@ helm upgrade --install ns -n notify --create-namespace \
 | `ingress.hosts[0].paths[1].backend.serviceName` | The service name for the backend                                             | `dev-null-service`                        |
 | `ingress.hosts[0].paths[1].backend.servicePort` | The service port for the backend                                             | `8080`                                    |
 | `ingress.tls`                                   | List of TLS configurations for the ingress                                   | `[]`                                      |
-| `startupProbe.enabled`                          | Enable readinessProbe for notifications container                            | `true`                                    |
-| `startupProbe.enabled`                          | Enable startupProbe for the notifications container                          | `true`                                    |
-| `startupProbe.httpGet.path`                     | The url path to probe during startup                                         | `/`                                       |
-| `startupProbe.httpGet.port`                     | The containerPort to probe                                                   | `8080`                                    |
-| `startupProbe.successThreshold`                 | Min consecutive successes for probe to be successful                         | `1`                                       |
-| `startupProbe.failureThreshold`                 | No. of consecutive failures before the container restarted                   | `75`                                      |
-| `startupProbe.periodSeconds`                    | Interval (in seconds) between startup checks                                 | `2`                                       |
-| `startupProbe.timeoutSeconds`                   | Timeout (in seconds) for each startup check                                  | `2`                                       |
+| `startupProbe.enabled`                          | Enable readinessProbe for notifications container                            | `false`                                   |
 | `livenessProbe.enabled`                         | Enable livenessProbe for notifications container                             | `true`                                    |
 | `livenessProbe.httpGet.path`                    | The url path to probe.                                                       | `/notifications/v1/metrics/ping`          |
 | `livenessProbe.httpGet.port`                    | The named containerPort to probe                                             | `http`                                    |
@@ -99,43 +94,47 @@ helm upgrade --install ns -n notify --create-namespace \
 | `nodeSelector`                                  | Node labels for pod assignment                                               | `{}`                                      |
 | `tolerations`                                   | Tolerations for pod assignment                                               | `[]`                                      |
 | `affinity`                                      | Affinity for pod assignment                                                  | `{}`                                      |
-| `resources.limits.cpu`                          | Maximum CPU the nsconsumer container may use                                 | `200m`                                    |
-| `resources.limits.memory`                       | Maximum memory the nsconsumer container may use                              | `256Mi`                                   |
-| `resources.requests.cpu`                        | CPU requested for the nsconsumer container                                   | `100m`                                    |
-| `resources.requests.memory`                     | Memory requested for the nsconsumer container                                | `128Mi`                                   |
+| `resources.requests.cpu`                        | CPU requested for the nsconsumer container                                   | `500m`                                    |
+| `resources.requests.memory`                     | Memory requested for the nsconsumer container                                | `512Mi`                                   |
+| `resources.limits.cpu`                          | Maximum CPU the nsconsumer container may use                                 | `1000m`                                   |
+| `resources.limits.memory`                       | Maximum memory the nsconsumer container may use                              | `1Gi`                                     |
 
 ### Tomcat Configuration
 
-| Name                                            | Description                                                               | Value                                                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `tomcat.extraCatalinaOpts`                      | Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:           | `["-XX:MaxRAMPercentage=75"]`                                                                 |
-| `tomcat.jmxEnabled`                             | Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.          | `false`                                                                                       |
-| `tomcat.jmxPort`                                | The port to use for JMX connections. IMPORTANT: If you change this...     | `9010`                                                                                        |
-| `tomcat.jmxCatalinaOpts`                        | Tomcat JVM options for enabling JMX                                       | `see values.yaml`                                                                             |
-| `tomcat.remoteDebugEnabled`                     | Enable remote debugging for Tomcat                                        | `false`                                                                                       |
-| `tomcat.remoteDebugPort`                        | The port to use for remote debugging connections                          | `5005`                                                                                        |
-| `nsconsumer.replicaCount`                       | The number of replicas for the nsconsumer deployment                      | `1`                                                                                           |
-| `nsconsumer.nameOverride`                       | String to partially override the nsconsumer chart name                    | `""`                                                                                          |
-| `nsconsumer.fullNameOverride`                   | String to fully override the nsconsumer resource names                    | `""`                                                                                          |
-| `nsconsumer.image.repository`                   | The nsconsumer image repository                                           | `ghcr.io/dataoneorg/nsconsumer`                                                               |
-| `nsconsumer.image.pullPolicy`                   | The nsconsumer image pull policy                                          | `IfNotPresent`                                                                                |
-| `nsconsumer.resources.limits.cpu`               | Maximum CPU the nsconsumer container may use                              | `200m`                                                                                        |
-| `nsconsumer.resources.limits.memory`            | Maximum memory the nsconsumer container may use                           | `256Mi`                                                                                       |
-| `nsconsumer.resources.requests.cpu`             | CPU requested for the nsconsumer container                                | `100m`                                                                                        |
-| `nsconsumer.resources.requests.memory`          | Memory requested for the nsconsumer container                             | `128Mi`                                                                                       |
-| `nsconsumer.serviceAccount.create`              | Should a service account be created for nsconsumer?                       | `false`                                                                                       |
-| `nsconsumer.serviceAccount.name`                | The name of the service account to use for nsconsumer                     | `""`                                                                                          |
-| `nsconsumer.readinessProbe.enabled`             | Enable the readinessProbe for the nsconsumer container                    | `true`                                                                                        |
-| `nsconsumer.readinessProbe.exec.command`        | The command that checks the consumer's readiness file is fresh (<30s old) | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
-| `nsconsumer.readinessProbe.initialDelaySeconds` | Seconds to wait after container start before probing                      | `60`                                                                                          |
-| `nsconsumer.readinessProbe.periodSeconds`       | How often (in seconds) to perform the probe                               | `10`                                                                                          |
-| `nsconsumer.readinessProbe.timeoutSeconds`      | Seconds after which the probe times out                                   | `5`                                                                                           |
-| `nsconsumer.livenessProbe.enabled`              | Enable the livenessProbe for the nsconsumer container                     | `true`                                                                                        |
-| `nsconsumer.livenessProbe.exec.command`         | The command that checks the consumer's readiness file is fresh (<30s old) | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
-| `nsconsumer.livenessProbe.initialDelaySeconds`  | Seconds to wait after container start before probing                      | `90`                                                                                          |
-| `nsconsumer.livenessProbe.periodSeconds`        | How often (in seconds) to perform the probe                               | `10`                                                                                          |
-| `nsconsumer.livenessProbe.timeoutSeconds`       | Seconds after which the probe times out                                   | `5`                                                                                           |
-| `nsconsumer.extraEnvVars`                       | Optional additional env vars to be added to the container.                | `{}`                                                                                          |
+| Name                                            | Description                                                           | Value                                                                                         |
+| ----------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `tomcat.extraCatalinaOpts`                      | Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:       | `["-XX:MaxRAMPercentage=75"]`                                                                 |
+| `tomcat.jmxEnabled`                             | Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.      | `false`                                                                                       |
+| `tomcat.jmxPort`                                | The port to use for JMX connections. IMPORTANT: If you change this... | `9010`                                                                                        |
+| `tomcat.jmxCatalinaOpts`                        | Tomcat JVM options for enabling JMX                                   | `see values.yaml`                                                                             |
+| `tomcat.remoteDebugEnabled`                     | Enable remote debugging for Tomcat                                    | `false`                                                                                       |
+| `tomcat.remoteDebugPort`                        | The port to use for remote debugging connections                      | `5005`                                                                                        |
+| `nsconsumer.replicaCount`                       | The number of replicas for the nsconsumer deployment                  | `1`                                                                                           |
+| `nsconsumer.nameOverride`                       | String to partially override the nsconsumer chart name                | `""`                                                                                          |
+| `nsconsumer.fullNameOverride`                   | String to fully override the nsconsumer resource names                | `""`                                                                                          |
+| `nsconsumer.image.repository`                   | The nsconsumer image repository                                       | `ghcr.io/dataoneorg/notification-consumer`                                                    |
+| `nsconsumer.image.pullPolicy`                   | The nsconsumer image pull policy                                      | `IfNotPresent`                                                                                |
+| `nsconsumer.resources.requests.cpu`             | CPU requested for the nsconsumer container                            | `100m`                                                                                        |
+| `nsconsumer.resources.requests.memory`          | Memory requested for the nsconsumer container                         | `128Mi`                                                                                       |
+| `nsconsumer.resources.limits.cpu`               | Maximum CPU the nsconsumer container may use                          | `200m`                                                                                        |
+| `nsconsumer.resources.limits.memory`            | Maximum memory the nsconsumer container may use                       | `256Mi`                                                                                       |
+| `nsconsumer.serviceAccount.create`              | Should a service account be created for nsconsumer?                   | `false`                                                                                       |
+| `nsconsumer.serviceAccount.name`                | The name of the service account to use for nsconsumer                 | `""`                                                                                          |
+| `nsconsumer.readinessProbe.enabled`             | Enable readinessProbe for container                                   | `true`                                                                                        |
+| `nsconsumer.readinessProbe.initialDelaySeconds` | delay after container start before probing                            | `5`                                                                                           |
+| `nsconsumer.readinessProbe.exec.command`        | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
+| `nsconsumer.readinessProbe.periodSeconds`       | Period seconds for readinessProbe                                     | `2`                                                                                           |
+| `nsconsumer.readinessProbe.timeoutSeconds`      | Timeout seconds for readinessProbe                                    | `2`                                                                                           |
+| `nsconsumer.readinessProbe.successThreshold`    | Min consecutive successes for probe to be successful                  | `1`                                                                                           |
+| `nsconsumer.readinessProbe.failureThreshold`    | consecutive failures before container marked unhealthy                | `30`                                                                                          |
+| `nsconsumer.livenessProbe.enabled`              | Enable the livenessProbe for the nsconsumer container                 | `true`                                                                                        |
+| `nsconsumer.livenessProbe.exec.command`         | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
+| `nsconsumer.livenessProbe.initialDelaySeconds`  | delay after container start before probing                            | `90`                                                                                          |
+| `nsconsumer.livenessProbe.periodSeconds`        | How often (in seconds) to perform the probe                           | `2`                                                                                           |
+| `nsconsumer.livenessProbe.timeoutSeconds`       | Seconds after which the probe times out                               | `2`                                                                                           |
+| `nsconsumer.livenessProbe.successThreshold`     | Min consecutive successes for probe to be successful                  | `1`                                                                                           |
+| `nsconsumer.livenessProbe.failureThreshold`     | consecutive failures before container marked unhealthy                | `30`                                                                                          |
+| `nsconsumer.extraEnvVars`                       | Optional additional env vars to be added to the container.            | `{}`                                                                                          |
 
 ### Configuration for the SMTP server used to send email notifications
 
@@ -152,7 +151,7 @@ helm upgrade --install ns -n notify --create-namespace \
 | ---------------------------------- | ------------------------------------------------- | --------------------------- |
 | `rmq.rmqConnection.existingSecret` | Name of Secret holding RMQ credentials (REQUIRED) | `ns-rmq-4-1-3-default-user` |
 | `rmq.rmqConnection.hostname`       | RMQ hostname (REQUIRED)                           | `ns-rmq-4-1-3`              |
-| `rmq.rmqConnection.port`           | RMQ amqp port                                     | `5672`                      |
+| `rmq.rmqConnection.port`           | RMQ AMQP port                                     | `5672`                      |
 | `rmq.rmqConnection.virtualHost`    | RMQ virtual host                                  | `/`                         |
 | `rmq.rmqConnection.queueName`      | RMQ queue name                                    | `dataone.notifications`     |
 | `rmq.rmqConnection.prefetchCount`  | RMQ prefetch count                                | `25`                        |
@@ -162,19 +161,19 @@ helm upgrade --install ns -n notify --create-namespace \
 
 ### RabbitMQ Operator Configuration
 
-| Name                                                        | Description                                                        | Value       |
-| ----------------------------------------------------------- | ------------------------------------------------------------------ | ----------- |
-| `rmq.rmqOperator.enabled`                                   | Enable or disable the RabbitMQ Operator installation               | `true`      |
-| `rmq.rmqOperator.nameOverride`                              | REQUIRED partial override for resourcename used for pods, PVCs etc | `rmq-4-1-3` |
-| `rmq.rmqOperator.replicaCount`                              | Number of desired rabbitmq pods (always use an odd number)         | `1`         |
-| `rmq.rmqOperator.resources.limits.cpu`                      | Maximum CPU the nsconsumer may use                                 | `500m`      |
-| `rmq.rmqOperator.resources.limits.memory`                   | Maximum memory the nsconsumer may use                              | `500Mi`     |
-| `rmq.rmqOperator.resources.requests.cpu`                    | CPU requested for the nsconsumer                                   | `800m`      |
-| `rmq.rmqOperator.resources.requests.memory`                 | Memory requested for the nsconsumer                                | `500Mi`     |
-| `rmq.rmqOperator.persistence.storageClassName`              | Storage class name for rabbitmq data PV                            | `""`        |
-| `rmq.rmqOperator.persistence.size`                          | Size of persistent volume for rabbitmq data                        | `10Gi`      |
-| `rmq.rmqOperator.envConfig`                                 | Additional rabbitmq environment variable settings                  | `{}`        |
-| `rmq.rmqOperator.additionalConfig.disk_free_limit.relative` | set_disk_free_limit mem_relative                                   | `1.0`       |
+| Name                                                        | Description                                                         | Value       |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- | ----------- |
+| `rmq.rmqOperator.enabled`                                   | Enable or disable the RabbitMQ Operator installation                | `true`      |
+| `rmq.rmqOperator.nameOverride`                              | REQUIRED partial override for resource name used for pods, PVCs etc | `rmq-4-1-3` |
+| `rmq.rmqOperator.replicaCount`                              | Number of desired RabbitMQ pods (always use an odd number)          | `1`         |
+| `rmq.rmqOperator.resources.requests.cpu`                    | CPU requested for the nsconsumer                                    | `400m`      |
+| `rmq.rmqOperator.resources.requests.memory`                 | Memory requested for the nsconsumer                                 | `500Mi`     |
+| `rmq.rmqOperator.resources.limits.cpu`                      | Maximum CPU the nsconsumer may use                                  | `900m`      |
+| `rmq.rmqOperator.resources.limits.memory`                   | Maximum memory the nsconsumer may use                               | `500Mi`     |
+| `rmq.rmqOperator.persistence.storageClassName`              | Storage class name for rabbitmq data PV                             | `""`        |
+| `rmq.rmqOperator.persistence.size`                          | Size of persistent volume for rabbitmq data                         | `10Gi`      |
+| `rmq.rmqOperator.envConfig`                                 | Additional RabbitMQ environment variable settings                   | `{}`        |
+| `rmq.rmqOperator.additionalConfig.disk_free_limit.relative` | set_disk_free_limit mem_relative                                    | `1.0`       |
 
 
 ## Creating and Publishing a New Helm Chart Version

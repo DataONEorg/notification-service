@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.Response;
 import org.dataone.notifications.api.auth.AuthProvider;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
-import org.dataone.notifications.util.TestUtils;
+import org.dataone.notifications.util.DbTestUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.junit.jupiter.api.AfterAll;
@@ -66,9 +66,9 @@ class ApiClientIT extends JerseyTest {
     private static PostgreSQLContainer<?> pg;
 
     @BeforeAll
-    static void oneTimeSetUp() {
-        pg = TestUtils.getTestDb();
-        DataRepository dataRepository = TestUtils.getTestDataRepository(pg);
+    static void oneTimeSetUp() throws Exception {
+        pg = DbTestUtils.getTestDb();
+        DataRepository dataRepository = DbTestUtils.getTestDataRepository(pg);
         AuthProvider mockAuthProvider = getAuthProvider();
         subscriptionResource = new SubscriptionResource(mockAuthProvider, dataRepository);
     }

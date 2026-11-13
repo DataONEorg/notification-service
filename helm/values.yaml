@@ -17,6 +17,22 @@ ns:
   ## (trace, debug, info, warn, error, fatal)
   logLevel: warn
 
+  api:
+    ## @param ns.api.privateApiBaseUrl Override private API base URL. Leave unset for auto-complete.
+    ## Include protocol, hostname, port, and NO trailing slash. Example:
+    ## https://my-service:8080
+    ##
+    ## IMPORTANT: calls to this API are made without authentication, so it must never be exposed to
+    ## the public internet. It is intended for internal use only, by the notification service.
+    ##
+    privateApiBaseUrl: ""
+
+    ## @param ns.api.privateApiPath Path for private API endpoints (will be appended to hostname)
+    ## USE A LEADING SLASH, BUT NO TRAILING SLASH! Should include context and API version. Example:
+    ## privateApiPath: /notifications/v1/private
+    ##
+    privateApiPath: /notifications/v1/private
+
   ## @param ns.auth.api.baseUrl The base URL for the authentication API (typically the CN)
   ## @param ns.auth.api.authenticate The endpoint for authentication (CN uses '/diag/subject')
   ## @param ns.auth.api.userAgent The User-Agent string to use when making requests to the auth API
@@ -40,7 +56,7 @@ ns:
     ##
     existingSecret: "nsdb-cnpg-app"
 
-    ## @param ns.database.jdbcHost (REQUIRED) database connection hostname (postgresql k8s service)
+    ## @param ns.database.jdbcHost (REQUIRED) database connection hostname (PostgreSQL k8s service)
     ## Typically <cnpg-release-name>-cnpg-rw
     ##
     jdbcHost: "nsdb-cnpg-rw"
@@ -179,23 +195,12 @@ ingress:
 ## If the startupProbe fails more than 'failureThreshold' times, the container is restarted.
 ##
 ## @param startupProbe.enabled Enable readinessProbe for notifications container
-## @param startupProbe.enabled Enable startupProbe for the notifications container
-## @param startupProbe.httpGet.path The url path to probe during startup
-## @param startupProbe.httpGet.port The containerPort to probe
-## @param startupProbe.successThreshold Min consecutive successes for probe to be successful
-## @param startupProbe.failureThreshold No. of consecutive failures before the container restarted
-## @param startupProbe.periodSeconds Interval (in seconds) between startup checks
-## @param startupProbe.timeoutSeconds Timeout (in seconds) for each startup check
+##
+## Default is disabled, because Tomee doesn't respond to HTTP requests until ~60s after startup, so
+## pod appears stuck in "ContainerCreating" state
 ##
 startupProbe:
-  enabled: true
-  httpGet:
-    path: /
-    port: 8080
-  periodSeconds: 2
-  timeoutSeconds: 2
-  successThreshold: 1
-  failureThreshold: 75
+  enabled: false
 
 ## Liveness Probe
 ## Periodic probe of container service liveness. If the probe fails, container will be restarted
@@ -241,6 +246,28 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 50
   successThreshold: 1
+
+## Lifecycle hooks to configure on the web api container. Set to null to disable.
+##
+lifecycleHooks:
+  postStart:
+    exec:
+      ## @skip lifecycleHooks.postStart.exec.command initialize the service
+      ## App will not initialize until it receives a request. This means the first user request will
+      ## be slow, because it will include the time to initialize the service. To avoid this, we can
+      #3 use a postStart hook to make a request to the service. Calling /datasetChanges with no
+      ## token returns HTTP 401, but still initializes the service/loads the classes...
+      ##
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initializing app..." >> /tmp/postStart.log
+          until curl -s -o /dev/null http://localhost:8080/notifications/v1/datasetChanges; do
+            echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - waiting for app to initialize..." >> /tmp/postStart.log
+            sleep 1
+          done
+          echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initialization done..." >> /tmp/postStart.log
 
 ## CURRENTLY IGNORED - NEEDS METRICS SERVICE ENABLED ON CLUSTER
 ## This section is for setting up autoscaling. More information can be found here:
@@ -297,14 +324,14 @@ resources:
   requests:
     ## @param resources.requests.cpu CPU requested for the nsconsumer container
     ##
-    cpu: 100m
+    cpu: 500m
     ## @param resources.requests.memory Memory requested for the nsconsumer container
     ##
     memory: 512Mi
   limits:
     ## @param resources.limits.cpu Maximum CPU the nsconsumer container may use
     ##
-    cpu: 500m
+    cpu: 1000m
     ## @param resources.limits.memory Maximum memory the nsconsumer container may use
     ##
     memory: 1Gi
@@ -318,7 +345,7 @@ tomcat:
   ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
   ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
   ##
-  ## (extraCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## (extraCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   extraCatalinaOpts:
@@ -357,7 +384,7 @@ tomcat:
   ##    forwarding from pod:9010 to localhost:9011, expose jmx on pod:9011 and forward from pod:9011
   ##    to localhost:9011)
   ##
-  ## (jmxCatalinaOpts is a yaml list, so each entry must be preceded by a dash (-) and a space. It
+  ## (jmxCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   jmxCatalinaOpts:
@@ -432,7 +459,7 @@ nsconsumer:
   ## from service endpoints (but will not be restarted unless livenessProbe fails)
   ##
   ## @param nsconsumer.readinessProbe.enabled Enable readinessProbe for container
-  ## @param nsconsumer.readinessProbe.initialDelay delay after container start before probing
+  ## @param nsconsumer.readinessProbe.initialDelaySeconds delay after container start before probing
   ## @param nsconsumer.readinessProbe.exec.command checks the consumer's readiness file is <30s old
   ## Optional values:
   ## @param nsconsumer.readinessProbe.periodSeconds Period seconds for readinessProbe
@@ -513,7 +540,7 @@ rmq:
     ##
     hostname: "ns-rmq-4-1-3" # TODO: autopopulate if not provided
 
-    ## @param rmq.rmqConnection.port RMQ amqp port
+    ## @param rmq.rmqConnection.port RMQ AMQP port
     ##
     port: "5672"
 
@@ -556,26 +583,26 @@ rmq:
     ##
     enabled: true
 
-    ## @param rmq.rmqOperator.nameOverride REQUIRED partial override for resourcename used for pods, PVCs etc
-    ## Automatically prepends the release name, so the resulting resource name for the pods etc. will
-    ## begin:  <myrelease>-<rabbitmq.nameOverride>-...
+    ## @param rmq.rmqOperator.nameOverride REQUIRED partial override for resource name used for pods, PVCs etc
+    ## Automatically prepends the release name, so the resulting resource name for the
+    ## pods etc. will begin:  <myrelease>-<rabbitmq.nameOverride>-...
     ##
     ## We change this with every change in RabbitMQ app version, so that we can use a new PV/PVC for
-    ## each release. This means each new installation is a fresh install, instead of being an upgrade,
-    ## which would be a lot more onerous (see rabbitMQ docs).
+    ## each release. This means each new installation is a fresh install, instead of being an
+    ## upgrade, which would be a lot more onerous (see RabbitMQ docs).
     ##
-    ## Convention is to use 'rmq', followed by the rabbitmq app version, with periods replaced by
+    ## Convention is to use 'rmq', followed by the RabbitMQ app version, with periods replaced by
     ## dashes; e.g.:
-    ##  nameOverride: "rmq-4-1-3"  ## for rabbitmq app version 4.1.3
+    ##  nameOverride: "rmq-4-1-3"  ## for RabbitMQ app version 4.1.3
     ##
     nameOverride: "rmq-4-1-3"
 
-    ## @param rmq.rmqOperator.replicaCount Number of desired rabbitmq pods (always use an odd number)
+    ## @param rmq.rmqOperator.replicaCount Number of desired RabbitMQ pods (always use an odd number)
     ## see: https://www.rabbitmq.com/docs/clustering#node-count
     ##
     replicaCount: 1
 
-    ## Resource requests and limits for rabbitmq pods (OVERRIDE THESE!)
+    ## Resource requests and limits for RabbitMQ pods (OVERRIDE THESE!)
     ##
     ## NOTE:
     ##   CPU: For production, the ABSOLUTE MINIMUM is 2 CPUs per RabbitMQ node (and 4 CPUs
@@ -613,7 +640,7 @@ rmq:
       ##
       size: 10Gi
 
-    ## @param rmq.rmqOperator.envConfig Additional rabbitmq environment variable settings
+    ## @param rmq.rmqOperator.envConfig Additional RabbitMQ environment variable settings
     ## See:
     ##   https://www.rabbitmq.com/kubernetes/operator/using-operator#env-config
     ##   https://www.rabbitmq.com/docs/configure#customise-environment
@@ -622,7 +649,7 @@ rmq:
     ##     RABBITMQ_USE_LONGNAME: "true"
     envConfig: {}
 
-    ## Additional rabbitmq configuration settings
+    ## Additional RabbitMQ configuration settings
     ## See:
     ##   https://www.rabbitmq.com/docs/configure#config-items
     ##   https://www.rabbitmq.com/docs/production-checklist
