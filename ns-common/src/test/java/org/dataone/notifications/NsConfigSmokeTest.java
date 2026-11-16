@@ -20,6 +20,6 @@ class NsConfigSmokeTest {
         Configuration cfg = NsConfig.getConfig();
         assertNotNull(cfg, "NsConfig must return a non-null Configuration");
         // check a known key from defaults
-        assertEquals("notifications", cfg.getString("ns.database.name"));
+        assertEquals("notifications_test_db", cfg.getString("ns.database.name"));
     }
 }

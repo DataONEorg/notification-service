@@ -4,6 +4,8 @@
 ############################################
 ##
 ns:
+  api:
+    privateBaseUrl: http://localhost:8080/notifications/v1/private
   auth:
     api:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2

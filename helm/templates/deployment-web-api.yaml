@@ -102,22 +102,11 @@ spec:
             - containerPort: {{ .Values.tomcat.remoteDebugPort }}
               name: jdwp
           {{- end }}
-          {{- if .Values.startupProbe.enabled }}
+          {{- with .Values.lifecycleHooks }}
           lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initializing app..." >> /tmp/postStart.log
-                    # App will not initialize until it receives a request. /datasetChanges call with
-                    # no token returns HTTP 401, but still initializes the service/loads the classes
-                    until curl -s -o /dev/null http://localhost:8080/notifications/v1/datasetChanges; do
-                      echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - waiting for app to initialize..." >> /tmp/postStart.log
-                      sleep 1
-                    done
-                    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') - initialization done..." >> /tmp/postStart.log
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
           startupProbe:
             {{- omit .Values.startupProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}

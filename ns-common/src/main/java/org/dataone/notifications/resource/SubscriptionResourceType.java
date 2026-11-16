@@ -9,8 +9,10 @@ import java.util.stream.Collectors;
  * {@code http://<host-name>:<port>/<context-root>/<REST-uri>/<resource-name> }
  */
 public enum SubscriptionResourceType {
-    datasetChanges, portalMetaChanges, citations;
+    datasetChanges, portalMetaChanges, citations,
     //...add more resource names as needed...
+    // testNoType, testType are for testing only, not for production use:
+    testNoType, testType;
 
     private static final String ALLOWED_VALUES = Arrays.stream(SubscriptionResourceType.values())
         .map(Enum::name)

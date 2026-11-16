@@ -2,11 +2,12 @@ package org.dataone.notifications.api.internal.event;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
+import org.dataone.notifications.event.LastSuccessfulRuntimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +20,6 @@ import jakarta.ws.rs.core.MediaType;
 import org.dataone.notifications.storage.DataRepository;
 
 import org.slf4j.Logger;
-
-import java.time.Instant;
 
 /**
  * A class that provides internal API endpoints for managing private resources. It enables various
@@ -47,54 +46,85 @@ public class PrivateResources {
         this.dataRepository = dataRepository;
     }
 
+    /*
+     * Gets the last successful runtime timestamp and nodeId pairs for a given resourceType.
+     *
+     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds
+     * @return a record containing the last successful runtime timestamp and nodeId pairs for the
+     *         specified resourceType
+     */
     @GET
-    @Path("/lastSuccessfulRuntime/{nodeId}/{resourceType}")
+    @Path("/lastSuccessfulRuntime/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
     public Record getLastRuntime(
-        @NotNull @PathParam("nodeId") String nodeId,
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType
     ){
-        log.debug(
-            "Request to get lastSuccessfulRuntime for nodeId: {}, resourceType: {}",
-            nodeId, resourceType);
-        Instant timestampUtc = dataRepository.getLastSuccessfulRuntime(nodeId, resourceType);
-        if (timestampUtc == null) {
+        log.debug("Request to get last successful source runtimes for resourceType: {}",
+            resourceType);
+        LastSuccessfulRuntimes response = dataRepository.getLastSuccessfulRuntimes(resourceType);
+        if (response == null) {
+            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+            throw new IllegalArgumentException(
+                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
+        }
+        if (response.runtimes().isEmpty()) {
+            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
             throw new NotFoundException(
-                "No lastSuccessfulRuntime found for nodeId: " + nodeId + ", resourceType: "
-                    + resourceType);
+                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
         }
-        log.debug("Got lastSuccessfulRuntime of: {} for nodeId: {}, resourceType: {}",
-                  timestampUtc, nodeId, resourceType);
-        return new NotificationResult(timestampUtc, nodeId, resourceType);
+        log.debug("Got lastSuccessfulRuntime list for resourceType: {}. List: {}",
+                  resourceType, response);
+        return response;
     }
 
+    /// Sets the last successful runtime timestamp and nodeId pairs for a given resourceType.
+    /// ("upserts" the given entries; other nodeIds are unchanged)
+    ///
+    /// Example resulting request:
+    /// ```json
+    ///   PUT /private/lastSuccessfulRuntime/datasetChanges
+    ///   Content-Type: application/json
+    ///   {"runtimes": [
+    ///     {"timestamp": 1794338367000, "nodeId": "urn:node:KNB"},
+    ///     {"timestamp": 1794338379000, "nodeId": "urn:node:ARCTIC"}
+    ///   ]}
+    /// ```
+    ///
+    /// @param runtimes LastSuccessfulRuntimes object containing the last successful runtime
+    ///                 timestamp and nodeId pairs to set for the specified resourceType
+    /// @param resourceType SubscriptionResourceType enum value representing the type of resource
+    ///                     for which to set the runtimes & nodeIds
+    ///
     @PUT
-    @Path("/lastSuccessfulRuntime")
+    @Path("/lastSuccessfulRuntime/{resourceType}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Record setLastRuntime(
-        @NotNull @FormParam("timestamp") Long timestampEpochMillis,
-        @NotNull @FormParam("nodeId") String nodeId,
-        @NotNull @FormParam("resourceType") SubscriptionResourceType resourceType) {
-        log.debug(
-            "Request to set lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
-            timestampEpochMillis, nodeId, resourceType);
-        Instant timestampUtc = Instant.ofEpochMilli(timestampEpochMillis);
-        validateTimestamp(timestampUtc);
-        dataRepository.setLastSuccessfulRuntime(timestampUtc, nodeId, resourceType);
-        log.debug(
-            "Updated lastSuccessfulRuntime to timestamp: {}; nodeId: {}, resourceType: {}",
-            timestampEpochMillis, nodeId, resourceType);
-        return new NotificationResult(timestampUtc, nodeId, resourceType);
+    public void setLastRuntime(
+        @NotNull LastSuccessfulRuntimes runtimes,
+        @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType) {
+        log.debug("Request to set lastSuccessfulRuntimes for resourceType: {} to: {}",
+                  resourceType, runtimes);
+        if (runtimes == null) {
+            throw new BadRequestException("Request body is required");
+        }
+        for (LastSuccessfulRuntimes.Entry entry : runtimes.runtimes()) {
+            if (entry.timestamp() == null || entry.nodeId() == null || entry.nodeId().isBlank()) {
+                throw new BadRequestException(
+                    "Each entry requires a timestamp and nodeId: " + entry);
+            }
+            validateTimestamp(entry.timestamp());
+        }
+        dataRepository.setLastSuccessfulRuntimes(resourceType, runtimes);
+        log.debug("Updated lastSuccessfulRuntimes for resourceType: {} to: {}",
+                  resourceType, runtimes);
     }
 
-    private void validateTimestamp(Instant timestampUtc) {
-        if (timestampUtc.isAfter(Instant.now().plusSeconds(60))      // allow for clock skew
-            || timestampUtc.isBefore(Instant.now().minusSeconds(SEVEN_DAYS_IN_SECONDS))) {
-            throw new BadRequestException("timestamp out of range: " + timestampUtc.toEpochMilli());
+    private void validateTimestamp(long timestampMillis) {
+        long nowMillis = System.currentTimeMillis();
+        if (timestampMillis > nowMillis + 60_000                      // allow for clock skew
+            || timestampMillis < nowMillis - SEVEN_DAYS_IN_SECONDS * 1000L) {
+            throw new BadRequestException("timestamp out of range: " + timestampMillis);
         }
     }
 
-    public record NotificationResult(Instant timestampEpochMillis,
-                                     String nodeId, SubscriptionResourceType resourceType) {
-    }
 }
