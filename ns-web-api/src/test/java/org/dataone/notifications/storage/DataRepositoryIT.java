@@ -8,7 +8,7 @@ import org.dataone.notifications.util.DbTestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ class DataRepositoryIT {
         new Subscription(
             EXPECTED_SUBJECT, SubscriptionResourceType.datasetChanges,
                          List.of(EXPECTED_PID));
-    private static PostgreSQLContainer<?> pg;
+    private static PostgreSQLContainer pg;
     private static DataRepository dataRepo;
 
     @BeforeAll

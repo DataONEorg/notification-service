@@ -19,7 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -63,7 +63,7 @@ class ApiClientIT extends JerseyTest {
     private static final String DATASETS = URI_PREFIX + SubscriptionResourceType.datasetChanges + "/";
 
     private static SubscriptionResource subscriptionResource;
-    private static PostgreSQLContainer<?> pg;
+    private static PostgreSQLContainer pg;
 
     @BeforeAll
     static void oneTimeSetUp() throws Exception {
