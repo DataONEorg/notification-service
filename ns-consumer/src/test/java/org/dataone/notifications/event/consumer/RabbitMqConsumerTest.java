@@ -17,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,6 +42,12 @@ class RabbitMqConsumerTest {
 
     private RabbitMqConsumer consumer;
 
+    private static Delivery delivery() {
+        return new Delivery(
+            new Envelope(DELIVERY_TAG, false, "", QUEUE_NAME), new AMQP.BasicProperties(),
+            new byte[0]);
+    }
+
     @BeforeEach
     void setUp() {
         consumer = new RabbitMqConsumer(QUEUE_NAME, processor, connection);
@@ -54,31 +59,31 @@ class RabbitMqConsumerTest {
         consumer.start();
 
         ArgumentCaptor<DeliverCallback> callback = ArgumentCaptor.forClass(DeliverCallback.class);
-        verify(channel).basicConsume(eq(QUEUE_NAME), eq(false), callback.capture(),
-            any(CancelCallback.class));
+        verify(channel).basicConsume(
+            eq(QUEUE_NAME), eq(false), callback.capture(), any(CancelCallback.class));
 
         Delivery delivery = delivery();
         callback.getValue().handle("consumer-tag", delivery);
 
-        verify(processor).process(delivery);
+        verify(processor).process(new String(delivery.getBody()));
         verify(channel).basicAck(DELIVERY_TAG, false);
     }
 
     @Test
     void startAcknowledgesMessageWhenProcessingFails() throws Exception {
         when(connection.newChannel()).thenReturn(channel);
-        doThrow(new IllegalStateException("processing failed"))
-            .when(processor).process(any(Delivery.class));
+        doThrow(new IllegalStateException("processing failed")).when(processor)
+            .process(any(String.class));
         consumer.start();
 
         ArgumentCaptor<DeliverCallback> callback = ArgumentCaptor.forClass(DeliverCallback.class);
-        verify(channel).basicConsume(eq(QUEUE_NAME), eq(false), callback.capture(),
-            any(CancelCallback.class));
+        verify(channel).basicConsume(
+            eq(QUEUE_NAME), eq(false), callback.capture(), any(CancelCallback.class));
 
         Delivery delivery = delivery();
         callback.getValue().handle("consumer-tag", delivery);
 
-        verify(processor).process(delivery);
+        verify(processor).process(new String(delivery.getBody()));
         verify(channel).basicAck(DELIVERY_TAG, false);
     }
 
@@ -90,8 +95,8 @@ class RabbitMqConsumerTest {
         consumer.start();
 
         verify(connection).newChannel();
-        verify(channel).basicConsume(eq(QUEUE_NAME), eq(false), any(DeliverCallback.class),
-            any(CancelCallback.class));
+        verify(channel).basicConsume(
+            eq(QUEUE_NAME), eq(false), any(DeliverCallback.class), any(CancelCallback.class));
         verifyNoMoreInteractions(connection, channel);
     }
 
@@ -123,45 +128,34 @@ class RabbitMqConsumerTest {
 
     @Test
     void startFailureWhenQueueNameNullOrBlank() {
-        consumer = new RabbitMqConsumer(null, processor, connection);
-        IllegalStateException error1 =
-            assertThrows(IllegalStateException.class, () -> consumer.start());
-        assertEquals("Failed to start consumer", error1.getMessage());
-        assertInstanceOf(IllegalStateException.class, error1.getCause());
-        assertEquals("RabbitMqConsumer queue name not provided", error1.getCause().getMessage());
+        IllegalStateException error = assertThrows(
+            IllegalStateException.class, () -> new RabbitMqConsumer(null, processor, connection));
+        assertEquals(
+            "RabbitMqConsumer connection {connection}, processor {processor}, or queue name "
+                + "{null} invalid", error.getMessage());
 
-        consumer = new RabbitMqConsumer(" ", processor, connection);
-        IllegalStateException error2 =
-            assertThrows(IllegalStateException.class, () -> consumer.start());
-        assertEquals("Failed to start consumer", error2.getMessage());
-        assertInstanceOf(IllegalStateException.class, error2.getCause());
-        assertEquals("RabbitMqConsumer queue name not provided", error2.getCause().getMessage());
+        IllegalStateException error2 = assertThrows(
+            IllegalStateException.class, () -> new RabbitMqConsumer(" ", processor, connection));
+        assertEquals(
+            "RabbitMqConsumer connection {connection}, processor {processor}, or queue name "
+                + "{ } invalid", error2.getMessage());
     }
 
     @Test
     void startFailureWhenProcessorNull() {
-        consumer = new RabbitMqConsumer(QUEUE_NAME, null, connection);
-        IllegalStateException error =
-            assertThrows(IllegalStateException.class, () -> consumer.start());
-        assertEquals("Failed to start consumer", error.getMessage());
-        assertInstanceOf(IllegalStateException.class, error.getCause());
-        assertEquals("RabbitMqConsumer processor is null", error.getCause().getMessage());
+        IllegalStateException error = assertThrows(
+            IllegalStateException.class, () -> new RabbitMqConsumer(QUEUE_NAME, null, connection));
+        assertEquals(
+            "RabbitMqConsumer connection {connection}, processor {null}, or queue name "
+                + "{notifications} invalid", error.getMessage());
     }
 
     @Test
     void startFailureWhenConnectionNull() {
-        consumer = new RabbitMqConsumer(QUEUE_NAME, processor, null);
-        IllegalStateException error =
-            assertThrows(IllegalStateException.class, () -> consumer.start());
-        assertEquals("Failed to start consumer", error.getMessage());
-        assertInstanceOf(IllegalStateException.class, error.getCause());
-        assertEquals("RabbitMqConnection is null", error.getCause().getMessage());
-    }
-
-    private static Delivery delivery() {
-        return new Delivery(
-            new Envelope(DELIVERY_TAG, false, "", QUEUE_NAME),
-            new AMQP.BasicProperties(),
-            new byte[0]);
+        IllegalStateException error = assertThrows(
+            IllegalStateException.class, () -> new RabbitMqConsumer(QUEUE_NAME, processor, null));
+        assertEquals(
+            "RabbitMqConsumer connection {null}, processor {processor}, or queue name "
+                + "{notifications} invalid", error.getMessage());
     }
 }

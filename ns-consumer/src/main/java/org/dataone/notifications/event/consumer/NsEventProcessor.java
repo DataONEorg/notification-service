@@ -1,6 +1,5 @@
 package org.dataone.notifications.event.consumer;
 
-import com.rabbitmq.client.Delivery;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.event.NsEventMessage.NsEvent;
 import org.dataone.notifications.event.notifier.NotificationListener;
@@ -10,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,10 +44,8 @@ public class NsEventProcessor {
         }
     }
 
-    public void process(Delivery delivery) {
+    public void process(String body) {
 
-        String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
-        log.trace("Message body: {}", body);
         NsEvent event = mapper.readValue(body, NsEventMessage.class).nsEvent();
         String response = null;
         for (NotificationListener listener : listeners) {

@@ -5,13 +5,13 @@ import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +27,13 @@ public class RabbitMqConsumer {
     private RabbitMqConnection connection;
     private Channel channel;
 
-    RabbitMqConsumer(
-        String queueName, NsEventProcessor processor, RabbitMqConnection connection) {
+    RabbitMqConsumer(String queueName, NsEventProcessor processor, RabbitMqConnection connection) throws IllegalStateException {
 
+        if (connection == null | processor == null | queueName == null || queueName.isBlank()) {
+            throw new IllegalStateException(
+                "RabbitMqConsumer connection {" + connection + "}, processor {" + processor
+                    + "}, or queue name {" + queueName + "} invalid");
+        }
         this.queueName = queueName;
         this.processor = processor;
         this.connection = connection;
@@ -44,7 +48,7 @@ public class RabbitMqConsumer {
      *             implementations. These listeners encapsulate the logic for handling notifications
      *             based on the consumed messages (e.g. see
      *             {@link org.dataone.notifications.event.notifier.channel.EmailNotifier}).
-     * @throws IOException If an I/O error occurs during consumer startup.
+     * @throws IOException      If an I/O error occurs during consumer startup.
      * @throws TimeoutException If a timeout occurs while establishing the RabbitMQ connection.
      */
     static void main(String[] args) throws IOException, TimeoutException {
@@ -88,11 +92,11 @@ public class RabbitMqConsumer {
         }
         log.info("Starting RabbitMqConsumer for queue {}", queueName);
         try {
-            validateResources();
             final Channel ch = connection.newChannel();
             channel = ch;
             DeliverCallback callback = (_, delivery) -> handleDelivery(ch, delivery);
-            ch.basicConsume(queueName, false, callback,
+            ch.basicConsume(
+                queueName, false, callback,
                 consumerTag -> log.warn("Consumer {} cancelled by broker", consumerTag));
             log.info("Consuming messages from queue {}", queueName);
         } catch (Exception e) {
@@ -102,29 +106,21 @@ public class RabbitMqConsumer {
         }
     }
 
-    private void validateResources() throws IllegalStateException {
-        if (connection == null) {
-            throw new IllegalStateException("RabbitMqConnection is null");
-        }
-        if (processor == null) {
-            throw new IllegalStateException("RabbitMqConsumer processor is null");
-        }
-        if (queueName == null || queueName.isBlank()) {
-            throw new IllegalStateException("RabbitMqConsumer queue name not provided");
-        }
-    }
-
     private void handleDelivery(Channel channel, Delivery delivery) throws IOException {
+
         long tag = delivery.getEnvelope().getDeliveryTag();
+        String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
+        log.trace("Received message body: {}", body);
         try {
-            processor.process(delivery);
+            processor.process(body);
             channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("Failed to process message. Failed messages are not re-queued. ", e);
-            // Disabling the requeue here to avoid bad messages holding up the queue forever:
-            //     channel.basicNack(tag, false, true);    // (deliveryTag, multiple?, requeue?)
+            log.error("Failed to process message with tag {}. Failed messages are not re-queued."
+                + " body was: {}", tag, body, e);
+            // Disabling the requeue to avoid bad messages holding up the queue for ever:
+            //   channel.basicNack(tag, false, true);    // basicNack(tag, multiple?, requeue?)
             // TODO: could eventually add a dead letter queue? Or some other type of operator
-            //  alerting. For now, not priority, since this is not mission critical.
+            //  alerting. Not a priority for now, since this is not mission critical.
             channel.basicAck(tag, false);
         }
     }
