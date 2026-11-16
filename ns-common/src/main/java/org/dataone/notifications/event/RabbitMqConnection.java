@@ -25,7 +25,7 @@ import java.util.function.BooleanSupplier;
 public class RabbitMqConnection {
     private final Logger log = LoggerFactory.getLogger(RabbitMqConnection.class);
     private final Path healthProbeFile = Paths.get("/tmp/rmq-consumer-readiness");
-    private final long healthPollIntervalSeconds = 15L;
+    protected final long healthPollIntervalSeconds = 15L;
     private final RabbitMqProperties properties;
     private ScheduledExecutorService healthScheduler;
     // inlined connection management that was previously in RabbitMqConnectionManager
@@ -37,8 +37,8 @@ public class RabbitMqConnection {
      * @throws TimeoutException
      */
     public RabbitMqConnection(RabbitMqProperties properties) throws IOException, TimeoutException {
-        connection = createConnection();
         this.properties = properties;
+        connection = createConnection();
         if (properties == null) {
             throw new IllegalArgumentException("RabbitMqProperties cannot be null");
         }
