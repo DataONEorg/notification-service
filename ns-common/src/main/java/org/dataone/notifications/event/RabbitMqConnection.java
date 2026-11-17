@@ -33,8 +33,8 @@ public class RabbitMqConnection {
 
     /**
      * Constructor of the class
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws IOException when the connection cannot be established
+     * @throws TimeoutException when the connection times out
      */
     public RabbitMqConnection(RabbitMqProperties properties) throws IOException, TimeoutException {
         this.properties = properties;
@@ -100,10 +100,10 @@ public class RabbitMqConnection {
 
     /**
      * Close the connection
-     * @throws IOException
+     * @throws IOException when the connection cannot be closed
      */
     public void close() throws IOException {
-        if (connection != null) {
+        if (connection != null && connection.isOpen()) {
             connection.close();
         }
     }

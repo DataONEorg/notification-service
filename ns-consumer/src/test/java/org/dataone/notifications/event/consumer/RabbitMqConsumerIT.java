@@ -35,12 +35,13 @@ class RabbitMqConsumerIT {
             rabbit.getHost(), rabbit.getAmqpPort(), rabbit.getAdminUsername(),
             rabbit.getAdminPassword(), "/", QUEUE_NAME, 10);
         RabbitMqConnection connection = new RabbitMqConnection(props);
-        NsEventProcessor processor = new NsEventProcessor(
-            new String[] {RecordingListener.class.getName()});
+        NsEventProcessor processor =
+            new NsEventProcessor(new String[]{RecordingListener.class.getName()});
         RabbitMqConsumer consumer = new RabbitMqConsumer(QUEUE_NAME, processor, connection);
 
         NsEvent event = new NsEvent(
-            "subscriber-1", "subscribed-pid", "new-pid", SubscriptionResourceType.datasetChanges);
+            "subscriber-1", "subscribed-pid", "new-pid",
+            SubscriptionResourceType.datasetChanges);
         byte[] body = new ObjectMapper().writeValueAsBytes(new NsEventMessage(event));
 
         try {
@@ -52,10 +53,12 @@ class RabbitMqConsumerIT {
 
             consumer.start();
 
-            assertEquals(event, receivedEvents.poll(10, TimeUnit.SECONDS),
+            assertEquals(
+                event, receivedEvents.poll(10, TimeUnit.SECONDS),
                 "the listener should receive the published event");
         } finally {
             consumer.close();
+            connection.close();
         }
     }
 
