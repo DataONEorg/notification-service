@@ -44,19 +44,6 @@ nsconsumer:
     auth:
       existingSecret: "mailpit-auth"
 
-    ## After applying the above, add this entry to /etc/hosts file:
-    ##
-    ##   $ echo "127.0.0.1    notifications.local" | sudo tee -a /etc/hosts
-    ##
-    ## Now you can access the notifications service at:
-    ##   http://notifications.local/notifications/metrics/ping
-    accountSvc:
-      ## @param nsconsumer.email.accountSvc.url The full URL for querying the account service API
-      ## in order to obtain the email address for a given subject. This is typically the CN account
-      ## service API, and includes the ?query= parameter; e.g.
-      ##   url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
-      ##
-      url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
 rmq:
   rmqOperator:
     persistence:

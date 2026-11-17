@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Processor invoked after a RabbitMQ message is consumed.
@@ -24,8 +26,8 @@ public class NsEventProcessor {
 
         if (listenerClassNames == null || listenerClassNames.length == 0) {
             throw new IllegalArgumentException(
-                "No NotificationListener classnames provided. These must be passed to the "
-                    + "RabbitMqConsumer.main() method as command-line arguments "
+                "At least one NotificationListener classname is required. Classnames must be "
+                    + "passed to the RabbitMqConsumer.main() method as command-line arguments "
                     + "- e.g. org.dataone.notifications.event.notifier.channel.EmailNotifier");
         }
         for (String className : listenerClassNames) {
@@ -47,15 +49,20 @@ public class NsEventProcessor {
     public void process(String body) {
 
         NsEvent event = mapper.readValue(body, NsEventMessage.class).nsEvent();
-        String response = null;
+        Map<String, String> responses = new HashMap<>();
         for (NotificationListener listener : listeners) {
             try {
-                response = listener.handleNotification(event);
+                responses.put(listener.getClass().getName(), listener.handleNotification(event));
             } catch (UnsupportedResourceTypeException e) {
-                log.error("Unsupported resource type: {}", e.getMessage());
+                log.error("NotificationListener {}: UnsupportedResourceTypeException: {}",
+                          listener.getClass().getName(), e.getMessage());
             } catch (NotificationDeliveryException e) {
-                log.error("Notification delivery failed: {}", e.getMessage());
+                log.error("NotificationListener {}: Notification delivery failed: {}",
+                          listener.getClass().getName(), e.getMessage());
             }
+        }
+        for (Map.Entry<String, String> entry : responses.entrySet()) {
+            log.debug("NsEventProcessor: Notified {} via {}", entry.getValue(), entry.getKey());
         }
     }
 }

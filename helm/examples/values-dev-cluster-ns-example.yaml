@@ -71,13 +71,6 @@ nsconsumer:
       # create it manually or via some other chart. The mailpit chart creates it automatically,
       # and then you can just supply the name.
       existingSecret: "nsmailpit-auth"
-    accountSvc:
-      ## @param nsconsumer.email.accountSvc.url The full URL for querying the account service API
-      ## in order to obtain the email address for a given subject. This is typically the CN account
-      ## service API, and includes the ?query= parameter; e.g.
-      ##   url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
-      ##
-      url: https://cn-sandbox.test.dataone.org/cn/v2/accounts?query=
 
 rmq:
   rmqOperator:

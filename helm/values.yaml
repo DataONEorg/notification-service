@@ -523,9 +523,10 @@ nsconsumer:
     accountSvc:
       ## @param nsconsumer.email.accountSvc.url The full URL for querying the account service API
       ## in order to obtain the email address for a given subject. This is typically the CN account
-      ## service API.
+      ## service API, and does NOT include a trailing slash; e.g:
+      ##   url: https://cn-sandbox.test.dataone.org/cn/v2/accounts
       ##
-      url: https://cn.dataone.org/cn/v2/account
+      url: https://cn.dataone.org/cn/v2/accounts
 
       ## @param nsconsumer.email.accountSvc.userAgent User-Agent string to use for requests to API
       ##
