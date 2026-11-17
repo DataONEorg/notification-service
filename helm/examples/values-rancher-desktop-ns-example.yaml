@@ -38,12 +38,15 @@ nsconsumer:
   image:
     tag: LOCAL
     pullPolicy: Never
-  email:
-    host: mailpit
-    port: 1025
-    auth:
-      existingSecret: "mailpit-auth"
 
+  notifiers:
+    email:
+      host: mailpit
+      port: 1025
+      auth:
+        existingSecret: "mailpit-auth"
+      accountSvc:
+        existingSecret: "ns-account-svc-token"
 rmq:
   rmqOperator:
     persistence:

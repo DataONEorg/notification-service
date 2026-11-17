@@ -23,10 +23,15 @@ ns:
       virtualHost: {{ default "/" .Values.rmq.rmqConnection.virtualHost | quote }}
       queueName: {{ required "rmq.rmqConnection.queueName IS REQUIRED" .Values.rmq.rmqConnection.queueName }}
       prefetchCount: {{ default 25 .Values.rmq.rmqConnection.prefetchCount | quote }}
-    email:
-      host: {{ required "email.host IS REQUIRED" .Values.nsconsumer.email.host }}
-      port: {{ .Values.nsconsumer.email.port | default 1025 }}
-    accountSvc:
-      url: {{ .Values.nsconsumer.email.accountSvc.url | default "https://cn-sandbox.test.dataone.org/cn/v2/accounts" }}
-      userAgent: {{ .Values.nsconsumer.email.accountSvc.userAgent | default "DataONE notification-service/1.0" }}
-      connectTimeoutSec: {{ .Values.nsconsumer.email.accountSvc.connectTimeoutSec | default "10" }}
+    notifiers:
+      email:
+        className: {{ .Values.nsconsumer.notifiers.email.className }}
+        host: {{ .Values.nsconsumer.notifiers.email.host | default "localhost" }}
+        port: {{ .Values.nsconsumer.notifiers.email.port | default 1025 }}
+        fromName: {{ .Values.nsconsumer.notifiers.email.fromName | default "DataONE Notification Service" }}
+        fromAddress: {{ .Values.nsconsumer.notifiers.email.fromAddress | default "do-not-reply@dataone.org" }}
+        subject: {{ .Values.nsconsumer.notifiers.email.subject | default "DataONE Notification" }}
+        accountSvc:
+          url: {{ .Values.nsconsumer.notifiers.email.accountSvc.url }}
+          userAgent: {{ .Values.nsconsumer.notifiers.email.accountSvc.userAgent }}
+          connectTimeoutSec: {{ .Values.nsconsumer.notifiers.email.accountSvc.connectTimeoutSec }}

@@ -52,17 +52,25 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key:  {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
-          {{- $emailAuthSecret :=  required "nsconsumer.email.auth.existingSecret IS REQUIRED" .Values.nsconsumer.email.auth.existingSecret }}
+          {{- $emailAuthSecret :=  required "nsconsumer.email.auth.existingSecret IS REQUIRED"
+          .Values.nsconsumer.notifiers.email.auth.existingSecret }}
             - name: EMAIL_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ $emailAuthSecret }}
-                  key: username
+                  key: {{ .Values.nsconsumer.notifiers.email.auth.usernameKey | default "username" }}
             - name: EMAIL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $emailAuthSecret }}
-                  key: password
+                  key: {{ .Values.nsconsumer.notifiers.email.auth.passwordKey | default "password" }}
+          {{- $acctSvcTokenSecret :=  required "nsconsumer.notifiers.email.accountSvc.existingSecret IS REQUIRED"
+          .Values.nsconsumer.notifiers.email.accountSvc.existingSecret }}
+            - name: ACCOUNT_SERVICE_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $acctSvcTokenSecret }}
+                  key: token
             {{- range $k, $v := .Values.nsconsumer.extraEnvVars }}
             - name: {{ $k }}
               value: {{ $v | quote }}

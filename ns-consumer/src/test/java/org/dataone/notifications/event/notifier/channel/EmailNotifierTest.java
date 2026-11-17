@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.net.URI;
@@ -46,6 +47,9 @@ class EmailNotifierTest {
 
     private static final String ORCID = "https://orcid.org/0000-0001-2345-6789";
     private static final String EMAIL = "person@example.org";
+    private static final String FROM_ADDRESS = "no-reply@test.dataone.org";
+    private static final String FROM_NAME = "DataONE Test Notifications";
+    private static final String SUBJECT = "DataONE Test Notification";
     private static final String ACCOUNT_SERVICE_URL = "https://accounts.example.org/subjects";
 
     @Mock
@@ -57,13 +61,33 @@ class EmailNotifierTest {
 
     private EmailNotifier notifier;
 
+    private static NsEvent event() {
+        return new NsEvent(
+            ORCID, "subscribed-pid", "new-pid",
+                           SubscriptionResourceType.datasetChanges);
+    }
+
+    private static String subjectInfo(String subject, String email) {
+        return "<subjectInfo><person><subject>" + subject + "</subject><email>" + email
+            + "</email></person></subjectInfo>";
+    }
+
     @BeforeEach
-    void setUp() {
-        lenient().when(config.getInt("ns.messaging.accountSvc.connectTimeoutSec", 10))
+    void setUp() throws Exception {
+        lenient()
+            .when(config.getInt("ns.messaging.notifiers.email.accountSvc.connectTimeoutSec", 10))
             .thenReturn(10);
-        when(config.getString("ns.messaging.email.host")).thenReturn("smtp.example.org");
-        when(config.getString("ns.messaging.email.port", "1025")).thenReturn("1025");
-        when(config.getString("ns.messaging.accountSvc.url")).thenReturn(ACCOUNT_SERVICE_URL);
+        when(config.getString("ns.messaging.notifiers.email.host")).thenReturn("smtp.example.org");
+        when(config.getString("ns.messaging.notifiers.email.port", "1025")).thenReturn("1025");
+        when(config.getString("ns.messaging.notifiers.email.accountSvc.url")).thenReturn(
+            ACCOUNT_SERVICE_URL);
+        when(config.getString("ns.messaging.notifiers.email.fromAddress")).thenReturn(FROM_ADDRESS);
+        when(config.getString("ns.messaging.notifiers.email.fromName")).thenReturn(FROM_NAME);
+        when(config.getString("ns.messaging.notifiers.email.subject")).thenReturn(SUBJECT);
+        EnvironmentVariables env = new EnvironmentVariables(
+            "ACCOUNT_SERVICE_BEARER_TOKEN", "myJwtToken", "EMAIL_USERNAME", "testUser",
+            "EMAIL_PASSWORD", "testPassword");
+        env.setup();
         try (MockedStatic<NsConfig> nsConfig = mockStatic(NsConfig.class)) {
             nsConfig.when(NsConfig::getConfig).thenReturn(config);
             notifier = new EmailNotifier(client);
@@ -71,13 +95,11 @@ class EmailNotifierTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
-        "' http://orcid.org/0000-0123-4567-890X ', orcid.org/0000-0123-4567-890X",
+    @CsvSource({"' http://orcid.org/0000-0123-4567-890X ', orcid.org/0000-0123-4567-890X",
         "' https://orcid.org/0000-0123-4567-890X ', orcid.org/0000-0123-4567-890X",
         "' orcid.org/0000-0123-4567-890X ', orcid.org/0000-0123-4567-890X",
         "'ftp://orcid.org/0000-0123-4567-890X', ftp://orcid.org/0000-0123-4567-890X",
-        "'HTTP://orcid.org/0000-0123-4567-890X', HTTP://orcid.org/0000-0123-4567-890X"
-    })
+        "'HTTP://orcid.org/0000-0123-4567-890X', HTTP://orcid.org/0000-0123-4567-890X"})
     void stripSchemeRemovesOnlyLeadingHttpSchemes(String subject, String expected) {
         assertEquals(expected, EmailNotifier.stripScheme(subject));
     }
@@ -85,14 +107,14 @@ class EmailNotifierTest {
     @Test
     void extractEmailFindsMatchingPersonAndTrimsFirstEmail() throws Exception {
         String xml = """
-            <subjectInfo>
-              <person><email>no-subject@example.org</email></person>
-              <person><subject>https://orcid.org/other</subject><email>other@example.org</email></person>
-              <person><subject> http://orcid.org/0000-0001-2345-6789 </subject>
-                <email> person@example.org </email><email>second@example.org</email>
-              </person>
-            </subjectInfo>
-            """;
+                     <subjectInfo>
+                       <person><email>no-subject@example.org</email></person>
+                       <person><subject>https://orcid.org/other</subject><email>other@example.org</email></person>
+                       <person><subject> http://orcid.org/0000-0001-2345-6789 </subject>
+                         <email> person@example.org </email><email>second@example.org</email>
+                       </person>
+                     </subjectInfo>
+                     """;
 
         assertEquals(EMAIL, EmailNotifier.extractEmail(xml, " " + ORCID + " "));
     }
@@ -100,33 +122,32 @@ class EmailNotifierTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "<email>   </email>"})
     void extractEmailRejectsMissingOrBlankEmail(String emailElement) {
-        String xml = "<subjectInfo><person><subject>" + ORCID + "</subject>"
-            + emailElement + "</person></subjectInfo>";
+        String xml = "<subjectInfo><person><subject>" + ORCID + "</subject>" + emailElement
+            + "</person></subjectInfo>";
 
-        IOException error = assertThrows(IOException.class,
-            () -> EmailNotifier.extractEmail(xml, ORCID));
+        IOException error =
+            assertThrows(IOException.class, () -> EmailNotifier.extractEmail(xml, ORCID));
         assertTrue(error.getMessage().contains("No email found for " + ORCID));
     }
 
     @Test
     void extractEmailRejectsUnmatchedPerson() {
-        String xml = "<subjectInfo><person><subject>" + ORCID
-            + "-different</subject><email>" + EMAIL + "</email></person></subjectInfo>";
+        String xml =
+            "<subjectInfo><person><subject>" + ORCID + "-different</subject><email>" + EMAIL
+                + "</email></person></subjectInfo>";
 
-        IOException error = assertThrows(IOException.class,
-            () -> EmailNotifier.extractEmail(xml, ORCID));
+        IOException error =
+            assertThrows(IOException.class, () -> EmailNotifier.extractEmail(xml, ORCID));
         assertTrue(error.getMessage().contains("No person matching " + ORCID));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-        "<subjectInfo>",
+    @ValueSource(strings = {"<subjectInfo>",
         "<!DOCTYPE subjectInfo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'>]>"
-            + "<subjectInfo>&xxe;</subjectInfo>"
-    })
+            + "<subjectInfo>&xxe;</subjectInfo>"})
     void extractEmailRejectsMalformedXmlAndDoctype(String xml) {
-        IOException error = assertThrows(IOException.class,
-            () -> EmailNotifier.extractEmail(xml, ORCID));
+        IOException error =
+            assertThrows(IOException.class, () -> EmailNotifier.extractEmail(xml, ORCID));
         assertTrue(error.getMessage().contains("Unable to parse Account Service response"));
         assertInstanceOf(org.xml.sax.SAXException.class, error.getCause());
     }
@@ -134,8 +155,8 @@ class EmailNotifierTest {
     @Test
     void getEmailForOrcidEncodesSubscriberAndReturnsAddress() throws Exception {
         String subscriber = ORCID + " a+b";
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-            .thenReturn(response);
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(
+            response);
         when(response.statusCode()).thenReturn(200);
         when(response.body()).thenReturn(subjectInfo(subscriber, EMAIL));
 
@@ -143,18 +164,20 @@ class EmailNotifierTest {
 
         ArgumentCaptor<HttpRequest> request = ArgumentCaptor.forClass(HttpRequest.class);
         verify(client).send(request.capture(), any(HttpResponse.BodyHandler.class));
-        assertEquals(URI.create(ACCOUNT_SERVICE_URL
-            + "/https%3A%2F%2Forcid.org%2F0000-0001-2345-6789%20a%2Bb"),
+        assertEquals(
+            URI.create(
+                ACCOUNT_SERVICE_URL + "/https%3A%2F%2Forcid.org%2F0000-0001-2345-6789%20a%2Bb"),
             request.getValue().uri());
         assertEquals("GET", request.getValue().method());
-        assertEquals("application/xml", request.getValue().headers().firstValue("Accept").orElseThrow());
+        assertEquals(
+            "application/xml", request.getValue().headers().firstValue("Accept").orElseThrow());
         assertTrue(request.getValue().timeout().isPresent());
     }
 
     @Test
     void getEmailForOrcidRejectsUnsuccessfulResponse() throws Exception {
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-            .thenReturn(response);
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(
+            response);
         when(response.statusCode()).thenReturn(503);
         when(response.body()).thenReturn("unavailable");
 
@@ -165,8 +188,8 @@ class EmailNotifierTest {
     @Test
     void getEmailForOrcidPropagatesIoFailure() throws Exception {
         IOException cause = new IOException("connection failed");
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-            .thenThrow(cause);
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(
+            cause);
 
         assertSame(cause, assertThrows(IOException.class, () -> notifier.getEmailForOrcid(ORCID)));
     }
@@ -174,11 +197,12 @@ class EmailNotifierTest {
     @Test
     void getEmailForOrcidRestoresInterruptedStatus() throws Exception {
         InterruptedException cause = new InterruptedException("interrupted");
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-            .thenThrow(cause);
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(
+            cause);
 
         try {
-            IOException error = assertThrows(IOException.class, () -> notifier.getEmailForOrcid(ORCID));
+            IOException error =
+                assertThrows(IOException.class, () -> notifier.getEmailForOrcid(ORCID));
             assertSame(cause, error.getCause());
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
@@ -198,9 +222,12 @@ class EmailNotifierTest {
             ArgumentCaptor<Message> message = ArgumentCaptor.forClass(Message.class);
             transport.verify(() -> Transport.send(message.capture()));
             MimeMessage sent = (MimeMessage) message.getValue();
-            assertEquals(EMAIL, ((InternetAddress) sent.getRecipients(Message.RecipientType.TO)[0]).getAddress());
-            assertEquals("noreply@myapp.test", ((InternetAddress) sent.getFrom()[0]).getAddress());
-            assertEquals("DataONE Event Notification", sent.getSubject());
+            assertEquals(
+                EMAIL, ((InternetAddress) sent.getRecipients(
+                    Message.RecipientType.TO)[0]).getAddress());
+            assertEquals(FROM_ADDRESS, ((InternetAddress) sent.getFrom()[0]).getAddress());
+            assertEquals(FROM_NAME, ((InternetAddress) sent.getFrom()[0]).getPersonal());
+            assertEquals(SUBJECT, sent.getSubject());
             assertTrue(sent.getContent().toString().contains("datasetChanges"));
             assertTrue(sent.getContent().toString().contains("subscribed-pid"));
             assertTrue(sent.getContent().toString().contains("new-pid"));
@@ -215,8 +242,10 @@ class EmailNotifierTest {
         doThrow(cause).when(spy).getEmailForOrcid(ORCID);
 
         try (MockedStatic<Transport> transport = mockStatic(Transport.class)) {
-            NotificationDeliveryException error = assertThrows(NotificationDeliveryException.class,
-                () -> spy.handleNotification(event()));
+            NotificationDeliveryException error = assertThrows(
+                NotificationDeliveryException.class,
+                () -> spy.handleNotification(
+                    event()));
             assertSame(cause, error.getCause());
             transport.verifyNoInteractions();
         }
@@ -230,20 +259,12 @@ class EmailNotifierTest {
 
         try (MockedStatic<Transport> transport = mockStatic(Transport.class)) {
             transport.when(() -> Transport.send(any(Message.class))).thenThrow(cause);
-            NotificationDeliveryException error = assertThrows(NotificationDeliveryException.class,
-                () -> spy.handleNotification(event()));
+            NotificationDeliveryException error = assertThrows(
+                NotificationDeliveryException.class,
+                () -> spy.handleNotification(
+                    event()));
             assertSame(cause, error.getCause());
             assertTrue(error.getMessage().contains(EMAIL));
         }
-    }
-
-    private static NsEvent event() {
-        return new NsEvent(ORCID, "subscribed-pid", "new-pid",
-            SubscriptionResourceType.datasetChanges);
-    }
-
-    private static String subjectInfo(String subject, String email) {
-        return "<subjectInfo><person><subject>" + subject + "</subject><email>" + email
-            + "</email></person></subjectInfo>";
     }
 }

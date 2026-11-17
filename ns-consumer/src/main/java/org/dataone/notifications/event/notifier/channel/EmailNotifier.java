@@ -10,6 +10,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -39,24 +40,27 @@ import org.xml.sax.SAXException;
 @Default
 public class EmailNotifier implements NotificationListener {
     private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
-    private static final Duration AS_HTTP_TIMEOUT_SEC = Duration.ofSeconds(
-        NsConfig.getConfig().getInt("ns.messaging.accountSvc.connectTimeoutSec", 10));
-    private static final HttpClient AS_HTTP_CLIENT =
-        HttpClient.newBuilder().connectTimeout(AS_HTTP_TIMEOUT_SEC).build();
-
-    // Thread-safe once configured; only used to create DocumentBuilders
+    private static final Duration A_S_HTTP_TIMEOUT_SEC = Duration.ofSeconds(NsConfig.getConfig()
+                                                                                .getInt(
+                                                                                    "ns.messaging"
+                                                                                        +
+                                                                                        ".notifiers.email.accountSvc.connectTimeoutSec",
+                                                                                    10));
+    private static final HttpClient A_S_HTTP_CLIENT =
+        HttpClient.newBuilder().connectTimeout(A_S_HTTP_TIMEOUT_SEC).build();
     private static final DocumentBuilderFactory DOC_BUILDER_FACTORY = newSecureDbf();
-
     // DocumentBuilder is NOT thread-safe, so keep one per thread and reuse it
-    private static final ThreadLocal<DocumentBuilder> DOC_BUILDER =
-        ThreadLocal.withInitial(() -> {
-            try {
-                return DOC_BUILDER_FACTORY.newDocumentBuilder();
-            } catch (ParserConfigurationException e) {
-                throw new IllegalStateException("Unable to create DocumentBuilder", e);
-            }
-        });
-    private final String AS_URL;
+    private static final ThreadLocal<DocumentBuilder> DOC_BUILDER = ThreadLocal.withInitial(() -> {
+        try {
+            return DOC_BUILDER_FACTORY.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Unable to create DocumentBuilder", e);
+        }
+    });
+    private final String SUBJECT;
+    private final String A_S_URL;
+    private final String BEARER_TOKEN;
+    private final InternetAddress FROM_ADDRESS;
     private final HttpClient accountServiceClient;
     Session session;
 
@@ -64,14 +68,24 @@ public class EmailNotifier implements NotificationListener {
      * Constructor - Initializes the EmailNotifier with SMTP settings from environment variables.
      * Uses EMAIL_USERNAME and EMAIL_PASSWORD for authentication.
      */
-    public EmailNotifier() {
-        this(AS_HTTP_CLIENT);
+    public EmailNotifier() throws UnsupportedEncodingException {
+        this(A_S_HTTP_CLIENT);
     }
 
-    EmailNotifier(HttpClient accountServiceClient) {
+    /**
+     * This constructor is package-protected because it is used for testing. It is called by the
+     * public constructor, and allows a custom HttpClient to be provided for Account Service
+     * requests.
+     *
+     * @param accountServiceClient HttpClient to use for Account Service requests (testing only)
+     * @throws UnsupportedEncodingException if the FROM_ADDRESS cannot be created due to encoding
+     *                                      issues
+     */
+    EmailNotifier(HttpClient accountServiceClient) throws UnsupportedEncodingException {
         this.accountServiceClient = accountServiceClient;
-        String emailHost = NsConfig.getConfig().getString("ns.messaging.email.host");
-        String emailPort = NsConfig.getConfig().getString("ns.messaging.email.port", "1025");
+        String emailHost = NsConfig.getConfig().getString("ns.messaging.notifiers.email.host");
+        String emailPort =
+            NsConfig.getConfig().getString("ns.messaging.notifiers.email.port", "1025");
         String emailUsername = System.getenv("EMAIL_USERNAME");
         String emailPassword = System.getenv("EMAIL_PASSWORD");
 
@@ -94,8 +108,20 @@ public class EmailNotifier implements NotificationListener {
                 }
             });
 
-        //URL for retrieving email addresses from the account service
-        AS_URL = NsConfig.getConfig().getString("ns.messaging.accountSvc.url");
+        A_S_URL = NsConfig.getConfig().getString("ns.messaging.notifiers.email.accountSvc.url");
+        final String token = System.getenv("ACCOUNT_SERVICE_BEARER_TOKEN");
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException(
+                "Environment variable ACCOUNT_SERVICE_BEARER_TOKEN is required for EmailNotifier");
+        }
+        BEARER_TOKEN = "Bearer " + token;
+        FROM_ADDRESS = new InternetAddress(
+                NsConfig.getConfig().getString("ns.messaging.notifiers.email.fromAddress"),
+                NsConfig.getConfig().getString("ns.messaging.notifiers.email.fromName")
+        );
+        SUBJECT = NsConfig.getConfig().getString("ns.messaging.notifiers.email.subject");
+        log.debug("EmailNotifier initialized with FROM_ADDRESS: {} and SUBJECT: {}",
+                  FROM_ADDRESS, SUBJECT);
     }
 
     /**
@@ -126,7 +152,8 @@ public class EmailNotifier implements NotificationListener {
                     continue;
                 }
                 NodeList emails = person.getElementsByTagName("email");
-                String email = emails.getLength() == 0 ? "" : emails.item(0).getTextContent().trim();
+                String email =
+                    emails.getLength() == 0 ? "" : emails.item(0).getTextContent().trim();
                 if (email.isEmpty()) {
                     throw new IOException(
                         "No email found for " + orcid + " in Account Service response: " + xml);
@@ -179,19 +206,17 @@ public class EmailNotifier implements NotificationListener {
             String subscribedPid = event.subscribedPid();
             String newPid = event.newPid();
 
-            // TODO: get "from:" address from config/env
-            message.setFrom(new InternetAddress("noreply@myapp.test", "My App"));
-
+            message.setFrom(FROM_ADDRESS);
             message.setRecipient(Message.RecipientType.TO, recipientEmail);
+            message.setSubject(SUBJECT);
 
             // TODO: get body, specific to resourceType, from config/env
             String emailText = """
                                You subscribed to notifications for action: %s on the dataset with identifier: %s.
                                A new version is available at: https://search-sandbox.test.dataone.org/view/%s
                                """.formatted(resourceType, subscribedPid, newPid);
-
             // TODO: get subject from config/env
-            message.setSubject("DataONE Event Notification");
+
             message.setText(emailText);
             Transport.send(message);
             log.debug("Email sent to recipientEmail: {} for event: {}", recipientEmail, event);
@@ -205,8 +230,7 @@ public class EmailNotifier implements NotificationListener {
         return recipientEmail.getAddress();
     }
 
-    InternetAddress getEmailForOrcid(String subscriber)
-        throws AddressException, IOException {
+    InternetAddress getEmailForOrcid(String subscriber) throws AddressException, IOException {
 
         // url-encode the subscriber string. URLEncoder uses form encoding, so need to fix spaces
         // ("+"), although ORCIDs shouldn't have spaces anyway
@@ -214,12 +238,14 @@ public class EmailNotifier implements NotificationListener {
             URLEncoder.encode(subscriber, StandardCharsets.UTF_8).replace("+", "%20");
 
         URI acctSvcUrl =
-            URI.create((AS_URL.endsWith("/") ? AS_URL : AS_URL + "/") + encodedSubscriber);
+            URI.create((A_S_URL.endsWith("/") ? A_S_URL : A_S_URL + "/") + encodedSubscriber);
         log.debug(
             "Retrieving email for ORCID: {} using Account Svc GET: {}", subscriber, acctSvcUrl);
 
-        HttpRequest acctSvcRequest = HttpRequest.newBuilder(acctSvcUrl).timeout(AS_HTTP_TIMEOUT_SEC)
-            .header("Accept", "application/xml").GET().build();
+        HttpRequest acctSvcRequest =
+            HttpRequest.newBuilder(acctSvcUrl).timeout(A_S_HTTP_TIMEOUT_SEC)
+                .header("Accept", "application/xml").header("Authorization", BEARER_TOKEN).GET()
+                .build();
 
         try {
             HttpResponse<String> response =

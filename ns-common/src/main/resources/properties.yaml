@@ -33,10 +33,15 @@ ns:
       virtualHost: /
       queueName: notification.subscription.events
       prefetchCount: 25
-    email:
-      host: nsmailpit
-      port: 1025
-    accountSvc:
-      url: "https://cn-sandbox.test.dataone.org/cn/v2/accounts/"
-      userAgent: "DataONE notification-service/1.0"
-      connectTimeoutSec: 10
+    notifiers:
+      email:
+        className: "org.dataone.notifications.event.notifier.channel.EmailNotifier"
+        host: nsmailpit
+        port: 1025
+        fromName: "DataONE Notifications"
+        fromAddress: "do-not-reply@dataone.org"
+        subject: "DataONE Notification"
+        accountSvc:
+          url: "https://cn-sandbox.test.dataone.org/cn/v2/accounts"
+          userAgent: "DataONE notification-service/1.0"
+          connectTimeoutSec: 10
