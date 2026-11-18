@@ -1,10 +1,15 @@
 package org.dataone.notifications.eventsource;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.dataone.notifications.resource.SubscriptionResourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,9 +20,12 @@ import java.util.concurrent.TimeoutException;
  * information to RabbitMQ.
  */
 public class SubscriptionProcessor {
+    private static final Logger log = LoggerFactory.getLogger(SubscriptionProcessor.class);
     private static volatile SubscriptionProcessor processor;
     private static RabbitMqProperties prorperties = RabbitMqProperties.from(NsConfig.getConfig());
     private static RabbitMqConnection rabbitMqConnection;
+    private Channel channel;
+    private ObjectMapper objectMapper;
 
     /**
      * Get the singleton instance of the class
@@ -43,6 +51,8 @@ public class SubscriptionProcessor {
      */
     private SubscriptionProcessor() throws IOException, TimeoutException {
         rabbitMqConnection = new RabbitMqConnection(prorperties);
+        channel = rabbitMqConnection.newChannel();
+        objectMapper = new ObjectMapper();
     }
 
     /**
@@ -73,7 +83,29 @@ public class SubscriptionProcessor {
 
     }
 
-    private void submit(NsEventMessage message) {
-
+    private void submit(NsEventMessage message) throws IOException, TimeoutException {
+        if (message == null) {
+            log.debug("The NsEventMessage object is null and the service will do nothing.");
+            return;
+        }
+        byte[] payload = objectMapper.writeValueAsBytes(message);
+        if (channel == null || !channel.isOpen()) {
+            try {
+                if (channel != null) {
+                    channel.close();
+                }
+            } catch (IOException | TimeoutException e) {
+                log.warn("Can't close the channel since {}", e.getMessage());
+            }
+            channel = rabbitMqConnection.newChannel();
+            log.debug("Created a new RabbitMQ connection");
+        }
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+            .contentType("application/json")
+            .contentEncoding("UTF-8")
+            .deliveryMode(2)  // Persistent
+            .build();
+        channel.basicPublish(
+            prorperties.exchangeName(), prorperties.routingKey(), properties, payload);
     }
 }
