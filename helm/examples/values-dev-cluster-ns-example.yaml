@@ -36,6 +36,12 @@ tomcat:
   remoteDebugEnabled: true
   remoteDebugPort: 5005
 
+  # TODO: REMOVE AFTER JAVA 25.0.5.1+ USED IN BASE IMAGE
+  extraCatalinaOpts:
+    - -XX:MaxRAMPercentage=75
+    - -XX:-UseBASE64Intrinsics
+  # END REMOVAL TODO
+
 ingress:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -55,6 +61,12 @@ ingress:
       secretName: ingress-tls-cert
 
 nsconsumer:
+  # TODO: REMOVE AFTER JAVA 25.0.5.1+ USED IN BASE IMAGE
+  extraEnvVars:
+    - -XX:MaxRAMPercentage=75
+    - -XX:-UseBASE64Intrinsics
+    # END REMOVAL TODO
+
   image:
     tag: develop
     pullPolicy: Always
