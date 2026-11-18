@@ -12,6 +12,7 @@ import org.apache.commons.configuration2.Configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,22 @@ public class NsEventProcessor {
         if (config == null || config.isEmpty()) {
             throw new IllegalArgumentException("Configuration is null or empty: " + config);
         }
-        List<Object> listenerNames = config.getList("ns.messaging.notifiers");
+        List<String> listenerNames = new ArrayList<>();
+        Iterator<String> keys = config.getKeys("ns.messaging.notifiers");
+        if (keys == null) {
+            throw new IllegalArgumentException(
+                "No ns.messaging.notifiers section found in configuration: " + config);
+        }
+        while (keys.hasNext()) {
+            String key = keys.next();
+            String[] parts = key.split("\\.");
+            if (parts.length == 4) {
+                String listenerName = parts[3];
+                if (!listenerNames.contains(listenerName)) {
+                    listenerNames.add(listenerName);
+                }
+            }
+        }
 
         if (listenerNames.isEmpty()) {
             throw new IllegalArgumentException(

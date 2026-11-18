@@ -18,12 +18,13 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
@@ -42,9 +43,6 @@ class NsEventProcessorTest {
 
     private static final String EVENT_JSON =
         new ObjectMapper().writeValueAsString(new NsEventMessage(EVENT));
-
-    @Mock
-    private Configuration config;
 
     @Test
     void constructor_nullClassNames_throwsIllegalArgumentException() {
@@ -151,17 +149,19 @@ class NsEventProcessorTest {
     //
     private Configuration nsConfig(String[][] notifierNamesAndClasses) {
 
+        Configuration config = mock(Configuration.class);
         List<Object> names = new ArrayList<>();
+        List<String> notifiers = new ArrayList<>();
 
         for (String[] notifierNamesAndClass : notifierNamesAndClasses) {
             String notifierName = notifierNamesAndClass[0];
             String className = notifierNamesAndClass[1];
             names.add(notifierName);
+            notifiers.add("ns.messaging.notifiers." + notifierName);
             when(config.getString(
                 "ns.messaging.notifiers." + notifierName + ".className")).thenReturn(className);
         }
-
-        when(config.getList("ns.messaging.notifiers")).thenReturn(names);
+        when(config.getKeys("ns.messaging.notifiers")).thenReturn(notifiers.iterator());
 
         try (MockedStatic<NsConfig> nsConfig = mockStatic(NsConfig.class)) {
             nsConfig.when(NsConfig::getConfig).thenReturn(config);

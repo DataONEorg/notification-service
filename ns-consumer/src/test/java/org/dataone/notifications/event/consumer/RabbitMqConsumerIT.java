@@ -79,7 +79,8 @@ class RabbitMqConsumerIT {
     @BeforeEach
     public void initMocks() {
         mockConfig = org.mockito.Mockito.mock(Configuration.class);
-        when(mockConfig.getList("ns.messaging.notifiers")).thenReturn(List.of("RecordingListener"));
+        when(mockConfig.getKeys("ns.messaging.notifiers")).thenReturn(
+            List.of("ns.messaging.notifiers.RecordingListener").iterator());
         when(mockConfig.getString("ns.messaging.notifiers.RecordingListener.className")).thenReturn(
             RecordingListener.class.getName());
         try (MockedStatic<NsConfig> nsConfig = mockStatic(NsConfig.class)) {
