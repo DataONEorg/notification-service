@@ -63,8 +63,7 @@ ingress:
 nsconsumer:
   # TODO: REMOVE AFTER JAVA 25.0.5.1+ USED IN BASE IMAGE
   extraEnvVars:
-    - -XX:MaxRAMPercentage=75
-    - -XX:-UseBASE64Intrinsics
+    JAVA_TOOL_OPTIONS: "-XX:-UseBASE64Intrinsics"
     # END REMOVAL TODO
 
   image:

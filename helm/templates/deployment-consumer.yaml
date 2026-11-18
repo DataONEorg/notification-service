@@ -34,9 +34,11 @@ spec:
               value: /etc/dataone/notification-service/properties.yaml
             - name: JAVA_TOOL_OPTIONS
               value: >-
+                {{ join " " .Values.nsconsumer.extraJavaOpts }}
                 -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
                 {{- if .Values.tomcat.remoteDebugEnabled }}
-                  -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:{{ .Values.tomcat.remoteDebugPort }}
+                -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:
+                  {{- .Values.tomcat.remoteDebugPort }}
                 {{- end }}
             {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
             {{- if not $secretName }}

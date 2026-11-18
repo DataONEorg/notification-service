@@ -508,6 +508,21 @@ nsconsumer:
   ##   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
+  ## @param nsconsumer.extraJavaOpts Optional additional Java options to be passed to the JVM
+  ## IMPORTANT NOTES:
+  ## 1. If you override these values below, using a separate file or command line options, those
+  ##    overrides will completely replace the default values below. YOU MUST THEREFORE COPY THE
+  ##    OPTIONS BELOW AND INCLUDE THEM IN YOUR OVERRIDES, IF YOU WANT TO KEEP THEM!
+  ## 2. You could set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead.
+  ##    Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
+  ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
+  ##
+  ## (extraCatalinaOpts is a YAML LIST, so each entry must be preceded by a DASH (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  extraJavaOpts:
+    - -XX:MaxRAMPercentage=75
+
   ## @Section Notifiers
   ## The notification service can be configured to use one or more notifiers, which are responsible
   ## for sending notifications to users based on the messages consumed from the RabbitMQ queue.
