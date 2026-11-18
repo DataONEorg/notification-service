@@ -345,11 +345,21 @@ tomcat:
   ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
   ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
   ##
+  ## !!! If you override these values below, using a separate file or command line options, those
+  ## overrides will completely replace the default values below. YOU MUST THEREFORE COPY THE
+  ## OPTIONS BELOW AND INCLUDE THEM IN YOUR OVERRIDES, IF YOU WANT TO KEEP THEM !!!
+  ##
   ## (extraCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   extraCatalinaOpts:
+      ## Allow JVM to use maximum of 75% of available RAM, so you don't need to change this
+      ## each time the memory limit is changed:
     - -XX:MaxRAMPercentage=75
+      ## (faster startup) Scan for CDI beans only here, instead of scanning all classes in the WAR:
+    - -Dtomee.mp.scan.packages=org.dataone.notifications
+      ## (faster startup) Stop running TldScanner across all bundled JARs looking for JSP tag libs:
+    - -Dtomcat.util.scan.StandardJarScanFilter.jarsToSkip=*.jar
 
   ## @param tomcat.jmxEnabled Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.
   ## When JMX is enabled by setting this to 'true', you can view the JMX metrics using a JMX client
