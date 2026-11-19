@@ -60,7 +60,68 @@ public class SubscriptionProcessor {
      * @param message  the message need to be processed
      */
     public void process(NsEventMessage message) {
+        if (message == null) {
+            throw new IllegalArgumentException("The NsEventMessage object cannot be null.");
+        }
+        if (message.nsEvent() == null) {
+            throw new IllegalArgumentException("The Event in the NsEventMessage object cannot be "
+                                                   + "null.");
+        }
+        SubscriptionResourceType subscriptionType = message.nsEvent().SubscriptionResourceType();
+        if (subscriptionType == null) {
+            throw new IllegalArgumentException("The subscription type in NsEventMessage cannot be"
+                                                   + " null");
+        }
+        switch (subscriptionType) {
+            case SubscriptionResourceType.datasetChanges:
+                processDatasetChange(message);
+            default:
+                throw new UnsupportedOperationException(
+                    "The routine to handle the subscription type " + subscriptionType.name()
+                        + " has not been implemented.");
+        }
+    }
 
+    protected void processDatasetChange(NsEventMessage message) {
+        String pid = message.nsEvent().subscribedPid();
+        if (pid == null || pid.isBlank()) {
+            throw new IllegalArgumentException("The pid in The NsEventMessage "
+                                                   + "object cannot be null.");
+        }
+        String newPid = message.nsEvent().newPid();
+        if (newPid == null || newPid.isBlank()) {
+            throw new IllegalArgumentException("The newPid in The NsEventMessage "
+                                                   + "object cannot be null.");
+        }
+        SubscriptionResourceType type = message.nsEvent().SubscriptionResourceType();
+        List<String> subscriptions = getSubscriptions(pid, type);
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            log.debug("There are no subscriptions for {} with type {}", pid, type.name());
+            return;
+        }
+        for (String subscription : subscriptions) {
+            if (subscription != null && subscription.isBlank()) {
+                message = message.withSubscriberId(subscription);
+                try {
+                    submit(message);
+                    log.info("The dataset change event for {} and subscriber {} was "
+                                 + "submitted to RabbitMQ.", pid, subscription);
+                } catch (Exception e) {
+                    log.error("The dataset change event for {} and subscriber {} cannot be "
+                                  + "submitted to RabbitMQ since {}", pid, subscription,
+                              e.getMessage());
+                    continue;
+                }
+                try {
+                    updateSubscriptions(pid, newPid, type);
+                    log.info("The subscription for {} and {} has been updated with the new pid "
+                                  + "{}", pid, type.name(), newPid);
+                } catch (Exception e) {
+                    log.error("Could not update the subscription for {} and {} with the new pid "
+                                  + "{}", pid, type.name(), newPid);
+                }
+            }
+        }
     }
 
     /**
@@ -106,6 +167,7 @@ public class SubscriptionProcessor {
             .deliveryMode(2)  // Persistent
             .build();
         channel.basicPublish(
-            SubscriptionProcessor.properties.exchangeName(), SubscriptionProcessor.properties.routingKey(), properties, payload);
+            SubscriptionProcessor.properties.exchangeName(),
+            SubscriptionProcessor.properties.routingKey(), properties, payload);
     }
 }
