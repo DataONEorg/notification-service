@@ -27,123 +27,128 @@ helm upgrade --install ns -n notify --create-namespace \
 
 ### Application-Specific Properties for notification-service
 
-| Name                                            | Description                                                                  | Value                                     |
-| ----------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------- |
-| `ns.logLevel`                                   | The log level for the notification service.                                  | `warn`                                    |
-| `ns.api.privateApiBaseUrl`                      | Override private API base URL. Leave unset for auto-complete.                | `""`                                      |
-| `ns.api.privateApiPath`                         | Path for private API endpoints (will be appended to hostname)                | `/notifications/v1/private`               |
-| `ns.auth.api.baseUrl`                           | The base URL for the authentication API (typically the CN)                   | `https://cn.dataone.org/cn/v2`            |
-| `ns.auth.api.authenticate`                      | The endpoint for authentication (CN uses '/diag/subject')                    | `/diag/subject`                           |
-| `ns.auth.api.userAgent`                         | The User-Agent string to use when making requests to the auth API            | `DataONE notification-service/1.0`        |
-| `ns.auth.api.connectTimeoutMilliSec`            | Timeout limit for opening connection to the auth API                         | `5000`                                    |
-| `ns.auth.api.readTimeoutMilliSec`               | Timeout limit for reading data from the auth API                             | `5000`                                    |
-| `ns.database.dbName`                            | The name of the database used by the notification service.                   | `notifications`                           |
-| `ns.database.existingSecret`                    | (REQUIRED) Basic Auth Secret name for DB username & password                 | `nsdb-cnpg-app`                           |
-| `ns.database.jdbcHost`                          | (REQUIRED) database connection hostname (PostgreSQL k8s service)             | `nsdb-cnpg-rw`                            |
-| `ns.database.jdbcPort`                          | The port for the database connection.                                        | `5432`                                    |
-| `replicaCount`                                  | The number of replicas for the notification web-api service deployment.      | `1`                                       |
-| `image.repository`                              | image repository                                                             | `ghcr.io/dataoneorg/notification-service` |
-| `image.pullPolicy`                              | image pull policy                                                            | `IfNotPresent`                            |
-| `image.tag`                                     | Overrides the image tag. Will default to the chart appVersion if set to ""   | `""`                                      |
-| `serviceAccount.create`                         | Should a service account be created to run notifications?                    | `false`                                   |
-| `serviceAccount.annotations`                    | Annotations to add to the service account                                    | `{}`                                      |
-| `serviceAccount.name`                           | The name to use for the service account.                                     | `""`                                      |
-| `podAnnotations`                                | Annotations to add to the pod                                                | `{}`                                      |
-| `podLabels`                                     | Labels to add to the pod                                                     | `{}`                                      |
-| `podSecurityContext`                            | Security context for the pod                                                 | `{}`                                      |
-| `securityContext`                               | Security context for the container                                           | `{}`                                      |
-| `ingress.enabled`                               | Enable or disable the ingress                                                | `true`                                    |
-| `ingress.className`                             | ClassName of the ingress provider in your cluster                            | `traefik`                                 |
-| `ingress.annotations`                           | Annotations to add to the ingress;                                           | `{}`                                      |
-| `ingress.corsEnabled`                           | Enable or disable CORS functionality for the ingress                         | `true`                                    |
-| `ingress.hosts[0].host`                         | The hostname for the ingress                                                 | `localhost`                               |
-| `ingress.hosts[0].paths[0].path`                | The path for the ingress host                                                | `/`                                       |
-| `ingress.hosts[0].paths[0].pathType`            | The path type for the ingress host                                           | `Prefix`                                  |
-| `ingress.hosts[0].paths[1].path`                | The path for the ingress host                                                | `/notifications/v1/private`               |
-| `ingress.hosts[0].paths[1].pathType`            | The path type for the ingress host                                           | `Prefix`                                  |
-| `ingress.hosts[0].paths[1].backend.serviceName` | The service name for the backend                                             | `dev-null-service`                        |
-| `ingress.hosts[0].paths[1].backend.servicePort` | The service port for the backend                                             | `8080`                                    |
-| `ingress.tls`                                   | List of TLS configurations for the ingress                                   | `[]`                                      |
-| `startupProbe.enabled`                          | Enable readinessProbe for notifications container                            | `false`                                   |
-| `livenessProbe.enabled`                         | Enable livenessProbe for notifications container                             | `true`                                    |
-| `livenessProbe.httpGet.path`                    | The url path to probe.                                                       | `/notifications/v1/metrics/ping`          |
-| `livenessProbe.httpGet.port`                    | The named containerPort to probe                                             | `http`                                    |
-| `livenessProbe.periodSeconds`                   | Period seconds for readinessProbe                                            | `1`                                       |
-| `livenessProbe.timeoutSeconds`                  | Timeout seconds for readinessProbe                                           | `5`                                       |
-| `livenessProbe.successThreshold`                | Min consecutive successes for probe to be successful                         | `1`                                       |
-| `livenessProbe.failureThreshold`                | No. consecutive failures before container marked unhealthy                   | `100`                                     |
-| `readinessProbe.enabled`                        | Enable readinessProbe for notifications container                            | `true`                                    |
-| `readinessProbe.httpGet.path`                   | The url path to probe.                                                       | `/notifications/v1/metrics/ping`          |
-| `readinessProbe.httpGet.port`                   | The named containerPort to probe                                             | `http`                                    |
-| `readinessProbe.initialDelaySeconds`            | Initial delay seconds for readinessProbe                                     | `5`                                       |
-| `readinessProbe.periodSeconds`                  | Period seconds for readinessProbe                                            | `1`                                       |
-| `readinessProbe.timeoutSeconds`                 | Timeout seconds for readinessProbe                                           | `5`                                       |
-| `readinessProbe.successThreshold`               | Min consecutive successes for probe to be successful                         | `1`                                       |
-| `readinessProbe.failureThreshold`               | No. consecutive failures before container marked unhealthy                   | `50`                                      |
-| `autoscaling.enabled`                           | Enable or disable autoscaling for the notification service deployment        | `false`                                   |
-| `autoscaling.minReplicas`                       | Minimum number of replicas for the notification service deployment           | `1`                                       |
-| `autoscaling.maxReplicas`                       | Maximum number of replicas for the notification service deployment           | `10`                                      |
-| `autoscaling.targetCPUUtilizationPercentage`    | Target CPU utilization percentage for the notification service deployment    | `80`                                      |
-| `autoscaling.targetMemoryUtilizationPercentage` | Target memory utilization percentage for the notification service deployment | `80`                                      |
-| `extraVolumes`                                  | Optional additional volumes to be added to the pod.                          | `[]`                                      |
-| `extraVolumeMounts`                             | Optional additional volume mounts to be added to the container.              | `[]`                                      |
-| `service.port`                                  | The port for the notification service.                                       | `8080`                                    |
-| `imagePullSecrets`                              | Optional list of image pull secrets (if image repo requires auth)            | `[]`                                      |
-| `fullnameOverride`                              | Override the full name of the chart                                          | `""`                                      |
-| `nameOverride`                                  | Override the name of the chart                                               | `""`                                      |
-| `nodeSelector`                                  | Node labels for pod assignment                                               | `{}`                                      |
-| `tolerations`                                   | Tolerations for pod assignment                                               | `[]`                                      |
-| `affinity`                                      | Affinity for pod assignment                                                  | `{}`                                      |
-| `resources.requests.cpu`                        | CPU requested for the nsconsumer container                                   | `500m`                                    |
-| `resources.requests.memory`                     | Memory requested for the nsconsumer container                                | `512Mi`                                   |
-| `resources.limits.cpu`                          | Maximum CPU the nsconsumer container may use                                 | `1000m`                                   |
-| `resources.limits.memory`                       | Maximum memory the nsconsumer container may use                              | `1Gi`                                     |
+| Name                                            | Description                                                                | Value                                     |
+| ----------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| `ns.logLevel`                                   | The log level for the notification service.                                | `warn`                                    |
+| `ns.api.privateApiBaseUrl`                      | Override private API base URL. Leave unset for auto-complete.              | `""`                                      |
+| `ns.api.privateApiPath`                         | Path for private API endpoints (will be appended to hostname)              | `/notifications/v1/private`               |
+| `ns.auth.api.baseUrl`                           | The base URL for the authentication API (typically the CN)                 | `https://cn.dataone.org/cn/v2`            |
+| `ns.auth.api.authenticate`                      | The endpoint for authentication (CN uses '/diag/subject')                  | `/diag/subject`                           |
+| `ns.auth.api.userAgent`                         | The User-Agent string to use when making requests to the auth API          | `DataONE notification-service/1.0`        |
+| `ns.auth.api.connectTimeoutMilliSec`            | Timeout limit for opening connection to the auth API                       | `5000`                                    |
+| `ns.auth.api.readTimeoutMilliSec`               | Timeout limit for reading data from the auth API                           | `5000`                                    |
+| `ns.database.dbName`                            | The name of the database used by the notification service.                 | `notifications`                           |
+| `ns.database.existingSecret`                    | (REQUIRED) Basic Auth Secret name for DB username & passwd                 | `nsdb-cnpg-app`                           |
+| `ns.database.jdbcHost`                          | (REQUIRED) database connection hostname (PostgreSQL k8s service)           | `nsdb-cnpg-rw`                            |
+| `ns.database.jdbcPort`                          | The port for the database connection.                                      | `5432`                                    |
+| `replicaCount`                                  | The number of replicas for the notification web-api service deployment.    | `1`                                       |
+| `image.repository`                              | image repository                                                           | `ghcr.io/dataoneorg/notification-service` |
+| `image.pullPolicy`                              | image pull policy                                                          | `IfNotPresent`                            |
+| `image.tag`                                     | Overrides the image tag. Will default to the chart appVersion if set to "" | `""`                                      |
+| `serviceAccount.create`                         | Should a service account be created to run notifications?                  | `false`                                   |
+| `serviceAccount.annotations`                    | Annotations to add to the service account                                  | `{}`                                      |
+| `serviceAccount.name`                           | The name to use for the service account.                                   | `""`                                      |
+| `podAnnotations`                                | Annotations to add to the pod                                              | `{}`                                      |
+| `podLabels`                                     | Labels to add to the pod                                                   | `{}`                                      |
+| `podSecurityContext`                            | Security context for the pod                                               | `{}`                                      |
+| `securityContext`                               | Security context for the container                                         | `{}`                                      |
+| `ingress.enabled`                               | Enable or disable the ingress                                              | `true`                                    |
+| `ingress.className`                             | ClassName of the ingress provider in your cluster                          | `traefik`                                 |
+| `ingress.annotations`                           | Annotations to add to the ingress;                                         | `{}`                                      |
+| `ingress.corsEnabled`                           | Enable or disable CORS functionality for the ingress                       | `true`                                    |
+| `ingress.hosts[0].host`                         | The hostname for the ingress                                               | `localhost`                               |
+| `ingress.hosts[0].paths[0].path`                | The path for the ingress host                                              | `/`                                       |
+| `ingress.hosts[0].paths[0].pathType`            | The path type for the ingress host                                         | `Prefix`                                  |
+| `ingress.hosts[0].paths[1].path`                | The path for the ingress host                                              | `/notifications/v1/private`               |
+| `ingress.hosts[0].paths[1].pathType`            | The path type for the ingress host                                         | `Prefix`                                  |
+| `ingress.hosts[0].paths[1].backend.serviceName` | The service name for the backend                                           | `dev-null-service`                        |
+| `ingress.hosts[0].paths[1].backend.servicePort` | The service port for the backend                                           | `8080`                                    |
+| `ingress.tls`                                   | List of TLS configurations for the ingress                                 | `[]`                                      |
+| `startupProbe.enabled`                          | Enable readinessProbe for notifications container                          | `false`                                   |
+| `livenessProbe.enabled`                         | Enable livenessProbe for notifications container                           | `true`                                    |
+| `livenessProbe.httpGet.path`                    | The url path to probe.                                                     | `/notifications/v1/metrics/ping`          |
+| `livenessProbe.httpGet.port`                    | The named containerPort to probe                                           | `http`                                    |
+| `livenessProbe.periodSeconds`                   | Period seconds for readinessProbe                                          | `1`                                       |
+| `livenessProbe.timeoutSeconds`                  | Timeout seconds for readinessProbe                                         | `5`                                       |
+| `livenessProbe.successThreshold`                | Min consecutive successes for probe to be successful                       | `1`                                       |
+| `livenessProbe.failureThreshold`                | No. consecutive failures before container marked unhealthy                 | `100`                                     |
+| `readinessProbe.enabled`                        | Enable readinessProbe for notifications container                          | `true`                                    |
+| `readinessProbe.httpGet.path`                   | The url path to probe.                                                     | `/notifications/v1/metrics/ping`          |
+| `readinessProbe.httpGet.port`                   | The named containerPort to probe                                           | `http`                                    |
+| `readinessProbe.initialDelaySeconds`            | Initial delay seconds for readinessProbe                                   | `5`                                       |
+| `readinessProbe.periodSeconds`                  | Period seconds for readinessProbe                                          | `1`                                       |
+| `readinessProbe.timeoutSeconds`                 | Timeout seconds for readinessProbe                                         | `5`                                       |
+| `readinessProbe.successThreshold`               | Min consecutive successes for probe to be successful                       | `1`                                       |
+| `readinessProbe.failureThreshold`               | No. consecutive failures before container marked unhealthy                 | `50`                                      |
+| `autoscaling.enabled`                           | Enable or disable autoscaling for the notification service deployment      | `false`                                   |
+| `autoscaling.minReplicas`                       | Minimum number of replicas for the notification service deployment         | `1`                                       |
+| `autoscaling.maxReplicas`                       | Maximum number of replicas for the notification service deployment         | `10`                                      |
+| `autoscaling.targetCPUUtilizationPercentage`    | Target % CPU utilization for api service                                   | `80`                                      |
+| `autoscaling.targetMemoryUtilizationPercentage` | Target % memory utilization for api service                                | `80`                                      |
+| `extraVolumes`                                  | Optional additional volumes to be added to the pod.                        | `[]`                                      |
+| `extraVolumeMounts`                             | Optional additional volume mounts to be added to the container.            | `[]`                                      |
+| `service.port`                                  | The port for the notification service.                                     | `8080`                                    |
+| `imagePullSecrets`                              | Optional list of image pull secrets (if image repo requires auth)          | `[]`                                      |
+| `fullnameOverride`                              | Override the full name of the chart                                        | `""`                                      |
+| `nameOverride`                                  | Override the name of the chart                                             | `""`                                      |
+| `nodeSelector`                                  | Node labels for pod assignment                                             | `{}`                                      |
+| `tolerations`                                   | Tolerations for pod assignment                                             | `[]`                                      |
+| `affinity`                                      | Affinity for pod assignment                                                | `{}`                                      |
+| `resources.requests.cpu`                        | CPU requested for the nsconsumer container                                 | `500m`                                    |
+| `resources.requests.memory`                     | Memory requested for the nsconsumer container                              | `512Mi`                                   |
+| `resources.limits.cpu`                          | Maximum CPU the nsconsumer container may use                               | `1000m`                                   |
+| `resources.limits.memory`                       | Maximum memory the nsconsumer container may use                            | `1Gi`                                     |
 
 ### Tomcat Configuration
 
-| Name                                            | Description                                                           | Value                                                                                         |
-| ----------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `tomcat.extraCatalinaOpts`                      | Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:       | `["-XX:MaxRAMPercentage=75"]`                                                                 |
-| `tomcat.jmxEnabled`                             | Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.      | `false`                                                                                       |
-| `tomcat.jmxPort`                                | The port to use for JMX connections. IMPORTANT: If you change this... | `9010`                                                                                        |
-| `tomcat.jmxCatalinaOpts`                        | Tomcat JVM options for enabling JMX                                   | `see values.yaml`                                                                             |
-| `tomcat.remoteDebugEnabled`                     | Enable remote debugging for Tomcat                                    | `false`                                                                                       |
-| `tomcat.remoteDebugPort`                        | The port to use for remote debugging connections                      | `5005`                                                                                        |
-| `nsconsumer.replicaCount`                       | The number of replicas for the nsconsumer deployment                  | `1`                                                                                           |
-| `nsconsumer.nameOverride`                       | String to partially override the nsconsumer chart name                | `""`                                                                                          |
-| `nsconsumer.fullNameOverride`                   | String to fully override the nsconsumer resource names                | `""`                                                                                          |
-| `nsconsumer.image.repository`                   | The nsconsumer image repository                                       | `ghcr.io/dataoneorg/notification-consumer`                                                    |
-| `nsconsumer.image.pullPolicy`                   | The nsconsumer image pull policy                                      | `IfNotPresent`                                                                                |
-| `nsconsumer.resources.requests.cpu`             | CPU requested for the nsconsumer container                            | `100m`                                                                                        |
-| `nsconsumer.resources.requests.memory`          | Memory requested for the nsconsumer container                         | `128Mi`                                                                                       |
-| `nsconsumer.resources.limits.cpu`               | Maximum CPU the nsconsumer container may use                          | `200m`                                                                                        |
-| `nsconsumer.resources.limits.memory`            | Maximum memory the nsconsumer container may use                       | `256Mi`                                                                                       |
-| `nsconsumer.serviceAccount.create`              | Should a service account be created for nsconsumer?                   | `false`                                                                                       |
-| `nsconsumer.serviceAccount.name`                | The name of the service account to use for nsconsumer                 | `""`                                                                                          |
-| `nsconsumer.readinessProbe.enabled`             | Enable readinessProbe for container                                   | `true`                                                                                        |
-| `nsconsumer.readinessProbe.initialDelaySeconds` | delay after container start before probing                            | `5`                                                                                           |
-| `nsconsumer.readinessProbe.exec.command`        | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
-| `nsconsumer.readinessProbe.periodSeconds`       | Period seconds for readinessProbe                                     | `2`                                                                                           |
-| `nsconsumer.readinessProbe.timeoutSeconds`      | Timeout seconds for readinessProbe                                    | `2`                                                                                           |
-| `nsconsumer.readinessProbe.successThreshold`    | Min consecutive successes for probe to be successful                  | `1`                                                                                           |
-| `nsconsumer.readinessProbe.failureThreshold`    | consecutive failures before container marked unhealthy                | `30`                                                                                          |
-| `nsconsumer.livenessProbe.enabled`              | Enable the livenessProbe for the nsconsumer container                 | `true`                                                                                        |
-| `nsconsumer.livenessProbe.exec.command`         | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]` |
-| `nsconsumer.livenessProbe.initialDelaySeconds`  | delay after container start before probing                            | `90`                                                                                          |
-| `nsconsumer.livenessProbe.periodSeconds`        | How often (in seconds) to perform the probe                           | `2`                                                                                           |
-| `nsconsumer.livenessProbe.timeoutSeconds`       | Seconds after which the probe times out                               | `2`                                                                                           |
-| `nsconsumer.livenessProbe.successThreshold`     | Min consecutive successes for probe to be successful                  | `1`                                                                                           |
-| `nsconsumer.livenessProbe.failureThreshold`     | consecutive failures before container marked unhealthy                | `30`                                                                                          |
-| `nsconsumer.extraEnvVars`                       | Optional additional env vars to be added to the container.            | `{}`                                                                                          |
-
-### Configuration for the SMTP server used to send email notifications
-
-| Name                            | Description                                                | Value      |
-| ------------------------------- | ---------------------------------------------------------- | ---------- |
-| `emailUtil.host`                | The hostname of the SMTP server to use for sending emails. | `ADD_HOST` |
-| `emailUtil.port`                | The port of the SMTP server to use for sending emails.     | `1025`     |
-| `emailUtil.auth.enabled`        | Enable or disable SMTP authentication.                     | `true`     |
-| `emailUtil.auth.existingSecret` | Secret holding SMTP credentials. This won't be             | `""`       |
+| Name                                                      | Description                                                           | Value                                                                                                                                          |
+| --------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tomcat.extraCatalinaOpts`                                | Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:       | `["-XX:MaxRAMPercentage=75","-Dtomee.mp.scan.packages=org.dataone.notifications","-Dtomcat.util.scan.StandardJarScanFilter.jarsToSkip=*.jar"]` |
+| `tomcat.jmxEnabled`                                       | Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.      | `false`                                                                                                                                        |
+| `tomcat.jmxPort`                                          | The port to use for JMX connections. IMPORTANT: If you change this... | `9010`                                                                                                                                         |
+| `tomcat.jmxCatalinaOpts`                                  | Tomcat JVM options for enabling JMX                                   | `see values.yaml`                                                                                                                              |
+| `tomcat.remoteDebugEnabled`                               | Enable remote debugging for Tomcat                                    | `false`                                                                                                                                        |
+| `tomcat.remoteDebugPort`                                  | The port to use for remote debugging connections                      | `5005`                                                                                                                                         |
+| `nsconsumer.replicaCount`                                 | The number of replicas for the nsconsumer deployment                  | `1`                                                                                                                                            |
+| `nsconsumer.nameOverride`                                 | String to partially override the nsconsumer chart name                | `""`                                                                                                                                           |
+| `nsconsumer.fullNameOverride`                             | String to fully override the nsconsumer resource names                | `""`                                                                                                                                           |
+| `nsconsumer.image.repository`                             | The nsconsumer image repository                                       | `ghcr.io/dataoneorg/notification-consumer`                                                                                                     |
+| `nsconsumer.image.pullPolicy`                             | The nsconsumer image pull policy                                      | `IfNotPresent`                                                                                                                                 |
+| `nsconsumer.resources.requests.cpu`                       | CPU requested for the nsconsumer container                            | `100m`                                                                                                                                         |
+| `nsconsumer.resources.requests.memory`                    | Memory requested for the nsconsumer container                         | `128Mi`                                                                                                                                        |
+| `nsconsumer.resources.limits.cpu`                         | Maximum CPU the nsconsumer container may use                          | `200m`                                                                                                                                         |
+| `nsconsumer.resources.limits.memory`                      | Maximum memory the nsconsumer container may use                       | `256Mi`                                                                                                                                        |
+| `nsconsumer.serviceAccount.create`                        | Should a service account be created for nsconsumer?                   | `false`                                                                                                                                        |
+| `nsconsumer.serviceAccount.name`                          | The name of the service account to use for nsconsumer                 | `""`                                                                                                                                           |
+| `nsconsumer.readinessProbe.enabled`                       | Enable readinessProbe for container                                   | `true`                                                                                                                                         |
+| `nsconsumer.readinessProbe.initialDelaySeconds`           | delay after container start before probing                            | `5`                                                                                                                                            |
+| `nsconsumer.readinessProbe.exec.command`                  | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]`                                                  |
+| `nsconsumer.readinessProbe.periodSeconds`                 | Period seconds for readinessProbe                                     | `2`                                                                                                                                            |
+| `nsconsumer.readinessProbe.timeoutSeconds`                | Timeout seconds for readinessProbe                                    | `2`                                                                                                                                            |
+| `nsconsumer.readinessProbe.successThreshold`              | Min consecutive successes for probe OK                                | `1`                                                                                                                                            |
+| `nsconsumer.readinessProbe.failureThreshold`              | consecutive fails before container  unhealthy                         | `30`                                                                                                                                           |
+| `nsconsumer.livenessProbe.enabled`                        | Enable the livenessProbe for the nsconsumer container                 | `true`                                                                                                                                         |
+| `nsconsumer.livenessProbe.exec.command`                   | checks the consumer's readiness file is <30s old                      | `["/bin/sh","-c","test $(($(date +%s) - $(stat -c %Y /tmp/rmq-consumer-readiness))) -lt 30"]`                                                  |
+| `nsconsumer.livenessProbe.initialDelaySeconds`            | delay after container start before probing                            | `90`                                                                                                                                           |
+| `nsconsumer.livenessProbe.periodSeconds`                  | How often (in seconds) to perform the probe                           | `2`                                                                                                                                            |
+| `nsconsumer.livenessProbe.timeoutSeconds`                 | Seconds after which the probe times out                               | `2`                                                                                                                                            |
+| `nsconsumer.livenessProbe.successThreshold`               | Minimum consecutive successes for probe OK                            | `1`                                                                                                                                            |
+| `nsconsumer.livenessProbe.failureThreshold`               | consecutive fails before container unhealthy                          | `30`                                                                                                                                           |
+| `nsconsumer.extraEnvVars`                                 | Optional additional env vars to be added to the container.            | `{}`                                                                                                                                           |
+| `nsconsumer.extraJavaOpts`                                | Optional additional Java options to be passed to the JVM              | `["-XX:MaxRAMPercentage=75"]`                                                                                                                  |
+| `nsconsumer.notifiers.email.className`                    | class name of the email notifier to be loaded.                        | `org.dataone.notifications.event.notifier.channel.EmailNotifier`                                                                               |
+| `nsconsumer.notifiers.email.host`                         | SMTP server hostname to use for sending emails.                       | `ADD_HOST`                                                                                                                                     |
+| `nsconsumer.notifiers.email.port`                         | the SMTP server port to use for sending emails.                       | `1025`                                                                                                                                         |
+| `nsconsumer.notifiers.email.fromAddress`                  | email address to use as the "from" address                            | `do-not-reply@dataone.org`                                                                                                                     |
+| `nsconsumer.notifiers.email.fromName`                     | the name to use in the "from" field                                   | `DataONE`                                                                                                                                      |
+| `nsconsumer.notifiers.email.subject`                      | the subject line to use for email notifications                       | `DataONE Notification`                                                                                                                         |
+| `nsconsumer.notifiers.email.auth.existingSecret`          | Secret holding SMTP credentials.                                      | `""`                                                                                                                                           |
+| `nsconsumer.notifiers.email.auth.usernameKey`             | Key name for username in Secret                                       | `username`                                                                                                                                     |
+| `nsconsumer.notifiers.email.auth.passwordKey`             | Key name for password in Secret                                       | `password`                                                                                                                                     |
+| `nsconsumer.notifiers.email.accountSvc.url`               | URL for querying account service API                                  | `https://cn-sandbox.test.dataone.org/cn/v2/accounts`                                                                                           |
+| `nsconsumer.notifiers.email.accountSvc.existingSecret`    | name of Secret for API token                                          | `""`                                                                                                                                           |
+| `nsconsumer.notifiers.email.accountSvc.userAgent`         | User-Agent string for API requests                                    | `DataONE notification-service/1.0`                                                                                                             |
+| `nsconsumer.notifiers.email.accountSvc.connectTimeoutSec` | API connect timeout                                                   | `10`                                                                                                                                           |
 
 ### RabbitMQ Connection Configuration
 

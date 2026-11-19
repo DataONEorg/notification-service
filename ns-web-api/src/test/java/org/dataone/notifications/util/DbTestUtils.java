@@ -7,7 +7,7 @@ import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.NsDBMigrator;
 import org.dataone.notifications.storage.NsDataRepository;
 import org.dataone.notifications.storage.NsDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
@@ -18,15 +18,15 @@ import java.time.Duration;
 
 public class DbTestUtils {
 
-    public static PostgreSQLContainer<?> getTestDb() throws Exception {
+    public static PostgreSQLContainer getTestDb() throws Exception {
 
         EnvironmentVariables env = new EnvironmentVariables(
             "NS_PROPERTIES_YAML_PATH", "../ns-common/src/test/resources/properties.yaml");
         env.setup();
         NsConfig.reload();
         Configuration nsConfig = NsConfig.getConfig();
-        PostgreSQLContainer<?> pg =
-            new PostgreSQLContainer<>("postgres:" + nsConfig.getString("ns.database.test.version"))
+        PostgreSQLContainer pg =
+            new PostgreSQLContainer("postgres:" + nsConfig.getString("ns.database.test.version"))
                 .withDatabaseName(nsConfig.getString("ns.database.name"))
                 .withUsername(nsConfig.getString("ns.database.username"))
                 .withPassword(nsConfig.getString("ns.database.password"))
@@ -39,7 +39,7 @@ public class DbTestUtils {
         return pg;
     }
 
-    public static synchronized DataRepository getTestDataRepository(PostgreSQLContainer<?> pg) {
+    public static synchronized DataRepository getTestDataRepository(PostgreSQLContainer pg) {
 
         final DBConnectionParams dbConnectionParams =
             new DBConnectionParams(pg.getJdbcUrl(), pg.getDriverClassName(), pg.getUsername(),
@@ -49,7 +49,7 @@ public class DbTestUtils {
         return new NsDataRepository(dataSource, migrator);
     }
 
-    private static void verifyPostgresPortAvailable(PostgreSQLContainer<?> pg) {
+    private static void verifyPostgresPortAvailable(PostgreSQLContainer pg) {
         // retries here
         int retries = 30;
         int retryCount = retries;

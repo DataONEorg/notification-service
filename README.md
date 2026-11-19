@@ -23,15 +23,15 @@ Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions)
 - [Getting Started - Running Notification Service Yourself](#getting-started---running-notification-service-yourself)
   - [Running in a Kubernetes Cluster](#running-in-a-kubernetes-cluster)
 - [Developer Guide](#developer-guide)
-  - [Jakarta EE](#jakarta-ee)
   - [Development build](#development-build)
   - [Local Environment](#local-environment)
   - [Running the Tests](#running-the-tests)
     - [Unit Tests](#unit-tests)
     - [Integration Tests](#integration-tests)
     - [Smoke Tests](#smoke-tests)
-  - [Building and Running on a Localhost Web Application Server](#building-and-running-on-a-localhost-web-application-server)
+  - [Jakarta EE](#jakarta-ee)
 - [Appendix 1: Building and Publishing the Container Images](#appendix-1-building-and-publishing-the-container-images)
+- [Appendix 2: Building and Running on a Localhost Web Application Server](#appendix-2-building-and-running-on-a-localhost-web-application-server)
 
 Documentation is a work in progress, and can be found here in the README
 
@@ -83,20 +83,11 @@ $ curl --request DELETE "${BASE_URL}/notifications/v1/datasetChanges/{pid}" \
 
 The simplest way to try out the notification service is to use the Helm chart to deploy in a Kubernetes ("K8s") cluster - see the [Helm Chart README](helm/README.md).
 
-It is also possible to  run locally on your development machine (see [Building and Running on a Localhost Web Application Server](#building-and-running-on-a-localhost-web-application-server)), although this approach is not well tested or supported.
+(It is also possible to run locally on your development machine (see [Appendix 2](#appendix-2-building-and-running-on-a-localhost-web-application-server)), although this approach is not well tested or supported.)
 
 ## Developer Guide
 
 This section is for developers who want to build, modify, or test the application, or run it locally on their development machine.
-
-### Jakarta EE
-Notification Service uses the Jakarta EE framework. Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source software.
-
-Here are some useful links for those unfamiliar with Jakarta EE:
-- [Jakarta EE 10](https://jakarta.ee/release/10/)
-- [Jakarta EE 10 API](https://jakarta.ee/specifications/platform/10/apidocs/)
-- [Jakarta EE REST Service
-  Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
 ### Development build
 
@@ -164,28 +155,14 @@ export TOKEN="your-jwt-token-here"
 mvn verify -PsmokeTest -DBASE_URL="https://notifications.test.dataone.org" -DTOKEN="$TOKEN"
 ```
 
-### Building and Running on a Localhost Web Application Server
+### Jakarta EE
+Notification Service uses the Jakarta EE framework. Jakarta EE is the latest version of what was formerly Oracle's Java Enterprise Edition (originally J2EE). It has now been moved to the Eclipse Foundation, where it is maintained as open source software.
 
-> [!NOTE]
-> **Prerequisites:**
-> In addition to the Java and maven versions listed above, you will need:
-> 1. [Apache TomEE](https://tomee.apache.org) MicroProfile v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
- Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE. TomEE is available in different "flavors"; choose the `MicroProfile` version.)
-> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script: `./scripts/docker-run-db.sh`.
-> 3. RabbitMQ: you should be able to configure Notification Service to work with any RabbitMQ instance, by editing the settings in `ns-common/src/main/resources/properties.yaml`. This approach is not tested or supported, but should work if you have a working RabbitMQ instance running on your local machine.
-
-Build with maven and copy the war file to your TomEE webapps directory:
-
-```shell
-$ mvn clean package -DskipTests
-
-$ cp ./target/notification-service-[VERSION].war $TOMEE_HOME/webapps/notifications.war
-  # The war file name determines the context used in the URL.
-  # In this case, the context is `notifications`, so the base URL
-  # will be `http://localhost:8080/notifications/...etc`.
-```
-...and (re)start TomEE. You can then visit the URL:
-http://localhost:8080/notifications/v1/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
+Here are some useful links for those unfamiliar with Jakarta EE:
+- [Jakarta EE 10](https://jakarta.ee/release/10/)
+- [Jakarta EE 10 API](https://jakarta.ee/specifications/platform/10/apidocs/)
+- [Jakarta EE REST Service
+  Tutorial](https://jakarta.ee/learn/starter-guides/how-to-build-a-restful-web-service/)
 
 ## Appendix 1: Building and Publishing the Container Images
 
@@ -232,6 +209,40 @@ http://localhost:8080/notifications/v1/metrics/ping, which should return `{"stat
 
     # push
      docker push ghcr.io/dataoneorg/notification-service:"$TAG"
+    ```
+
+## Appendix 2: Building and Running on a Localhost Web Application Server
+
+> [!NOTE]
+> **Prerequisites:**
+> In addition to the Java and maven versions listed above, you will need:
+> 1. [Apache TomEE](https://tomee.apache.org) MicroProfile v10+ (or another web application server that is fully compliant with [Jakarta EE](#jakarta-ee) 10.
+>
+>   >*Tomcat version 10 is NOT yet fully compliant with Jakarta EE 10, so for the time being, it is recommended to use **Apache TomEE**, which is an Apache-maintained combination of Tomcat and the additional libraries needed to support Jakarta EE. TomEE is available in different "flavors"; choose the `MicroProfile` version.)*
+> 2. A running PostgreSQL database. This can easily be started in a container, using the provided script: `./scripts/docker-run-db.sh`.
+> 3. RabbitMQ: you should be able to configure Notification Service to work with any RabbitMQ instance, by editing the settings in `ns-common/src/main/resources/properties.yaml`. This approach is not tested or supported, but should work if you have a working RabbitMQ instance running on your local machine.
+
+1. Build with maven (`mvn clean package -DskipTests`)
+2. **ns-web-api:** Copy the war file to your TomEE webapps directory:
+
+    ```shell
+    $ cp ./ns-web-api/target/ns-web-api-[VERSION].war $TOMEE_HOME/webapps/notifications.war
+      # The final war file name determines the context used in the URL.
+      # In this case, the context is `notifications` (from `notifications.war`),
+      # so the base URL will be `http://localhost:8080/notifications/...etc`.
+    ```
+...and (re)start TomEE. You can then visit the URL: http://localhost:8080/notifications/v1/metrics/ping, which should return `{"status":"ok"}`. You can also validate that the service is working correctly by running the [smoke tests](#smoke-tests).
+
+3. **ns-consumer:** run the jar file from the command line:
+
+    ```shell
+    $ java -jar ./ns-consumer/target/ns-consumer-[VERSION].jar
+    ```
+
+4. **ns-source:** this is typically run on a regular basis by a cron job. You can trigger it as follows (or schedule the same command in cron):
+
+    ```shell
+    $ java -jar ./ns-source/target/ns-source-[VERSION].jar
     ```
 
 ## License
