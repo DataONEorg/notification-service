@@ -39,20 +39,14 @@ nsconsumer:
     tag: LOCAL
     pullPolicy: Never
 
-emailUtil:
-  host: mailpit
-  port: 1025
-  auth:
-    enabled: true
-    existingSecret: "mailpit-auth"
-
-    ## After applying the above, add this entry to /etc/hosts file:
-    ##
-    ##   $ echo "127.0.0.1    notifications.local" | sudo tee -a /etc/hosts
-    ##
-    ## Now you can access the notifications service at:
-    ##   http://notifications.local/notifications/metrics/ping
-
+  notifiers:
+    email:
+      host: mailpit
+      port: 1025
+      auth:
+        existingSecret: "mailpit-auth"
+      accountSvc:
+        existingSecret: "ns-account-svc-token"
 rmq:
   rmqOperator:
     persistence:

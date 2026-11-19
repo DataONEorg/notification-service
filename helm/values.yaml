@@ -43,7 +43,7 @@ ns:
     api:
       baseUrl: https://cn.dataone.org/cn/v2
       authenticate: /diag/subject
-      userAgent: "DataONE notification-service/1.0"
+      userAgent: &userAgent "DataONE notification-service/1.0"
       connectTimeoutMilliSec: 5000
       readTimeoutMilliSec: 5000
 
@@ -52,7 +52,7 @@ ns:
     ##
     dbName: notifications
 
-    ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & password
+    ## @param ns.database.existingSecret (REQUIRED) Basic Auth Secret name for DB username & passwd
     ##
     existingSecret: "nsdb-cnpg-app"
 
@@ -275,8 +275,8 @@ lifecycleHooks:
 ## @param autoscaling.enabled Enable or disable autoscaling for the notification service deployment
 ## @param autoscaling.minReplicas Minimum number of replicas for the notification service deployment
 ## @param autoscaling.maxReplicas Maximum number of replicas for the notification service deployment
-## @param autoscaling.targetCPUUtilizationPercentage Target CPU utilization percentage for the notification service deployment
-## @param autoscaling.targetMemoryUtilizationPercentage Target memory utilization percentage for the notification service deployment
+## @param autoscaling.targetCPUUtilizationPercentage Target % CPU utilization for api service
+## @param autoscaling.targetMemoryUtilizationPercentage Target % memory utilization for api service
 ##
 autoscaling:
   enabled: false    # CURRENTLY IGNORED - NEEDS METRICS SERVICE ON CLUSTER
@@ -345,11 +345,21 @@ tomcat:
   ## 3. Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
   ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
   ##
+  ## !!! If you override these values below, using a separate file or command line options, those
+  ## overrides will completely replace the default values below. YOU MUST THEREFORE COPY THE
+  ## OPTIONS BELOW AND INCLUDE THEM IN YOUR OVERRIDES, IF YOU WANT TO KEEP THEM !!!
+  ##
   ## (extraCatalinaOpts is a YAML list, so each entry must be preceded by a dash (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   extraCatalinaOpts:
+      ## Allow JVM to use maximum of 75% of available RAM, so you don't need to change this
+      ## each time the memory limit is changed:
     - -XX:MaxRAMPercentage=75
+      ## (faster startup) Scan for CDI beans only here, instead of scanning all classes in the WAR:
+    - -Dtomee.mp.scan.packages=org.dataone.notifications
+      ## (faster startup) Stop running TldScanner across all bundled JARs looking for JSP tag libs:
+    - -Dtomcat.util.scan.StandardJarScanFilter.jarsToSkip=*.jar
 
   ## @param tomcat.jmxEnabled Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.
   ## When JMX is enabled by setting this to 'true', you can view the JMX metrics using a JMX client
@@ -464,8 +474,8 @@ nsconsumer:
   ## Optional values:
   ## @param nsconsumer.readinessProbe.periodSeconds Period seconds for readinessProbe
   ## @param nsconsumer.readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
-  ## @param nsconsumer.readinessProbe.successThreshold Min consecutive successes for probe to be successful
-  ## @param nsconsumer.readinessProbe.failureThreshold consecutive failures before container marked unhealthy
+  ## @param nsconsumer.readinessProbe.successThreshold Min consecutive successes for probe OK
+  ## @param nsconsumer.readinessProbe.failureThreshold consecutive fails before container  unhealthy
   ##
   readinessProbe:
     enabled: true
@@ -485,8 +495,8 @@ nsconsumer:
   ## @param nsconsumer.livenessProbe.initialDelaySeconds delay after container start before probing
   ## @param nsconsumer.livenessProbe.periodSeconds How often (in seconds) to perform the probe
   ## @param nsconsumer.livenessProbe.timeoutSeconds Seconds after which the probe times out
-  ## @param nsconsumer.livenessProbe.successThreshold Min consecutive successes for probe to be successful
-  ## @param nsconsumer.livenessProbe.failureThreshold consecutive failures before container marked unhealthy
+  ## @param nsconsumer.livenessProbe.successThreshold Minimum consecutive successes for probe OK
+  ## @param nsconsumer.livenessProbe.failureThreshold consecutive fails before container unhealthy
   ##
   livenessProbe:
     enabled: true
@@ -508,20 +518,110 @@ nsconsumer:
   ##   EXAMPLE_ENV_VAR_2: "example_value_2"
   extraEnvVars: {}
 
-## @section Configuration for the SMTP server used to send email notifications
-emailUtil:
-  ## @param emailUtil.host The hostname of the SMTP server to use for sending emails.
-  host: ADD_HOST
-  ## @param emailUtil.port The port of the SMTP server to use for sending emails.
-  port: 1025
-  auth:
-    ## @param emailUtil.auth.enabled Enable or disable SMTP authentication.
-    enabled: true
-    ## @param emailUtil.auth.existingSecret Secret holding SMTP credentials. This won't be
-    ## created automatically if you don't provide one, so you have to either
-    ## create it manually or reference a secret created by the email service chart.
-    ##
-    existingSecret: ""
+  ## @param nsconsumer.extraJavaOpts Optional additional Java options to be passed to the JVM
+  ## IMPORTANT NOTES:
+  ## 1. If you override these values below, using a separate file or command line options, those
+  ##    overrides will completely replace the default values below. YOU MUST THEREFORE COPY THE
+  ##    OPTIONS BELOW AND INCLUDE THEM IN YOUR OVERRIDES, IF YOU WANT TO KEEP THEM!
+  ## 2. You could set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead.
+  ##    Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
+  ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
+  ##
+  ## (extraCatalinaOpts is a YAML LIST, so each entry must be preceded by a DASH (-) and a space. It
+  ## looks strange when the options also contain dashes, but is correct YAML syntax.)
+  ##
+  extraJavaOpts:
+    - -XX:MaxRAMPercentage=75
+
+  ## @Section Notifiers
+  ## The notification service can be configured to use one or more notifiers, which are responsible
+  ## for sending notifications to users based on the messages consumed from the RabbitMQ queue.
+  ## Each is implemented as a {@link org.dataone.notifications.event.notifier.NotificationListener}
+  ## and can be configured with its own settings below. For example, see nsconsumer.notifiers.email,
+  ## which configures the {@link org.dataone.notifications.event.notifier.channel.EmailNotifier}.
+  ##
+  ## IMPORTANT: Each listener must have at least a className defined, which is the fully qualified
+  ## class name of the NotificationListener implementation to use (see, for example,
+  ##   nsconsumer.notifiers.email.className
+  ## which is set to:
+  ##   "org.dataone.notifications.event.notifier.channel.EmailNotifier"
+  ## Entries without a className are ignored.
+  ##
+  notifiers:
+    ## @skip Configuration for the SMTP server used to send email notifications
+    email:
+      ## @param nsconsumer.notifiers.email.className class name of the email notifier to be loaded.
+      ## This is the fully qualified class name of the NotificationListener implementation to use.
+      ## Entries without a className are ignored.
+      ##
+      className: "org.dataone.notifications.event.notifier.channel.EmailNotifier"
+
+      ## @param nsconsumer.notifiers.email.host SMTP server hostname to use for sending emails.
+      ##
+      host: ADD_HOST
+
+      ## @param nsconsumer.notifiers.email.port the SMTP server port to use for sending emails.
+      ##
+      port: 1025
+
+      ## @param nsconsumer.notifiers.email.fromAddress email address to use as the "from" address
+      ##
+      fromAddress: "do-not-reply@dataone.org"
+
+      ## @param nsconsumer.notifiers.email.fromName the name to use in the "from" field
+      fromName: "DataONE"
+
+      ## @param nsconsumer.notifiers.email.subject the subject line to use for email notifications
+      ##
+      subject: "DataONE Notification"
+
+      auth:
+        ## @param nsconsumer.notifiers.email.auth.existingSecret Secret holding SMTP credentials.
+        ##
+        ## IMPORTANT:
+        ## 1. This is a REQUIRED field. You must either create it manually or reference a secret
+        ##    created by the email service chart.
+        ## 2. If you are referencing a secret created by a separate email service chart, edit
+        ##    usernameKey and passwordKey below to match the key names used in that secret.
+        ## 3. If you are providing your own Secret, it must contain the exact key names listed
+        ##    in usernameKey and passwordKey, below.
+        ##
+        existingSecret: ""
+
+        ## @param nsconsumer.notifiers.email.auth.usernameKey Key name for username in Secret
+        ## @default username
+        ##
+        usernameKey: username
+
+        ## @param nsconsumer.notifiers.email.auth.passwordKey Key name for password in Secret
+        ## @default password
+        ##
+        passwordKey: password
+
+      accountSvc:
+        ## @param nsconsumer.notifiers.email.accountSvc.url URL for querying account service API
+        ## in order to obtain the email address for a given subject. This is typically the CN
+        ## account service API, and does NOT include a trailing slash; e.g:
+        ##   url: https://cn-sandbox.test.dataone.org/cn/v2/accounts
+        ##
+        url: https://cn-sandbox.test.dataone.org/cn/v2/accounts
+
+        ## @param nsconsumer.notifiers.email.accountSvc.existingSecret name of Secret for API token
+        ## This secret must have been created manually before initial deployment, and must use
+        ## 'token' (without quotes) as the exact key name, e.g.:
+        ##   $ kubectl create secret generic <release-name>-account-svc-token \
+        ##     --from-literal=token=<your-token-string>
+        ## The value of existingSecret would be "<release-name>-account-svc-token" in this example.
+        ##
+        existingSecret: ""
+
+        ## @param nsconsumer.notifiers.email.accountSvc.userAgent User-Agent string for API requests
+        ##
+        userAgent: *userAgent
+
+        ## @param nsconsumer.notifiers.email.accountSvc.connectTimeoutSec API connect timeout
+        ##
+        connectTimeoutSec: 10
 
 ## @section RabbitMQ Connection Configuration
 ## (This section does NOT affect the RabbitMQ Operator installation itself.)

@@ -42,10 +42,4 @@ LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notificatio
 
 EXPOSE 8080
 
-# These options are to save on startup time:
-# scan.packages: scan for CDI beans here, instead of scanning all classes in the WAR
-# jarsToSkip: stop running TldScanner across all bundled JARs looking for JSP tag libraries
-#
-ENV CATALINA_OPTS="${CATALINA_OPTS} -Dtomee.mp.scan.packages=org.dataone.notifications -Dtomcat.util.scan.StandardJarScanFilter.jarsToSkip=*.jar"
-
 CMD ["catalina.sh", "run"]
