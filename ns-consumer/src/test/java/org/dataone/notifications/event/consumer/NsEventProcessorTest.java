@@ -10,7 +10,6 @@ import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;

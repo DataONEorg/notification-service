@@ -109,11 +109,13 @@ public class EmailNotifier implements NotificationListener {
             });
 
         A_S_URL = NsConfig.getConfig().getString("ns.messaging.notifiers.email.accountSvc.url");
-        final String token = System.getenv("ACCOUNT_SERVICE_BEARER_TOKEN");
-        if (token == null || token.isBlank()) {
+        final String tokenRaw = System.getenv("ACCOUNT_SERVICE_BEARER_TOKEN");
+        if (tokenRaw == null || tokenRaw.isBlank()) {
             throw new IllegalStateException(
                 "Environment variable ACCOUNT_SERVICE_BEARER_TOKEN is required for EmailNotifier");
         }
+        // Trim whitespace and remove any line breaks from token to ensure valid header
+        final String token = tokenRaw.trim().replaceAll("\\s+", "");
         BEARER_TOKEN = "Bearer " + token;
         FROM_ADDRESS = new InternetAddress(
                 NsConfig.getConfig().getString("ns.messaging.notifiers.email.fromAddress"),
