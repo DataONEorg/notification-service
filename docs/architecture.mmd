@@ -49,8 +49,8 @@ flowchart LR
         ds-src -- "{ subscribedPid:123<br/>newPid:456<br/>SubscriptionResourceType: datasetChanges }" --> subs-proc
         mtrx-src --> subs-proc
         fut-src --> subs-proc
-        ds-src -- "Internal HTTP GET<br/>(lastSuccessfulRuntime)" --> web-api
-        subs-proc -- "Internal HTTP<br/>(PUT<br/>lastSuccessfulRuntime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
+        ds-src -- "Internal HTTP GET<br/>(lastModificationTime)" --> web-api
+        subs-proc -- "Internal HTTP<br/>(PUT<br/>lastModificationTime<br/>GET matching subscriptions;<br/>Update subscription<br/>to newPid)" --> web-api
         web-api <-- Subscription CRUD --> DB
 
     linkStyle default stroke-width:3px,color:#000000,font-style:italic

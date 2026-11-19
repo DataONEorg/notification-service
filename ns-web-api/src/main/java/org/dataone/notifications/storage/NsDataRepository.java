@@ -6,7 +6,7 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.dataone.notifications.util.StringUtils;
@@ -201,65 +201,65 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
-    public LastSuccessfulRuntimes getLastSuccessfulRuntimes(SubscriptionResourceType resourceType)
+    public LastModificationTimes getLastModificationTimes(SubscriptionResourceType resourceType)
         throws PersistenceException {
 
-        log.debug("Get lastSuccessfulRuntime for resourceType: {}", resourceType);
+        log.debug("Get lastModificationTime for resourceType: {}", resourceType);
         validateInput(resourceType);
-        String sql = "SELECT timestamp,node_id FROM last_successful_runtime WHERE resource_type=?";
+        String sql = "SELECT timestamp,node_id FROM last_modification_time WHERE resource_type=?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            List<LastSuccessfulRuntimes.Entry> entries = new ArrayList<>();
+            List<LastModificationTimes.Entry> entries = new ArrayList<>();
             statement.setString(1, resourceType.toString());
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     long ts = resultSet.getTimestamp("timestamp").getTime();
                     String nodeId = resultSet.getString("node_id");
                     log.debug(
-                        "ResourceType {}: lastSuccessfulRuntime was {} for nodeId={}",
+                        "ResourceType {}: lastModificationTime was {} for nodeId={}",
                         resourceType, ts, nodeId);
-                    entries.add(new LastSuccessfulRuntimes.Entry(ts, nodeId));
+                    entries.add(new LastModificationTimes.Entry(ts, nodeId));
                 }
                 if (entries.isEmpty()) {
-                    log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+                    log.warn("No lastModificationTimes found for resourceType: {}", resourceType);
                     throw new NotFoundException(
-                        "No lastSuccessfulRuntimes found for resourceType: " + resourceType);
+                        "No lastModificationTimes found for resourceType: " + resourceType);
                 }
             }
-            return new LastSuccessfulRuntimes(entries);
+            return new LastModificationTimes(entries);
 
         } catch (SQLException e) {
-            log.error("Database error: {} retrieving lastSuccessfulRuntime", e.getMessage());
-            throw new PersistenceException("Database error retrieving lastSuccessfulRuntime", e);
+            log.error("Database error: {} retrieving lastModificationTime", e.getMessage());
+            throw new PersistenceException("Database error retrieving lastModificationTime", e);
         }
     }
 
     @Override
-    public void setLastSuccessfulRuntimes(
+    public void setLastModificationTimes(
         SubscriptionResourceType resourceType,
-        LastSuccessfulRuntimes runtimes)
+        LastModificationTimes runtimes)
         throws IllegalArgumentException, PersistenceException {
 
         log.debug(
-            "Set lastSuccessfulRuntimes for resourceType: {} to List: {}", resourceType, runtimes);
+            "Set lastModificationTimes for resourceType: {} to List: {}", resourceType, runtimes);
         validateInput(resourceType);
         if (runtimes == null) {
-            log.error("LastSuccessfulRuntimes is null");
-            throw new IllegalArgumentException("LastSuccessfulRuntimes is null");
+            log.error("LastModificationTimes is null");
+            throw new IllegalArgumentException("LastModificationTimes is null");
         }
-        List<LastSuccessfulRuntimes.Entry> entries = runtimes.runtimes();
+        List<LastModificationTimes.Entry> entries = runtimes.runtimes();
         if (entries.isEmpty()) {
             return;
         }
         String[] nodeIds =
-            entries.stream().map(LastSuccessfulRuntimes.Entry::nodeId).toArray(String[]::new);
+            entries.stream().map(LastModificationTimes.Entry::nodeId).toArray(String[]::new);
         Timestamp[] timestamps =
             entries.stream().map(e -> new Timestamp(e.timestamp())).toArray(Timestamp[]::new);
 
         // Single round trip for all rows. GROUP BY keeps the latest timestamp per node, since one
         // upsert can't touch the same row twice
-        String sql = "INSERT INTO last_successful_runtime (resource_type, node_id, timestamp) "
+        String sql = "INSERT INTO last_modification_time (resource_type, node_id, timestamp) "
             + "SELECT ?, t.node_id, MAX(t.ts) FROM unnest(?, ?) AS t(node_id, ts) "
             + "GROUP BY t.node_id "
             + "ON CONFLICT (resource_type, node_id) DO UPDATE SET timestamp = EXCLUDED.timestamp";
@@ -278,8 +278,8 @@ public class NsDataRepository implements DataRepository {
                 timestampArray.free();
             }
         } catch (SQLException e) {
-            log.error("Database error: {} setting lastSuccessfulRuntime", e.getMessage());
-            throw new PersistenceException("Database error setting lastSuccessfulRuntime", e);
+            log.error("Database error: {} setting lastModificationTime", e.getMessage());
+            throw new PersistenceException("Database error setting lastModificationTime", e);
         }
     }
 

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.Flow;
 
 import org.dataone.notifications.NsConfig;
-import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,12 +97,12 @@ class HttpUtilsTest {
 
     @Test
     void doGet_returnsBodyAndSendsExpectedRequest() throws Exception {
-        String json = HttpUtils.doGet("/lastSuccessfulRuntime/urn:node:KNB/DATA");
+        String json = HttpUtils.doGet("/lastModificationTime/urn:node:KNB/DATA");
 
         assertEquals(JSON, json);
         HttpRequest request = sentRequest();
         assertEquals("GET", request.method());
-        assertEquals(BASE_URL + "/lastSuccessfulRuntime/urn:node:KNB/DATA",
+        assertEquals(BASE_URL + "/lastModificationTime/urn:node:KNB/DATA",
                      request.uri().toString());
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
     }
@@ -120,9 +120,9 @@ class HttpUtilsTest {
             "{\"runtimes\":[{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}]}");
 
         assertEquals(
-            new LastSuccessfulRuntimes(
-                List.of(new LastSuccessfulRuntimes.Entry(123L, "urn:node:KNB"))),
-            HttpUtils.doGet("/x", LastSuccessfulRuntimes.class));
+            new LastModificationTimes(
+                List.of(new LastModificationTimes.Entry(123L, "urn:node:KNB"))),
+            HttpUtils.doGet("/x", LastModificationTimes.class));
     }
 
     @Test
@@ -140,7 +140,7 @@ class HttpUtilsTest {
     void doGet_typed_unparseableBody_throwsIOException() {
         when(response.body()).thenReturn("not json");
 
-        assertThrows(IOException.class, () -> HttpUtils.doGet("/x", LastSuccessfulRuntimes.class));
+        assertThrows(IOException.class, () -> HttpUtils.doGet("/x", LastModificationTimes.class));
     }
 
     @Test
@@ -167,15 +167,15 @@ class HttpUtilsTest {
     }
 
     @Test
-    void doPut_sendsJsonBodyForLastSuccessfulRuntimeEndpoint() throws Exception {
-        String json = HttpUtils.doPut("/lastSuccessfulRuntime/datasetChanges", List.of(
-            new LastSuccessfulRuntimes.Entry(1700000000000L, "urn:node:KNB"),
-            new LastSuccessfulRuntimes.Entry(1700000060000L, "urn:node:ARCTIC")));
+    void doPut_sendsJsonBodyForLastModificationTimeEndpoint() throws Exception {
+        String json = HttpUtils.doPut("/lastModificationTime/datasetChanges", List.of(
+            new LastModificationTimes.Entry(1700000000000L, "urn:node:KNB"),
+            new LastModificationTimes.Entry(1700000060000L, "urn:node:ARCTIC")));
 
         assertEquals(JSON, json);
         HttpRequest request = sentRequest();
         assertEquals("PUT", request.method());
-        assertEquals(BASE_URL + "/lastSuccessfulRuntime/datasetChanges", request.uri().toString());
+        assertEquals(BASE_URL + "/lastModificationTime/datasetChanges", request.uri().toString());
         assertEquals("application/json", request.headers().firstValue("Content-Type").orElse(null));
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
         JsonNode sent = new ObjectMapper().readTree(bodyOf(request));
