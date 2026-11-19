@@ -104,7 +104,7 @@ public class SubscriptionProcessor {
                 message = message.withSubscriberId(subscription);
                 try {
                     submit(message);
-                    log.info("The dataset change event for {} and subscriber {} was "
+                    log.debug("The dataset change event for {} and subscriber {} was "
                                  + "submitted to RabbitMQ.", pid, subscription);
                 } catch (Exception e) {
                     log.error("The dataset change event for {} and subscriber {} cannot be "
@@ -114,7 +114,7 @@ public class SubscriptionProcessor {
                 }
                 try {
                     updateSubscriptions(pid, newPid, type);
-                    log.info("The subscription for {} and {} has been updated with the new pid "
+                    log.debug("The subscription for {} and {} has been updated with the new pid "
                                   + "{}", pid, type.name(), newPid);
                 } catch (Exception e) {
                     log.error("Could not update the subscription for {} and {} with the new pid "
