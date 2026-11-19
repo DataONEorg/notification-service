@@ -569,7 +569,7 @@ nsconsumer:
       fromAddress: "do-not-reply@dataone.org"
 
       ## @param nsconsumer.notifiers.email.fromName the name to use in the "from" field
-      fromName: "My App"
+      fromName: "DataONE"
 
       ## @param nsconsumer.notifiers.email.subject the subject line to use for email notifications
       ##
