@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException;
 public class SubscriptionProcessor {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionProcessor.class);
     private static volatile SubscriptionProcessor processor;
-    private static RabbitMqProperties prorperties = RabbitMqProperties.from(NsConfig.getConfig());
+    private static RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
     private static RabbitMqConnection rabbitMqConnection;
     private Channel channel;
     private ObjectMapper objectMapper;
@@ -50,7 +50,7 @@ public class SubscriptionProcessor {
      * @throws TimeoutException
      */
     private SubscriptionProcessor() throws IOException, TimeoutException {
-        rabbitMqConnection = new RabbitMqConnection(prorperties);
+        rabbitMqConnection = new RabbitMqConnection(properties);
         channel = rabbitMqConnection.newChannel();
         objectMapper = new ObjectMapper();
     }
@@ -106,6 +106,6 @@ public class SubscriptionProcessor {
             .deliveryMode(2)  // Persistent
             .build();
         channel.basicPublish(
-            prorperties.exchangeName(), prorperties.routingKey(), properties, payload);
+            SubscriptionProcessor.properties.exchangeName(), SubscriptionProcessor.properties.routingKey(), properties, payload);
     }
 }

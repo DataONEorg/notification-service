@@ -44,8 +44,15 @@ class RabbitMqConsumerIT {
         receivedEvents.clear();
         RabbitMqProperties props =
             new RabbitMqProperties(
-                rabbit.getHost(), rabbit.getAmqpPort(), rabbit.getAdminUsername(),
-                rabbit.getAdminPassword(), "/", QUEUE_NAME, 10);
+                rabbit.getHost(),
+                rabbit.getAmqpPort(),
+                rabbit.getAdminUsername(),
+                rabbit.getAdminPassword(),
+                "/",
+                QUEUE_NAME,
+                10,
+                "",
+                QUEUE_NAME);
         RabbitMqConnection connection = new RabbitMqConnection(props);
 
         RabbitMqConsumer consumer;

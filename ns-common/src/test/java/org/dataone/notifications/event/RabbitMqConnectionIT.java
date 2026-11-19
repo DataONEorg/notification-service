@@ -24,8 +24,15 @@ class RabbitMqConnectionIT {
     @Test
     void connectsToRunningBrokerAndWritesProbe() throws Exception {
         RabbitMqProperties props = new RabbitMqProperties(
-            rabbit.getHost(), rabbit.getAmqpPort(), rabbit.getAdminUsername(),
-            rabbit.getAdminPassword(), "/", "test-queue", 10);
+            rabbit.getHost(),
+            rabbit.getAmqpPort(),
+            rabbit.getAdminUsername(),
+            rabbit.getAdminPassword(),
+            "/",
+            "test-queue",
+            10,
+            "",
+            "test-queue");
 
         // Fails immediately if RabbitMQ is unreachable or channel/queue setup fails
         RabbitMqConnection rmqConnection = new RabbitMqConnection(props);
