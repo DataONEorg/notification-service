@@ -35,7 +35,7 @@ class PrivateResourcesSmokeIT {
 
     private static final String URI_PREFIX = "notifications/v1";
     private static final String PRIVATE_PATH = "private";
-    private static final String LAST_RUNTIME_PATH = "lastSuccessfulRuntime";
+    private static final String LAST_RUNTIME_PATH = "lastModificationTime";
     // Constant (resourceType, nodeId) keys: the first run inserts these rows, and every later run
     // only updates their timestamps, so the live DB never grows beyond these rows.
     private static final String TEST_NODE_ID = "urn:node:SMOKE_TEST";
@@ -69,7 +69,7 @@ class PrivateResourcesSmokeIT {
     @Test
     void setLastRuntime_multipleEntries_returnsNoContent() {
         long now = Instant.now().toEpochMilli();
-        log.debug("PUT lastSuccessfulRuntime, timestamps={}", now);
+        log.debug("PUT lastModificationTime, timestamps={}", now);
 
         try (Response r = put(TYPE,
                               body(entry(now - 60_000, TEST_NODE_ID),

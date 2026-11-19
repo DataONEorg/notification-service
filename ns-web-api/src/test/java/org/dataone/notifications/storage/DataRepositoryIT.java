@@ -2,7 +2,7 @@ package org.dataone.notifications.storage;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.util.DbTestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -146,66 +146,66 @@ class DataRepositoryIT {
     }
 
     @Test
-    void getLastSuccessfulRuntimesNoData() {
+    void getLastModificationTimesNoData() {
         assertThrows(
             NotFoundException.class,
-            () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+            () -> dataRepo.getLastModificationTimes(SubscriptionResourceType.citations));
     }
 
     @Test
-    void getLastSuccessfulRuntimesNullResourceType() {
-        assertThrows(NotFoundException.class, () -> dataRepo.getLastSuccessfulRuntimes(null));
+    void getLastModificationTimesNullResourceType() {
+        assertThrows(NotFoundException.class, () -> dataRepo.getLastModificationTimes(null));
     }
 
     @Test
-    void setLastSuccessfulRuntimesNullArguments() {
-        LastSuccessfulRuntimes runtimes = new LastSuccessfulRuntimes(
-            List.of(new LastSuccessfulRuntimes.Entry(System.currentTimeMillis(), "urn:node:NULL")));
+    void setLastModificationTimesNullArguments() {
+        LastModificationTimes runtimes = new LastModificationTimes(
+            List.of(new LastModificationTimes.Entry(System.currentTimeMillis(), "urn:node:NULL")));
         assertThrows(
-            NotFoundException.class, () -> dataRepo.setLastSuccessfulRuntimes(null, runtimes));
+            NotFoundException.class, () -> dataRepo.setLastModificationTimes(null, runtimes));
         assertThrows(
             IllegalArgumentException.class,
-            () -> dataRepo.setLastSuccessfulRuntimes(
+            () -> dataRepo.setLastModificationTimes(
                 SubscriptionResourceType.portalMetaChanges,
                 null));
     }
 
     @Test
-    void setLastSuccessfulRuntimesEmptyListIsNoOp() {
+    void setLastModificationTimesEmptyListIsNoOp() {
         assertDoesNotThrow(
-            () -> dataRepo.setLastSuccessfulRuntimes(
+            () -> dataRepo.setLastModificationTimes(
                 SubscriptionResourceType.citations,
-                new LastSuccessfulRuntimes(List.of())));
+                new LastModificationTimes(List.of())));
         assertThrows(
             NotFoundException.class,
-            () -> dataRepo.getLastSuccessfulRuntimes(SubscriptionResourceType.citations));
+            () -> dataRepo.getLastModificationTimes(SubscriptionResourceType.citations));
     }
 
     @Test
-    void testLastSuccessfulRuntimesInsertAndUpdate() {
+    void testLastModificationTimesInsertAndUpdate() {
         final SubscriptionResourceType type = SubscriptionResourceType.datasetChanges;
         final long now = System.currentTimeMillis();
-        final LastSuccessfulRuntimes.Entry node1 =
-            new LastSuccessfulRuntimes.Entry(now - 300_000, "urn:node:INS1");
-        final LastSuccessfulRuntimes.Entry node2 =
-            new LastSuccessfulRuntimes.Entry(now - 200_000, "urn:node:INS2");
+        final LastModificationTimes.Entry node1 =
+            new LastModificationTimes.Entry(now - 300_000, "urn:node:INS1");
+        final LastModificationTimes.Entry node2 =
+            new LastModificationTimes.Entry(now - 200_000, "urn:node:INS2");
 
         // Insert several rows in one call
-        dataRepo.setLastSuccessfulRuntimes(type, new LastSuccessfulRuntimes(List.of(node1, node2)));
-        List<LastSuccessfulRuntimes.Entry> stored =
-            dataRepo.getLastSuccessfulRuntimes(type).runtimes();
+        dataRepo.setLastModificationTimes(type, new LastModificationTimes(List.of(node1, node2)));
+        List<LastModificationTimes.Entry> stored =
+            dataRepo.getLastModificationTimes(type).runtimes();
         assertEquals(2, stored.size());
         assertTrue(stored.contains(node1), "Expected " + node1 + " to be in: " + stored);
         assertTrue(stored.contains(node2), "Expected " + node2 + " to be in: " + stored);
 
         // Update one existing node & insert a new one: existing node updated, others untouched
-        final LastSuccessfulRuntimes.Entry node1Updated =
-            new LastSuccessfulRuntimes.Entry(now, node1.nodeId());
-        final LastSuccessfulRuntimes.Entry node3 =
-            new LastSuccessfulRuntimes.Entry(now - 100_000, "urn:node:INS3");
-        dataRepo.setLastSuccessfulRuntimes(
-            type, new LastSuccessfulRuntimes(List.of(node1Updated, node3)));
-        stored = dataRepo.getLastSuccessfulRuntimes(type).runtimes();
+        final LastModificationTimes.Entry node1Updated =
+            new LastModificationTimes.Entry(now, node1.nodeId());
+        final LastModificationTimes.Entry node3 =
+            new LastModificationTimes.Entry(now - 100_000, "urn:node:INS3");
+        dataRepo.setLastModificationTimes(
+            type, new LastModificationTimes(List.of(node1Updated, node3)));
+        stored = dataRepo.getLastModificationTimes(type).runtimes();
         assertEquals(3, stored.size());
         assertTrue(stored.contains(node1Updated), "Expected " + node1Updated + " in: " + stored);
         assertFalse(stored.contains(node1), "Old entry should have been replaced: " + stored);
@@ -214,19 +214,19 @@ class DataRepositoryIT {
     }
 
     @Test
-    void setLastSuccessfulRuntimesDuplicateNodeKeepsLatestTimestamp() {
+    void setLastModificationTimesDuplicateNodeKeepsLatestTimestamp() {
         final SubscriptionResourceType type = SubscriptionResourceType.portalMetaChanges;
         final String nodeId = "urn:node:DUP";
         final long now = System.currentTimeMillis();
         final long latest = now - 10_000;
 
-        dataRepo.setLastSuccessfulRuntimes(
-            type, new LastSuccessfulRuntimes(List.of(
-                new LastSuccessfulRuntimes.Entry(latest, nodeId),
-                new LastSuccessfulRuntimes.Entry(now - 500_000, nodeId))));
+        dataRepo.setLastModificationTimes(
+            type, new LastModificationTimes(List.of(
+                new LastModificationTimes.Entry(latest, nodeId),
+                new LastModificationTimes.Entry(now - 500_000, nodeId))));
 
-        List<LastSuccessfulRuntimes.Entry> stored =
-            dataRepo.getLastSuccessfulRuntimes(type).runtimes();
-        assertEquals(List.of(new LastSuccessfulRuntimes.Entry(latest, nodeId)), stored);
+        List<LastModificationTimes.Entry> stored =
+            dataRepo.getLastModificationTimes(type).runtimes();
+        assertEquals(List.of(new LastModificationTimes.Entry(latest, nodeId)), stored);
     }
 }

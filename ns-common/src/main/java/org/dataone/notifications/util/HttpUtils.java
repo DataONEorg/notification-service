@@ -9,7 +9,7 @@ import java.time.Duration;
 import java.util.List;
 
 import org.dataone.notifications.NsConfig;
-import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
@@ -42,14 +42,14 @@ public class HttpUtils {
      /// Sends an HTTP GET to the internal api service and deserializes the JSON response to the
      /// provided `Class<T>` type.
      ///
-     /// Example: fetch the last successful runtimes (see {@code PrivateResources.getLastRuntime})
+     /// Example: fetch the last modification times (see {@code PrivateResources.getLastRuntime})
      /// and iterate over the timestamp / nodeId pairs. The typed overload doGet(String, Class) does
      /// the JSON-to-object conversion:
      ///
      /// ```java
-     ///   LastSuccessfulRuntimes result = HttpUtils.doGet(
-     ///       "/lastSuccessfulRuntime/datasetChanges", LastSuccessfulRuntimes.class);
-     ///   for (LastSuccessfulRuntimes.Entry e : result.runtimes()) {
+     ///   LastModificationTimes result = HttpUtils.doGet(
+     ///       "/lastModificationTime/datasetChanges", LastModificationTimes.class);
+     ///   for (LastModificationTimes.Entry e : result.runtimes()) {
      ///       long epochMillis = e.timestamp();   // milliseconds since the epoch (UTC)
      ///       String nodeId = e.nodeId();
      ///       Instant lastRun = Instant.ofEpochMilli(epochMillis);  // if an Instant is needed
@@ -74,7 +74,7 @@ public class HttpUtils {
 
      /// Sends an HTTP GET to the internal api service and returns the JSON response as a String.
      ///
-     /// @param requestUri path (plus optional query) E.g. "/lastSuccessfulRuntime/datasetChanges".
+     /// @param requestUri path (plus optional query) E.g. "/lastModificationTime/datasetChanges".
      ///                   Will be appended to the base URL (see ns.api.privateBaseUrl in
      ///                   config/properties.yaml). Callers are responsible for URL-encoding any
      ///                   path segments.
@@ -107,17 +107,17 @@ public class HttpUtils {
         }
     }
 
-     /// Sends an HTTP PUT to the internal api service, to set the last successful runtimes. The
-     /// entries are wrapped in a {@link LastSuccessfulRuntimes} and sent as JSON, with timestamps
+     /// Sends an HTTP PUT to the internal api service, to set the last modification times. The
+     /// entries are wrapped in a {@link LastModificationTimes} and sent as JSON, with timestamps
      /// as integer milliseconds since the epoch. E.g.:
      ///
      /// ```java
-     ///   HttpUtils.doPut("/lastSuccessfulRuntime/datasetChanges", List.of(
-     ///       new LastSuccessfulRuntimes.Entry(1794338367000L, "urn:node:KNB"),
-     ///       new LastSuccessfulRuntimes.Entry(1794338379000L, "urn:node:ARCTIC")));
+     ///   HttpUtils.doPut("/lastModificationTime/datasetChanges", List.of(
+     ///       new LastModificationTimes.Entry(1794338367000L, "urn:node:KNB"),
+     ///       new LastModificationTimes.Entry(1794338379000L, "urn:node:ARCTIC")));
      /// }
      /// ```
-     /// @param requestUri path (plus optional query) E.g. "/lastSuccessfulRuntime/datasetChanges".
+     /// @param requestUri path (plus optional query) E.g. "/lastModificationTime/datasetChanges".
      ///                   Will be appended to the base URL (see ns.api.privateBaseUrl in
      ///                   config/properties.yaml).  Callers are responsible for URL-encoding any path
      ///                   segments.
@@ -126,14 +126,14 @@ public class HttpUtils {
      /// @throws IOException if the body cannot be serialized, the request fails, or the server
      ///                     returns a non-2xx status
      ///
-    public static String doPut(String requestUri, List<LastSuccessfulRuntimes.Entry> entries)
+    public static String doPut(String requestUri, List<LastModificationTimes.Entry> entries)
         throws IOException {
 
         String path = requestUri.startsWith("/") ? requestUri : "/" + requestUri;
 
         String json;
         try {
-            json = MAPPER.writeValueAsString(new LastSuccessfulRuntimes(entries));
+            json = MAPPER.writeValueAsString(new LastModificationTimes(entries));
         } catch (JacksonException e) {
             throw new IOException("Unable to serialize body of PUT " + path + " as JSON", e);
         }

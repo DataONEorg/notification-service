@@ -7,7 +7,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
-import org.dataone.notifications.event.LastSuccessfulRuntimes;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.LoggerFactory;
 
@@ -47,42 +47,42 @@ public class PrivateResources {
     }
 
     /*
-     * Gets the last successful runtime timestamp and nodeId pairs for a given resourceType.
+     * Gets the last modification time timestamp and nodeId pairs for a given resourceType.
      *
      * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds
-     * @return a record containing the last successful runtime timestamp and nodeId pairs for the
+     * @return a record containing the last modification time timestamp and nodeId pairs for the
      *         specified resourceType
      */
     @GET
-    @Path("/lastSuccessfulRuntime/{resourceType}")
+    @Path("/lastModificationTime/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Record getLastRuntime(
+    public Record getLastModificationTime(
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType
     ){
         log.debug("Request to get last successful source runtimes for resourceType: {}",
             resourceType);
-        LastSuccessfulRuntimes response = dataRepository.getLastSuccessfulRuntimes(resourceType);
+        LastModificationTimes response = dataRepository.getLastModificationTimes(resourceType);
         if (response == null) {
-            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+            log.warn("No lastModificationTimes found for resourceType: {}", resourceType);
             throw new IllegalArgumentException(
-                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
+                "No lastModificationTime found for resourceType: " + resourceType);
         }
         if (response.runtimes().isEmpty()) {
-            log.warn("No lastSuccessfulRuntimes found for resourceType: {}", resourceType);
+            log.warn("No lastModificationTimes found for resourceType: {}", resourceType);
             throw new NotFoundException(
-                "No lastSuccessfulRuntime found for resourceType: " + resourceType);
+                "No lastModificationTime found for resourceType: " + resourceType);
         }
-        log.debug("Got lastSuccessfulRuntime list for resourceType: {}. List: {}",
+        log.debug("Got lastModificationTime list for resourceType: {}. List: {}",
                   resourceType, response);
         return response;
     }
 
-    /// Sets the last successful runtime timestamp and nodeId pairs for a given resourceType.
+    /// Sets the last modification time timestamp and nodeId pairs for a given resourceType.
     /// ("upserts" the given entries; other nodeIds are unchanged)
     ///
     /// Example resulting request:
     /// ```json
-    ///   PUT /private/lastSuccessfulRuntime/datasetChanges
+    ///   PUT /private/lastModificationTime/datasetChanges
     ///   Content-Type: application/json
     ///   {"runtimes": [
     ///     {"timestamp": 1794338367000, "nodeId": "urn:node:KNB"},
@@ -90,41 +90,31 @@ public class PrivateResources {
     ///   ]}
     /// ```
     ///
-    /// @param runtimes LastSuccessfulRuntimes object containing the last successful runtime
+    /// @param runtimes LastModificationTimes object containing the last modification time
     ///                 timestamp and nodeId pairs to set for the specified resourceType
     /// @param resourceType SubscriptionResourceType enum value representing the type of resource
     ///                     for which to set the runtimes & nodeIds
     ///
     @PUT
-    @Path("/lastSuccessfulRuntime/{resourceType}")
+    @Path("/lastModificationTime/{resourceType}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public void setLastRuntime(
-        @NotNull LastSuccessfulRuntimes runtimes,
+    public void setLastModificationTime(
+        @NotNull LastModificationTimes runtimes,
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType) {
-        log.debug("Request to set lastSuccessfulRuntimes for resourceType: {} to: {}",
+        log.debug("Request to set lastModificationTimes for resourceType: {} to: {}",
                   resourceType, runtimes);
         if (runtimes == null) {
             throw new BadRequestException("Request body is required");
         }
-        for (LastSuccessfulRuntimes.Entry entry : runtimes.runtimes()) {
+        for (LastModificationTimes.Entry entry : runtimes.runtimes()) {
             if (entry.timestamp() == null || entry.nodeId() == null || entry.nodeId().isBlank()) {
                 throw new BadRequestException(
                     "Each entry requires a timestamp and nodeId: " + entry);
             }
-            validateTimestamp(entry.timestamp());
         }
-        dataRepository.setLastSuccessfulRuntimes(resourceType, runtimes);
-        log.debug("Updated lastSuccessfulRuntimes for resourceType: {} to: {}",
+        dataRepository.setLastModificationTimes(resourceType, runtimes);
+        log.debug("Updated lastModificationTimes for resourceType: {} to: {}",
                   resourceType, runtimes);
     }
-
-    private void validateTimestamp(long timestampMillis) {
-        long nowMillis = System.currentTimeMillis();
-        if (timestampMillis > nowMillis + 60_000                      // allow for clock skew
-            || timestampMillis < nowMillis - SEVEN_DAYS_IN_SECONDS * 1000L) {
-            throw new BadRequestException("timestamp out of range: " + timestampMillis);
-        }
-    }
-
 }
