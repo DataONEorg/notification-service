@@ -21,6 +21,22 @@ import org.dataone.notifications.resource.SubscriptionResourceType;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record NsEventMessage(NsEvent nsEvent) {
 
+    /**
+     * Update the message with the given subscriber id
+     * @param subscriberId the subscriber id in the new message
+     * @return a new message with the given subscriber id
+     */
+    public NsEventMessage withSubscriberId(String subscriberId) {
+        NsEvent event = nsEvent;
+        NsEvent updatedEvent = new NsEvent(
+            subscriberId,
+            event.subscribedPid(),
+            event.newPid(),
+            event.SubscriptionResourceType()
+        );
+        return new NsEventMessage(updatedEvent);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NsEvent(
         String subscriberId,
