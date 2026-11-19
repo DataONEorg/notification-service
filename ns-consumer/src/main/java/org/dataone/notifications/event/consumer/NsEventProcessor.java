@@ -38,7 +38,7 @@ public class NsEventProcessor {
         while (keys.hasNext()) {
             String key = keys.next();
             String[] parts = key.split("\\.");
-            if (parts.length == 4) {
+            if (parts.length >= 4) {
                 String listenerName = parts[3];
                 if (!listenerNames.contains(listenerName)) {
                     listenerNames.add(listenerName);
