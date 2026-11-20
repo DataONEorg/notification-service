@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.event.NsEventMessage;
+import org.dataone.notifications.eventsource.SubscriptionProcessor;
 import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 /**
@@ -36,11 +38,15 @@ public class DataSet {
     private static final String solrQueryUrl =
         "http://localhost:8983/solr/metacat-index/select-all";
     private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
-
-    private static final String MN_LATEST_MODIFICATION_FILE_PATH =
-        "./.mn_latest_modification_time_map";
     private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
+    private static SubscriptionProcessor subscriptionProcessor;
 
+    /**
+     * Constructor
+     */
+    public DataSet() throws IOException, TimeoutException {
+        subscriptionProcessor = SubscriptionProcessor.getInstance();
+    }
 
     /**
      * Poll the solr server and send the candidate objects to the notification queue
@@ -101,11 +107,27 @@ public class DataSet {
             // Process this batch.
             for (JsonNode doc : documents) {
                 String guid = doc.path("id").asText(null);
+                if (guid == null || guid.isBlank()) {
+                    log.warn("The guid can't be blank for processing. The record will be ignored.");
+                    continue;
+                }
                 String newId = doc.path("obsoletedBy").asText(null);
+                if (newId == null || newId.isBlank()) {
+                    log.warn("The new guid can't be blank for processing. The record will be "
+                                 + "ignored.");
+                    continue;
+                }
                 String nodeId = doc.path("authoritativeMN").asText(null);
+                if (nodeId == null || nodeId.isBlank()) {
+                    log.warn(
+                        "The node id can't be blank for processing. The record will be ignored.");
+                    continue;
+                }
                 String modifiedDate = doc.path("dateModified").asText(null);
                 String formatId = doc.path("formatId").asText(null);
                 String formatType = doc.path("formatType").asText(null);
+                log.debug(
+                    "The id is {}, the new id is {} and the node id is {}", guid, newId, nodeId);
                 List<String> resourceMaps = new ArrayList<>();
                 JsonNode resourceMapNode = doc.path("resourceMap");
                 if (resourceMapNode.isArray()) {
@@ -119,17 +141,24 @@ public class DataSet {
                 } catch (Exception e) {
                     log.warn("Can't get the subscription resource type for {} since {}, and this "
                                  + "object is ignored.", guid, e.getMessage());
+                    continue;
                 }
                 if (subscriptionResourceType != null) {
-                    NsEventMessage message = new NsEventMessage(null);
+                    // The null value is subscriberId
+                    NsEventMessage.NsEvent event =
+                        new NsEventMessage.NsEvent(null, guid, newId, subscriptionResourceType);
+                    NsEventMessage message = new NsEventMessage(event);
+                    try {
+                        subscriptionProcessor.process(message);
+                    } catch (Exception e) {
+                        log.warn("Couldn't process the guid {} since {}.", guid, e.getMessage());
+                        continue;
+                    }
                 }
                 // Since the modificationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
                     latestModifiedMap.putIfAbsent(nodeId, modifiedDate);
                 }
-                log.debug(
-                    "The id is {}, the new id is {} and the node id is {}", guid, newId, nodeId);
-                // TODO: Submit the notification task.
             }
             // Solr returns the cursor to use for the next request.
             String nextCursorMark = result.path("nextCursorMark").asText();
