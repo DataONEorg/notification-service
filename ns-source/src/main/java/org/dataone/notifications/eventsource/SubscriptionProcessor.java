@@ -33,7 +33,7 @@ public class SubscriptionProcessor {
      * @throws IOException
      * @throws TimeoutException
      */
-    public SubscriptionProcessor getInstance() throws IOException, TimeoutException {
+    public static SubscriptionProcessor getInstance() throws IOException, TimeoutException {
         if (processor == null) {
             synchronized (SubscriptionProcessor.class) {
                 if (processor == null) {
