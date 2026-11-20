@@ -183,9 +183,9 @@ public class DataSet {
      * This method will generate the LastModificationTimes for query. It covers those scenarios:
      * 1. A fresh start (no records from the remote database). It will use all node ids from
      * existing solr server and the current time as the last modification
-     * 2. There are records from the remote database. It will compare the solr query result to
-     * figure out if new node ids were added. If a new one is found, a node Id and the earliest
-     * modification date will be added.
+     * 2. There are records from the remote database (not a fresh start). It will compare the solr
+     * query result to figure out if new node ids were added. If a new one is found, a node id
+     * and the current time as the last modification date will be added.
      * @param nodeIdWithEarliestModificationFromSolr  a map from solr which may contain the new
      *                                               node id
      * @return the LastModificationTimes combined the remote records and new added nodeId
@@ -227,14 +227,11 @@ public class DataSet {
                 entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
             } else {
                 if (!originalNodeIds.contains(nodeId)) {
-                    String earliestModficationTime =
-                        nodeIdWithEarliestModificationFromSolr.get(nodeId);
-                    long epochMillis = Instant.parse(earliestModficationTime).toEpochMilli();
                     log.debug(
                         "Found a new node id (it is not in the remote server). Node "
-                            + "id {} and the earliest modification {} will be put into map.",
-                        nodeId, earliestModficationTime);
-                    result.addEntry(epochMillis, nodeId);
+                            + "id {} and current time {} will be put into map.",
+                        nodeId, currentTime);
+                    result.addEntry(currentTime, nodeId);
                 }
             }
         }
