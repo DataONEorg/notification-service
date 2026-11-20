@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 
+import org.dataone.notifications.util.HttpUtils;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,7 @@ public class DataSet {
 
     private static final String MN_LATEST_MODIFICATION_FILE_PATH =
         "./.mn_latest_modification_time_map";
+    private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
 
 
     /**
@@ -53,20 +56,24 @@ public class DataSet {
                     + "will stop polling.", solrQueryUrl);
             return;
         }
-        Map<String, String> originalMnLatestModifiedDateMap =
+        LastModificationTimes originalLatestModificationTimes =
             getRecordedMnLatestMap(nodeIdWithEarliestModificationFromSolr);
-        if (originalMnLatestModifiedDateMap == null || originalMnLatestModifiedDateMap.isEmpty()) {
+        if (originalLatestModificationTimes == null
+            || originalLatestModificationTimes.runtimes() == null || originalLatestModificationTimes
+            .runtimes().isEmpty()) {
             return;
         }
         // Build the MN/date conditions.
         List<String> mnQueries = new ArrayList<>();
-        for (Map.Entry<String, String> entry : originalMnLatestModifiedDateMap.entrySet()) {
-            String mn = entry.getKey();
-            String dateModified = entry.getValue();
+        for (LastModificationTimes.Entry e : originalLatestModificationTimes.runtimes()) {
+            long epochMillis = e.timestamp();   // milliseconds since the epoch (UTC)
+            String timestamp = Instant.ofEpochMilli(epochMillis).toString();
+            String nodeId = e.nodeId();
             mnQueries.add(
-                "(authoritativeMN:\"" + escapeSolrValue(mn) + "\" " +
-                    "AND dateModified:{" + dateModified + " TO *})"
+                "(authoritativeMN:\"" + escapeSolrValue(nodeId) + "\" " +
+                    "AND dateModified:{" + timestamp + " TO *})"
             );
+
         }
         // Combine all MN/date conditions with OR.
         String mnDateQuery = "(" + String.join(" OR ", mnQueries) + ")";
@@ -74,6 +81,7 @@ public class DataSet {
         String q = mnDateQuery +
             " AND obsoletedBy:[* TO *]" +
             " AND (formatType:\"RESOURCE\" OR formatType:\"METADATA\")";
+        log.debug("The query is {}", q);
         String cursorMark = "*";
         // A new map to store the latest modification date for this poll
         Map<String, String> latestModifiedMap = new HashMap<>();
@@ -115,7 +123,7 @@ public class DataSet {
                 if (subscriptionResourceType != null) {
                     NsEventMessage message = new NsEventMessage(null);
                 }
-                // Since the modficationDate is desc, the first record has the newest value
+                // Since the modificationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
                     latestModifiedMap.putIfAbsent(nodeId, modifiedDate);
                 }
@@ -131,9 +139,10 @@ public class DataSet {
             }
             cursorMark = nextCursorMark;
         }
-        // Update the original map with new values
-        originalMnLatestModifiedDateMap.putAll(latestModifiedMap);
-        saveMnLatestMap(originalMnLatestModifiedDateMap);
+        // Save the new LastModificationTimeEntries to the remote server
+        List<LastModificationTimes.Entry> modifiedTimes =
+            convertMapToLastModificationEntries(latestModifiedMap);
+        saveLastModificationEntries(modifiedTimes);
     }
 
     private String escapeSolrValue(String value) {
@@ -142,70 +151,99 @@ public class DataSet {
 
 
     /**
-     * Read the recorded map from the file/database if the file/database exist. The map has a key
-     * of node id and the value of the latest modification date. It also handles the scenarios of
-     * fresh start (no record file or database) or a new node id found in the solr docs.
+     * This method will generate the LastModificationTimes for query. It covers those scenarios:
+     * 1. A fresh start (no records from the remote database). It will use all node ids from
+     * existing solr server and the current time as the last modification
+     * 2. There are records from the remote database. It will compare the solr query result to
+     * figure out if new node ids were added. If a new one is found, a node Id and the earliest
+     * modification date will be added.
      * @param nodeIdWithEarliestModificationFromSolr  a map from solr which may contain the new
      *                                               node id
-     * @return the map with nodeId/latestModficationDate
+     * @return the LastModificationTimes combined the remote records and new added nodeId
      * @throws IOException
      */
-    private Map<String, String> getRecordedMnLatestMap(
+    private LastModificationTimes getRecordedMnLatestMap(
         Map<String, String> nodeIdWithEarliestModificationFromSolr) throws IOException {
         boolean freshStart = false;
-        File file = new File(MN_LATEST_MODIFICATION_FILE_PATH);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, String> mnLatestMap = new HashMap<>();
-        // Read the existing map if the file exists.
-        if (file.exists()) {
-            mnLatestMap = mapper.readValue(file,
-                                           new TypeReference<Map<String, String>>() {});
-        } else {
+        ArrayList<String> originalNodeIds = new ArrayList<>();
+        // Read the existing lastModificationTimes from the internal service
+        LastModificationTimes result = HttpUtils.doGet(
+               "/lastModificationTime/datasetChanges", LastModificationTimes.class);
+        if (result == null || result.runtimes() == null || result.runtimes().isEmpty()) {
+            log.debug("The LastModificationTimes from the remote server is empty.");
             freshStart = true;
+        } else {
+            for (LastModificationTimes.Entry e : result.runtimes()) {
+                String nodeId = e.nodeId();
+                if (nodeId != null && nodeId.isBlank()) {
+                    log.debug("Add node id {} into the original node list ", nodeId);
+                    originalNodeIds.add(nodeId);
+                }
+            }
         }
         // Add new node IDs
-        String currentTime = Instant.now().toString();
-        boolean updated = false;
+        long currentTime = System.currentTimeMillis();
         // Handle the scenarios of a fresh start or a new node id was found in the solr doc.
+        List<LastModificationTimes.Entry> entries = new ArrayList<>();
         for (String nodeId : nodeIdWithEarliestModificationFromSolr.keySet()) {
             if (nodeId == null || nodeId.isBlank()) {
                 log.debug("The node id is null or blank, skip it");
                 continue;
             }
             if (freshStart) {
-                log.debug("This a fresh start (no recorded file or database). Node id {} and "
-                              + "current time {} will be put into map.", nodeId, currentTime);
-                mnLatestMap.put(nodeId, currentTime);
-                updated = true;
+                log.debug(
+                    "This a fresh start (no recorded file or database). Node id {} and "
+                        + "current time {} will be put into LastModificationTimes.", nodeId,
+                    currentTime);
+                entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
             } else {
-                if (!mnLatestMap.containsKey(nodeId)) {
+                if (!originalNodeIds.contains(nodeId)) {
                     String earliestModficationTime =
                         nodeIdWithEarliestModificationFromSolr.get(nodeId);
+                    long epochMillis = Instant.parse(earliestModficationTime).toEpochMilli();
                     log.debug(
-                        "Found a new node id (it is not in the recorded file or database). Node "
+                        "Found a new node id (it is not in the remote server). Node "
                             + "id {} and the earliest modification {} will be put into map.",
                         nodeId, earliestModficationTime);
-                    mnLatestMap.put(nodeId, earliestModficationTime);
-                    updated = true;
+                    result.addEntry(epochMillis, nodeId);
                 }
             }
         }
-        // Save the map if the file is new or has been updated.
-        if (!file.exists() || updated) {
-            saveMnLatestMap(mnLatestMap);
+        // Save the LastModificationTimes if it is a fresh start
+        if (freshStart) {
+            saveLastModificationEntries(entries);
+            result = new LastModificationTimes(entries);
         }
-        return mnLatestMap;
+        return result;
     }
 
-    private void saveMnLatestMap(Map<String, String> map) throws IOException {
-        File file = new File(MN_LATEST_MODIFICATION_FILE_PATH);
-        // Create parent directories if they don't exist.
-        File parentDir = file.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            Files.createDirectories(parentDir.toPath());
+    private List<LastModificationTimes.Entry> convertMapToLastModificationEntries(
+        Map<String, String> map) throws IOException {
+        if (map == null || map.isEmpty()) {
+            return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, map);
+        List<LastModificationTimes.Entry> entries = new ArrayList<>();
+        for (String nodeId : map.keySet()) {
+            if (nodeId != null && !nodeId.isBlank())  {
+                String timestamp = map.get(nodeId);
+                long epochMillis = Instant.parse(timestamp).toEpochMilli();
+                entries.add(new LastModificationTimes.Entry(epochMillis, nodeId));
+            }
+        }
+        if (!entries.isEmpty()) {
+            return entries;
+        } else {
+            return null;
+        }
+    }
+
+    private void saveLastModificationEntries(List<LastModificationTimes.Entry> entries) throws IOException {
+        if (entries != null && !entries.isEmpty()) {
+            HttpUtils.doPut(LAST_MODIFICATION_URL, entries);
+        } else {
+            log.debug("An empty ModificationTimes.Entry list will not be saved to the remote "
+                          + "server");
+        }
     }
 
     /**
