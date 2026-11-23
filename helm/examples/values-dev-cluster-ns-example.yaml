@@ -18,7 +18,7 @@ ns:
   logLevel: debug
   auth:
     api:
-      baseUrl: https://cn-sandbox.test.dataone.org/cn/v2
+      baseUrl: https://cn-stage.test.dataone.org/cn/v2
       connectTimeoutMilliSec: 10000
       readTimeoutMilliSec: 20000
 
@@ -61,11 +61,6 @@ ingress:
       secretName: ingress-tls-cert
 
 nsconsumer:
-  # TODO: REMOVE AFTER JAVA 25.0.5.1+ USED IN BASE IMAGE
-  extraEnvVars:
-    JAVA_TOOL_OPTIONS: "-XX:-UseBASE64Intrinsics"
-    # END REMOVAL TODO
-
   image:
     tag: develop
     pullPolicy: Always

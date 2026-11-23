@@ -3,11 +3,11 @@ dbName: notifications
 
 resources:
   requests:
-    cpu: 1
-    memory: 1Gi
+    cpu: 2
+    memory: 4Gi
   limits:
-    cpu: 1
-    memory: 1Gi
+    cpu: 2
+    memory: 4Gi
 
 ## For local Rancher Desktop:
 #resources:
@@ -17,7 +17,7 @@ resources:
 #  limits:
 #    cpu: 500m
 #    memory: 500Mi
-
-persistence:
-  size: 1Gi
-  storageClass: local-path
+#
+#persistence:
+#  size: 1Gi
+#  storageClass: local-path
