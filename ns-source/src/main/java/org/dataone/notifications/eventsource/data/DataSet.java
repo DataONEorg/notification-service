@@ -1,7 +1,5 @@
 package org.dataone.notifications.eventsource.data;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.dataone.notifications.event.LastModificationTimes;
@@ -17,9 +15,7 @@ import org.dataone.notifications.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,7 +86,7 @@ public class DataSet {
         log.debug("The query is {}", q);
         String cursorMark = "*";
         // A new map to store the latest modification date for this poll
-        Map<String, String> latestModifiedMap = new HashMap<>();
+        List<LastModificationTimes.Entry> modifiedTimes = new ArrayList<>();
         while (true) {
             Map<String, String> params = new HashMap<>();
             params.put("q", q);
@@ -157,7 +153,8 @@ public class DataSet {
                 }
                 // Since the modificationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
-                    latestModifiedMap.putIfAbsent(nodeId, modifiedDate);
+                    long epochMillis = Instant.parse(modifiedDate).toEpochMilli();
+                    modifiedTimes.add(new LastModificationTimes.Entry(epochMillis, nodeId));
                 }
             }
             // Solr returns the cursor to use for the next request.
@@ -169,8 +166,6 @@ public class DataSet {
             cursorMark = nextCursorMark;
         }
         // Save the new LastModificationTimeEntries to the remote server
-        List<LastModificationTimes.Entry> modifiedTimes =
-            convertMapToLastModificationEntries(latestModifiedMap);
         saveLastModificationEntries(modifiedTimes);
     }
 
@@ -243,26 +238,6 @@ public class DataSet {
         return result;
     }
 
-    private List<LastModificationTimes.Entry> convertMapToLastModificationEntries(
-        Map<String, String> map) throws IOException {
-        if (map == null || map.isEmpty()) {
-            return null;
-        }
-        List<LastModificationTimes.Entry> entries = new ArrayList<>();
-        for (String nodeId : map.keySet()) {
-            if (nodeId != null && !nodeId.isBlank())  {
-                String timestamp = map.get(nodeId);
-                long epochMillis = Instant.parse(timestamp).toEpochMilli();
-                entries.add(new LastModificationTimes.Entry(epochMillis, nodeId));
-            }
-        }
-        if (!entries.isEmpty()) {
-            return entries;
-        } else {
-            return null;
-        }
-    }
-
     private void saveLastModificationEntries(List<LastModificationTimes.Entry> entries) throws IOException {
         if (entries != null && !entries.isEmpty()) {
             HttpUtils.doPut(LAST_MODIFICATION_URL, entries);
@@ -323,8 +298,7 @@ public class DataSet {
     /// References:
     ///
     /// - List of available formats: [DataONE formats](https://cn.dataone.org/cn/v2/formats)
-    /// - Enumeration of available resource types:
-    /// [org.dataone.notifications.api.resource.SubscriptionResourceType]
+    /// - Enumeration of available resource types: {@link SubscriptionResourceType}
     ///
     /// @param formatType  the format type of the data object, it can be DATA, METADATA, or RESOURCE
     /// @param formatId  the format id of the data object

@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * The Junit tests for the DataSet class
+ * The JUnit tests for the DataSet class
  */
 public class DataSetTest {
     private static final String ORE = "http://www.openarchives.org/ore/terms";
@@ -21,7 +21,7 @@ public class DataSetTest {
 
 
     @Test
-    void resource_returnsDatasetChanges() throws Exception {
+    void resource_returnsDatasetChanges() {
         assertEquals(
             SubscriptionResourceType.datasetChanges,
             DataSet.getResourceType("RESOURCE", ORE, RESOURCE_MAP_LIST));
@@ -37,7 +37,7 @@ public class DataSetTest {
     }
 
     @Test
-    void metadataPortal_returnsPortalMetaChanges() throws Exception {
+    void metadataPortal_returnsPortalMetaChanges() {
         assertEquals(SubscriptionResourceType.portalMetaChanges,
                      DataSet.getResourceType("METADATA", PORTAL_1_0_0, null));
         assertEquals(SubscriptionResourceType.portalMetaChanges,
@@ -45,7 +45,7 @@ public class DataSetTest {
     }
 
     @Test
-    void metadataPortalWithResourceMap_returnsPortalMetaChanges() throws Exception {
+    void metadataPortalWithResourceMap_returnsPortalMetaChanges() {
         assertEquals(SubscriptionResourceType.portalMetaChanges, DataSet.getResourceType(
             "METADATA", PORTAL_1_0_0, RESOURCE_MAP_LIST));
         assertEquals(SubscriptionResourceType.portalMetaChanges, DataSet.getResourceType(
@@ -60,13 +60,13 @@ public class DataSetTest {
     }
 
     @Test
-    void metadataWithNullResourceMap_returnsDatasetChanges() throws Exception {
+    void metadataWithNullResourceMap_returnsDatasetChanges() {
         assertEquals(SubscriptionResourceType.datasetChanges,
                      DataSet.getResourceType("METADATA", ORE, null));
     }
 
     @Test
-    void metadataWithMalformedResourceMap_returnsDatasetChanges() throws Exception {
+    void metadataWithMalformedResourceMap_returnsDatasetChanges() {
         assertEquals(SubscriptionResourceType.datasetChanges,
                      DataSet.getResourceType("METADATA", ORE, List.of()));
         assertEquals(SubscriptionResourceType.datasetChanges,
