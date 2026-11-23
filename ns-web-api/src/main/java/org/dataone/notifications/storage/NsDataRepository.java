@@ -19,7 +19,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -214,7 +213,7 @@ public class NsDataRepository implements DataRepository {
             statement.setString(1, resourceType.toString());
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    long ts = resultSet.getTimestamp("timestamp").getTime();
+                    long ts = resultSet.getLong("timestamp");
                     String nodeId = resultSet.getString("node_id");
                     log.debug(
                         "ResourceType {}: lastModificationTime was {} for nodeId={}",
@@ -252,10 +251,14 @@ public class NsDataRepository implements DataRepository {
         if (entries.isEmpty()) {
             return;
         }
+        if (entries.stream().anyMatch(e -> e.timestamp() == null)) {
+            log.error("timestamp must not be null");
+            throw new IllegalArgumentException("timestamp must not be null");
+        }
         String[] nodeIds =
             entries.stream().map(LastModificationTimes.Entry::nodeId).toArray(String[]::new);
-        Timestamp[] timestamps =
-            entries.stream().map(e -> new Timestamp(e.timestamp())).toArray(Timestamp[]::new);
+        Long[] timestamps =
+            entries.stream().map(LastModificationTimes.Entry::timestamp).toArray(Long[]::new);
 
         // Single round trip for all rows. GROUP BY keeps the latest timestamp per node, since one
         // upsert can't touch the same row twice
@@ -267,7 +270,7 @@ public class NsDataRepository implements DataRepository {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             Array nodeIdArray = connection.createArrayOf("varchar", nodeIds);
-            Array timestampArray = connection.createArrayOf("timestamptz", timestamps);
+            Array timestampArray = connection.createArrayOf("bigint", timestamps);
             try {
                 statement.setString(1, resourceType.toString());
                 statement.setArray(2, nodeIdArray);

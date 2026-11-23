@@ -21,14 +21,13 @@ import org.dataone.notifications.storage.DataRepository;
 
 import org.slf4j.Logger;
 
-/**
- * A class that provides internal API endpoints for managing private resources. It enables various
- * components of the system to read or write database records, without needing individual components
- * to have direct access to the database.
- *
- * IMPORTANT: The endpoints defined in this class are intended for internal use within the cluster
- * only, and should never be exposed to external clients.
- */
+/// A class that provides internal API endpoints for managing private resources. It enables various
+/// components of the system to read or write database records, without needing individual components
+/// to have direct access to the database.
+///
+/// IMPORTANT: The endpoints defined in this class are intended for internal use within the cluster
+/// only, and should never be exposed to external clients.
+///
 @RequestScoped
 @Path("/private")
 public class PrivateResources {
@@ -46,13 +45,13 @@ public class PrivateResources {
         this.dataRepository = dataRepository;
     }
 
-    /*
-     * Gets the last modification time timestamp and nodeId pairs for a given resourceType.
-     *
-     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds
-     * @return a record containing the last modification time timestamp and nodeId pairs for the
-     *         specified resourceType
-     */
+    /// Gets the last modification time timestamp and nodeId pairs for a given resourceType.
+    ///
+    /// @param resourceType the type of resource for which to retrieve the runtimes & nodeIds - see
+    ///                     {@link SubscriptionResourceType} enum for valid values
+    /// @return a record containing the last modification time timestamp (integer milliseconds since
+    /// the epoch (UTC)) and nodeId pairs for the specified resourceType
+    ///
     @GET
     @Path("/lastModificationTime/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -91,9 +90,11 @@ public class PrivateResources {
     /// ```
     ///
     /// @param runtimes LastModificationTimes object containing the last modification time
-    ///                 timestamp and nodeId pairs to set for the specified resourceType
+    ///                 timestamp (integer milliseconds since the epoch (UTC)) and nodeId pairs to
+    ///                 set for the specified resourceType
     /// @param resourceType SubscriptionResourceType enum value representing the type of resource
-    ///                     for which to set the runtimes & nodeIds
+    ///                     for which to set the runtimes & nodeIds - see
+    ///                     {@link SubscriptionResourceType} enum for valid values
     ///
     @PUT
     @Path("/lastModificationTime/{resourceType}")

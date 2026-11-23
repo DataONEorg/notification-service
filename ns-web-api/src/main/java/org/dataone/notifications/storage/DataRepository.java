@@ -17,7 +17,8 @@ public interface DataRepository {
      * Retrieves the list of PIDs that a given subject is subscribed to for a given resourceType.
      *
      * @param subject      the subject (user ORCID) for which to retrieve subscriptions
-     * @param resourceType the type of resource for which to retrieve subscriptions
+     * @param resourceType the type of resource for which to retrieve subscriptions - see
+     *                     {@link SubscriptionResourceType} enum for valid values
      * @return a List of PIDs that the subject is subscribed to for the given resourceType. This
      *         method will never return null; if no subscriptions are found, an empty List will be
      *         returned.
@@ -44,7 +45,8 @@ public interface DataRepository {
     /**
      * Retrieves the last modification time timestamps and nodeIds for a given resourceType.
      *
-     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds
+     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds - see
+     *     ///             {@link SubscriptionResourceType} enum for valid values
      * @return a LastModificationTimes record for the specified resourceType, containing 0..n
      *     LastModificationTimes.Entry records, each containing a timestamp and nodeId. This method
      *     will never return null; if no entries are found, a NotFoundException will be thrown.
@@ -62,8 +64,9 @@ public interface DataRepository {
      * the provided List is null, an IllegalArgumentException will be thrown. Entries are never
      * deleted by this method.
      *
-     * @param resourceType the type of resource for which to set the runtimes & nodeIds
-     * @param entries      a List of LastModificationTimes.Entry records, each containing a
+     * @param resourceType the type of resource for which to set the runtimes & nodeIds - see
+     *                     {@link SubscriptionResourceType} enum for valid values
+     * @param entries      a List of {@link LastModificationTimes.Entry} records, each containing a
      *                     timestamp and nodeId to be set for the given resourceType.
      * @throws IllegalArgumentException if the provided List is null
      * @throws PersistenceException     if there is an error persisting the entries to the data

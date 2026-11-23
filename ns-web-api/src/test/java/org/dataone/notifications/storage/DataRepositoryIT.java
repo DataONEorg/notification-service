@@ -168,6 +168,12 @@ class DataRepositoryIT {
             () -> dataRepo.setLastModificationTimes(
                 SubscriptionResourceType.portalMetaChanges,
                 null));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> dataRepo.setLastModificationTimes(
+                SubscriptionResourceType.portalMetaChanges,
+                new LastModificationTimes(
+                    List.of(new LastModificationTimes.Entry(null, "urn:node:NULL")))));
     }
 
     @Test
