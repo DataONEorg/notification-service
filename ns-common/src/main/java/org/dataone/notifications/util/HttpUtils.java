@@ -2,14 +2,17 @@ package org.dataone.notifications.util;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.LastModificationTimes;
+import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
@@ -104,6 +107,74 @@ public class HttpUtils {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Interrupted during GET " + path, e);
+        }
+    }
+
+     /// Sends an HTTP GET to the internal api service to retrieve the list of subscriber subjects
+     /// (user ids) for the given pid and resource type (see
+     /// {@code PrivateResources.getSubscriptionSubjects}).
+     ///
+     /// Example:
+     ///
+     /// ```java
+     ///   List<String> subjects = HttpUtils.getSubscriptionSubjects(
+     ///       "urn:uuid:1234", SubscriptionResourceType.datasetChanges);
+     /// ```
+     ///
+     /// @param pid          the object id for which to retrieve subscriber subjects (will be
+     ///                     URL-encoded by this method)
+     /// @param resourceType the subscription resource type
+     /// @return a List of subject (user id) Strings; empty if no subscriptions exist
+     /// @throws IOException if the request fails or the response cannot be parsed
+     ///
+    public static List<String> getSubscriptionSubjects(
+        String pid, SubscriptionResourceType resourceType) throws IOException {
+        // URLEncoder uses form encoding, so fix spaces (%20) for path segments
+        String encodedPid =
+            URLEncoder.encode(pid, StandardCharsets.UTF_8).replace("+", "%20");
+        String body = doGet("/subscriptions/" + resourceType + "/" + encodedPid);
+        try {
+            return MAPPER.readValue(
+                body, MAPPER.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (JacksonException e) {
+            throw new IOException(
+                "Unable to parse response of GET /subscriptions/" + resourceType + "/" + pid
+                    + " as List<String>", e);
+        }
+    }
+
+     /// Sends an HTTP PUT to the internal api service to update subscription pids. Calls the
+     /// private endpoint {@code PUT /private/subscriptions/{oldPid}/{newPid}/{subject}}.
+     ///
+     /// Example:
+     /// ```java
+     ///   int updated = HttpUtils.updateSubscriptionPid(
+     ///       "urn:uuid:old-pid", "urn:uuid:new-pid", "http://orcid.org/0000-0001-2345-6789");
+     /// ```
+     ///
+     /// @param oldPid  the current pid to be replaced (will be URL-encoded by this method)
+     /// @param newPid  the new pid to set (will be URL-encoded by this method)
+     /// @param subject the subject (user id) whose subscriptions should be updated (will be
+     ///                URL-encoded by this method)
+     /// @return the number of subscriptions that were updated
+     /// @throws IOException if the request fails or the response cannot be parsed
+     ///
+    public static int updateSubscriptionPid(String oldPid, String newPid, String subject)
+        throws IOException {
+        // URLEncoder uses form encoding, so fix spaces (%20) for path segments
+        String encodedOldPid =
+            URLEncoder.encode(oldPid, StandardCharsets.UTF_8).replace("+", "%20");
+        String encodedNewPid =
+            URLEncoder.encode(newPid, StandardCharsets.UTF_8).replace("+", "%20");
+        String encodedSubject =
+            URLEncoder.encode(subject, StandardCharsets.UTF_8).replace("+", "%20");
+        String path = "/subscriptions/" + encodedOldPid + "/" + encodedNewPid + "/"
+            + encodedSubject;
+        String body = doPut(path, List.of());
+        try {
+            return MAPPER.readTree(body).get("updated").asInt();
+        } catch (JacksonException e) {
+            throw new IOException("Unable to parse response of PUT " + path, e);
         }
     }
 

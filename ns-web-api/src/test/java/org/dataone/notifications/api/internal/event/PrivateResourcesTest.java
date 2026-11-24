@@ -6,6 +6,7 @@ import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.DataRepository;
 import org.dataone.notifications.storage.NsDataRepository;
+import org.dataone.notifications.storage.Subscription;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -213,6 +214,127 @@ class PrivateResourcesTest {
 
         assertThrows(
             IllegalStateException.class, () -> privateResources.getLastModificationTime(RESOURCE_TYPE),
+            "Expected repository exception to propagate");
+    }
+
+    @Test
+    void getSubscriptionSubjects_returnsSubjects() {
+        String pid = "urn:uuid:1234";
+        when(mockDataRepo.getSubscriptionsByPid(pid, RESOURCE_TYPE)).thenReturn(List.of(
+            new Subscription("http://orcid.org/0000-0001-2345-6789", RESOURCE_TYPE, List.of(pid)),
+            new Subscription("dn:uid=alice,o=org", RESOURCE_TYPE, List.of(pid))));
+
+        List<String> subjects = privateResources.getSubscriptionSubjects(RESOURCE_TYPE, pid);
+
+        assertEquals(List.of("http://orcid.org/0000-0001-2345-6789", "dn:uid=alice,o=org"),
+                     subjects);
+        verify(mockDataRepo).getSubscriptionsByPid(pid, RESOURCE_TYPE);
+    }
+
+    @Test
+    void getSubscriptionSubjects_noSubscriptions_returnsEmptyList() {
+        String pid = "urn:uuid:nope";
+        when(mockDataRepo.getSubscriptionsByPid(pid, RESOURCE_TYPE)).thenReturn(List.of());
+
+        assertEquals(List.of(), privateResources.getSubscriptionSubjects(RESOURCE_TYPE, pid));
+        verify(mockDataRepo).getSubscriptionsByPid(pid, RESOURCE_TYPE);
+    }
+
+    @Test
+    void getSubscriptionSubjects_repositoryFailure_propagates() {
+        when(mockDataRepo.getSubscriptionsByPid(any(), any())).thenThrow(
+            new IllegalStateException("db down"));
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> privateResources.getSubscriptionSubjects(RESOURCE_TYPE, "urn:uuid:1234"),
+            "Expected repository exception to propagate");
+    }
+
+    @Test
+    void updateSubscriptionPid_valid_returnsUpdatedCount() {
+        String oldPid = "urn:uuid:old";
+        String newPid = "urn:uuid:new";
+        String subject = "http://orcid.org/0000-0001-2345-6789";
+        when(mockDataRepo.updateSubscriptionPid(oldPid, newPid, subject)).thenReturn(3);
+
+        PrivateResources.UpdateResult result =
+            (PrivateResources.UpdateResult) privateResources.updateSubscriptionPid(
+                oldPid, newPid, subject);
+
+        assertEquals(3, result.updated());
+        verify(mockDataRepo).updateSubscriptionPid(oldPid, newPid, subject);
+    }
+
+    @Test
+    void updateSubscriptionPid_nullOldPid_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                null, "urn:uuid:new", "http://orcid.org/0000-0001-2345-6789"),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_blankOldPid_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "  ", "urn:uuid:new", "http://orcid.org/0000-0001-2345-6789"),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_nullNewPid_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "urn:uuid:old", null, "http://orcid.org/0000-0001-2345-6789"),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_blankNewPid_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "urn:uuid:old", "  ", "http://orcid.org/0000-0001-2345-6789"),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_nullSubject_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "urn:uuid:old", "urn:uuid:new", null),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_blankSubject_throwsBadRequest() {
+        assertThrows(
+            BadRequestException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "urn:uuid:old", "urn:uuid:new", "  "),
+            "Expected updateSubscriptionPid() to throw BadRequestException");
+        verify(mockDataRepo, never()).updateSubscriptionPid(any(), any(), any());
+    }
+
+    @Test
+    void updateSubscriptionPid_repositoryFailure_propagates() {
+        when(mockDataRepo.updateSubscriptionPid(any(), any(), any())).thenThrow(
+            new IllegalStateException("db down"));
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> privateResources.updateSubscriptionPid(
+                "urn:uuid:old", "urn:uuid:new", "http://orcid.org/0000-0001-2345-6789"),
             "Expected repository exception to propagate");
     }
 }

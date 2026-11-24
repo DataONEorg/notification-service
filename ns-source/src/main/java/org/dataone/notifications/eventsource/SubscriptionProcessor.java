@@ -7,6 +7,7 @@ import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.event.RabbitMqConnection;
 import org.dataone.notifications.event.RabbitMqProperties;
 import org.dataone.notifications.resource.SubscriptionResourceType;
+import org.dataone.notifications.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
@@ -22,16 +23,17 @@ import java.util.concurrent.TimeoutException;
 public class SubscriptionProcessor {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionProcessor.class);
     private static volatile SubscriptionProcessor processor;
-    private static RabbitMqProperties properties = RabbitMqProperties.from(NsConfig.getConfig());
+    private static final RabbitMqProperties properties =
+        RabbitMqProperties.from(NsConfig.getConfig());
     private static RabbitMqConnection rabbitMqConnection;
     private Channel channel;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * Get the singleton instance of the class
      * @return an instance of this class
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws IOException if the rabbitMqConnection connection cannot be established
+     * @throws TimeoutException if the rabbitMqConnection connection times out
      */
     public static SubscriptionProcessor getInstance() throws IOException, TimeoutException {
         if (processor == null) {
@@ -46,8 +48,8 @@ public class SubscriptionProcessor {
 
     /**
      * Default constructor
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws IOException if the rabbitMqConnection connection cannot be established
+     * @throws TimeoutException if the rabbitMqConnection connection times out
      */
     private SubscriptionProcessor() throws IOException, TimeoutException {
         rabbitMqConnection = new RabbitMqConnection(properties);
@@ -60,56 +62,34 @@ public class SubscriptionProcessor {
      * @param message  the message need to be processed
      */
     public void process(NsEventMessage message) {
-        if (message == null) {
-            throw new IllegalArgumentException("The NsEventMessage object cannot be null.");
-        }
-        if (message.nsEvent() == null) {
-            throw new IllegalArgumentException("The Event in the NsEventMessage object cannot be "
-                                                   + "null.");
-        }
-        SubscriptionResourceType subscriptionType = message.nsEvent().SubscriptionResourceType();
-        if (subscriptionType == null) {
-            throw new IllegalArgumentException("The subscription type in NsEventMessage cannot be"
-                                                   + " null");
-        }
-        switch (subscriptionType) {
-            case SubscriptionResourceType.datasetChanges:
-                processDatasetChange(message);
-            default:
-                throw new UnsupportedOperationException(
-                    "The routine to handle the subscription type " + subscriptionType.name()
-                        + " has not been implemented.");
-        }
-    }
 
-    protected void processDatasetChange(NsEventMessage message) {
+        ensureNotNull(message.nsEvent(), "Event");
+        SubscriptionResourceType subscriptionType = message.nsEvent().SubscriptionResourceType();
+        ensureNotNull(subscriptionType, "subscription type");
         String pid = message.nsEvent().subscribedPid();
-        if (pid == null || pid.isBlank()) {
-            throw new IllegalArgumentException("The pid in The NsEventMessage "
-                                                   + "object cannot be null.");
-        }
+        ensureNotNull(pid, "pid");
         String newPid = message.nsEvent().newPid();
-        if (newPid == null || newPid.isBlank()) {
-            throw new IllegalArgumentException("The newPid in The NsEventMessage "
-                                                   + "object cannot be null.");
-        }
+        ensureNotNull(newPid, "newPid");
+
         SubscriptionResourceType type = message.nsEvent().SubscriptionResourceType();
-        List<String> subscriptions = getSubscriptions(pid, type);
-        if (subscriptions == null || subscriptions.isEmpty()) {
-            log.debug("There are no subscriptions for {} with type {}", pid, type.name());
+        List<String> subscribers = getSubscribers(pid, type);
+        if (subscribers == null || subscribers.isEmpty()) {
+            log.debug("There are no subscribers for pid {} with type {}", pid, type.name());
             return;
         }
-        for (String subscription : subscriptions) {
-            if (subscription != null && subscription.isBlank()) {
-                message = message.withSubscriberId(subscription);
+        for (String subscriber : subscribers) {
+            if (subscriber != null && subscriber.isBlank()) {
+                message = message.withSubscriberId(subscriber);
                 try {
                     submit(message);
-                    log.debug("The dataset change event for {} and subscriber {} was "
-                                 + "submitted to RabbitMQ.", pid, subscription);
+                    log.debug(
+                        "The {} event for pid {} and subscriber {} was submitted to RabbitMQ.",
+                        type, pid, subscriber);
                 } catch (Exception e) {
-                    log.error("The dataset change event for {} and subscriber {} cannot be "
-                                  + "submitted to RabbitMQ since {}", pid, subscription,
-                              e.getMessage());
+                    log.error(
+                        "The {} event for pid {} and subscriber {} cannot be "
+                            + "submitted to RabbitMQ since {}", type, pid, subscriber,
+                        e.getMessage());
                     continue;
                 }
                 try {
@@ -125,23 +105,49 @@ public class SubscriptionProcessor {
     }
 
     /**
-     * Get the all subscription ids for a given pid for the subscription
+     * Get the all subscriber ids for a given pid for the subscription resource type
      * @param pid  the object id for the subscription
      * @param type  the subscription resource type for the object
-     * @return the list of subscription ids; null will return if there are no subscriptions
+     * @return the list of subscriber ids; null will return if there are no subscribers
      */
-    private List<String> getSubscriptions(String pid, SubscriptionResourceType type) {
-        return null;
+    private List<String> getSubscribers(String pid, SubscriptionResourceType type) {
+        try {
+            List<String> subjects = HttpUtils.getSubscriptionSubjects(pid, type);
+            return subjects.isEmpty() ? null : subjects;
+        } catch (IOException e) {
+            log.error("Error retrieving subscribers for pid {} and type {}: {}",
+                      pid, type, e.getMessage());
+            return null;
+        }
     }
 
     /**
      * Update the subscription to a new pid from an old one.
      * @param pid  the old subscription object
      * @param newPid  the new subscription object
-     * @param type  the type of the subscription
+     * @param type  the type of the subscription resource
      */
     private void updateSubscriptions(String pid, String newPid, SubscriptionResourceType type) {
-
+        try {
+            List<String> subjects = HttpUtils.getSubscriptionSubjects(pid, type);
+            if (subjects == null || subjects.isEmpty()) {
+                log.debug("No subscriptions found for pid {} with type {}", pid, type.name());
+                return;
+            }
+            for (String subject : subjects) {
+                try {
+                    int updated = HttpUtils.updateSubscriptionPid(pid, newPid, subject);
+                    log.debug("Updated {} subscription(s) from pid {} to {} for subject {}",
+                              updated, pid, newPid, subject);
+                } catch (Exception e) {
+                    log.error("Could not update subscription from pid {} to {} for subject {}: {}",
+                              pid, newPid, subject, e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            log.error("Error retrieving subscriptions for pid {} and type {}: {}",
+                      pid, type, e.getMessage());
+        }
     }
 
     private void submit(NsEventMessage message) throws IOException, TimeoutException {
@@ -169,5 +175,12 @@ public class SubscriptionProcessor {
         channel.basicPublish(
             SubscriptionProcessor.properties.exchangeName(),
             SubscriptionProcessor.properties.routingKey(), properties, payload);
+    }
+
+    private void ensureNotNull(Object obj, String objectReadableName) throws IllegalArgumentException {
+        if (obj == null) {
+            throw new IllegalArgumentException(
+                "The " + objectReadableName + " in the NsEventMessage object cannot be " + "null.");
+        }
     }
 }

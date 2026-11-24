@@ -43,6 +43,20 @@ public interface DataRepository {
         throws NotAuthorizedException, NotFoundException, PersistenceException;
 
     /**
+     * Updates all subscriptions for a given subject, replacing the old pid with the new pid.
+     *
+     * @param oldPid the current pid to be replaced
+     * @param newPid the new pid to set
+     * @param subject the subject (user id) whose subscriptions should be updated
+     * @return the number of subscriptions that were updated
+     * @throws NotAuthorizedException if the subject is not authorized
+     * @throws NotFoundException if no matching subscriptions are found
+     * @throws PersistenceException if there is an error accessing the data store
+     */
+    int updateSubscriptionPid(String oldPid, String newPid, String subject)
+        throws NotAuthorizedException, NotFoundException, PersistenceException;
+
+    /**
      * Retrieves the last modification time timestamps and nodeIds for a given resourceType.
      *
      * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds - see

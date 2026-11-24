@@ -9,7 +9,10 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
 import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
+import org.dataone.notifications.storage.Subscription;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -75,6 +78,71 @@ public class PrivateResources {
                   resourceType, response);
         return response;
     }
+
+    /// Gets the list of subscriber subjects (user ids) for a given resourceType and pid.
+    ///
+    /// @param resourceType the type of resource - see {@link SubscriptionResourceType} enum
+    /// @param pid the object id for which to retrieve subscriber subjects
+    /// @return a List of subject (user id) Strings; empty if no subscriptions exist
+    ///
+    @GET
+    @Path("/subscriptions/{resourceType}/{pid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getSubscriptionSubjects(
+        @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType,
+        @NotNull @PathParam("pid") String pid
+    ) {
+        log.debug("Request to get subscriber subjects for resourceType: {}, pid: {}",
+                  resourceType, pid);
+        List<String> subjects = dataRepository.getSubscriptionsByPid(pid, resourceType)
+            .stream()
+            .map(Subscription::subject)
+            .toList();
+        log.debug("Got {} subscriber subjects for resourceType: {}, pid: {}",
+                  subjects.size(), resourceType, pid);
+        return subjects;
+    }
+
+    /// Updates all subscriptions for a given subject, replacing the old pid with the new pid.
+    ///
+    /// Example resulting request:
+    /// ```json
+    ///   PUT /private/subscriptions/urn:uuid:old-pid/urn:uuid:new-pid/http://orcid.org/0000-0001-2345-6789
+    /// ```
+    ///
+    /// @param oldPid the current pid to be replaced
+    /// @param newPid the new pid to set
+    /// @param subject the subject (user id) whose subscriptions should be updated
+    /// @return a record containing the number of subscriptions updated
+    ///
+    @PUT
+    @Path("/subscriptions/{oldPid}/{newPid}/{subject}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Record updateSubscriptionPid(
+        @NotNull @PathParam("oldPid") String oldPid,
+        @NotNull @PathParam("newPid") String newPid,
+        @NotNull @PathParam("subject") String subject
+    ) {
+        log.debug("Request to update subscription pid from {} to {} for subject {}",
+                  oldPid, newPid, subject);
+        if (oldPid == null || oldPid.isBlank()) {
+            throw new BadRequestException("oldPid is required");
+        }
+        if (newPid == null || newPid.isBlank()) {
+            throw new BadRequestException("newPid is required");
+        }
+        if (subject == null || subject.isBlank()) {
+            throw new BadRequestException("subject is required");
+        }
+        int updated = dataRepository.updateSubscriptionPid(oldPid, newPid, subject);
+        log.debug("Updated {} subscription(s) from pid {} to {} for subject {}",
+                  updated, oldPid, newPid, subject);
+        return new UpdateResult(updated);
+    }
+
+    /// A record containing the result of an update operation.
+    /// @param updated the number of records updated
+    public record UpdateResult(int updated) {}
 
     /// Sets the last modification time timestamp and nodeId pairs for a given resourceType.
     /// ("upserts" the given entries; other nodeIds are unchanged)

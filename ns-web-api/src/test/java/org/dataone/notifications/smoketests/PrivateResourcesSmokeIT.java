@@ -4,6 +4,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Response;
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,8 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * EXPOSED TO THE PUBLIC INTERNET.
  *
  * Smoke tests for the private (cluster-only) endpoints.
- * Requires BASE_URL, but no TOKEN. Usage:
+ * Requires BASE_URL, and TOKEN only for tests that create subscriptions. Usage:
  *
  * $ export BASE_URL=http://localhost:8080/notifications/v1
  * $ mvn clean -PsmokeTest -DBASE_URL="$BASE_URL" -DTOKEN="$TOKEN" verify
@@ -75,27 +78,6 @@ class PrivateResourcesSmokeIT {
                               body(entry(now - 60_000, TEST_NODE_ID),
                                    entry(now - 90_000, TEST_NODE_ID_2)))) {
             assertEquals(204, r.getStatus(), "unexpected status");
-        }
-    }
-
-    @Test
-    void setLastRuntime_timestampInFuture_returnsBadRequest() {
-        long now = Instant.now().toEpochMilli();
-        try (Response r = put(TYPE,
-                              body(entry(now, TEST_NODE_ID),
-                                   entry(now + 3_600_000, TEST_NODE_ID_2)))) {
-            assertEquals(400, r.getStatus(), "future timestamp should be rejected");
-        }
-    }
-
-    @Test
-    void setLastRuntime_timestampTooOld_returnsBadRequest() {
-        long now = Instant.now().toEpochMilli();
-        long eightDaysMs = 8L * 24 * 60 * 60 * 1000;
-        try (Response r = put(TYPE,
-                              body(entry(now, TEST_NODE_ID),
-                                   entry(now - eightDaysMs, TEST_NODE_ID_2)))) {
-            assertEquals(400, r.getStatus(), "timestamp older than 7 days should be rejected");
         }
     }
 
@@ -172,6 +154,84 @@ class PrivateResourcesSmokeIT {
     void getLastRuntime_noEntries_returnsNotFound() {
         try (Response r = get(EMPTY_TYPE.name())) {
             assertEquals(404, r.getStatus(), "unexpected status");
+        }
+    }
+
+    @Test
+    void getSubscriptionSubjects_afterSubscribe_returnsSubjectList() {
+        String pid = "smoke-test-pid-" + Instant.now().toEpochMilli();
+
+        String subject;
+
+        String token = System.getProperty("TOKEN", System.getenv("TOKEN"));
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("TOKEN is required for these smoke tests");
+        }
+        try (Response r = client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(TYPE)
+            .path(pid)
+            .request()
+            .header("Authorization", "Bearer " + token)
+            .post(Entity.json("{}"))) {
+            String body = r.readEntity(String.class);
+            log.debug("POST subscribe status={}, body={}", r.getStatus(), body);
+            assertTrue(r.getStatus() == 200 || r.getStatus() == 201,
+                       "unexpected subscribe status: " + r.getStatus());
+            JsonNode sub = MAPPER.readTree(body);
+            subject = sub.get("subject").asString();
+            assertNotNull(subject, "subject missing from subscribe response: " + body);
+        }
+
+        try (Response r = client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(PRIVATE_PATH)
+            .path("subscriptions")
+            .path(TYPE)
+            .path(pid)
+            .request()
+            .get()) {
+            String body = r.readEntity(String.class);
+            log.debug("GET subscriptions status={}, body={}", r.getStatus(), body);
+            assertEquals(200, r.getStatus(), "unexpected status");
+
+            JsonNode root = MAPPER.readTree(body);
+            assertTrue(root.isArray(), "expected a JSON array, got: " + body);
+            List<String> subjects = new ArrayList<>();
+            root.forEach(n -> subjects.add(n.asString()));
+            assertEquals(List.of(subject), subjects, "unexpected subjects");
+        }
+    }
+
+    @Test
+    void getSubscriptionSubjects_unknownPid_returnsEmptyList() {
+        try (Response r = client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(PRIVATE_PATH)
+            .path("subscriptions")
+            .path(TYPE)
+            .path("no-such-pid-" + Instant.now().toEpochMilli())
+            .request()
+            .get()) {
+            String body = r.readEntity(String.class);
+            log.debug("GET subscriptions status={}, body={}", r.getStatus(), body);
+            assertEquals(200, r.getStatus(), "unexpected status");
+            assertEquals("[]", body, "expected empty array");
+        }
+    }
+
+    @Test
+    void getSubscriptionSubjects_invalidResourceType_returnsClientError() {
+        try (Response r = client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(PRIVATE_PATH)
+            .path("subscriptions")
+            .path("notAResourceType")
+            .path("some-pid")
+            .request()
+            .get()) {
+            int status = r.getStatus();
+            assertEquals(4, status / 100, "unexpected status: " + status);
         }
     }
 

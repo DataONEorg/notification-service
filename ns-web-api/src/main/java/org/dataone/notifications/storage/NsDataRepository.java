@@ -200,6 +200,42 @@ public class NsDataRepository implements DataRepository {
     }
 
     @Override
+    public int updateSubscriptionPid(String oldPid, String newPid, String subject)
+        throws NotAuthorizedException, NotFoundException, PersistenceException {
+
+        log.debug("Update subscription pid from {} to {} for subject {}", oldPid, newPid, subject);
+        validateInput(subject, SubscriptionResourceType.datasetChanges);
+        if (StringUtils.isBlank(oldPid)) {
+            log.error("Old PID is null or empty");
+            throw new NotFoundException("Old PID is null or empty");
+        }
+        if (StringUtils.isBlank(newPid)) {
+            log.error("New PID is null or empty");
+            throw new NotFoundException("New PID is null or empty");
+        }
+
+        String sql = "UPDATE subscriptions SET pid=? WHERE pid=? AND subject=?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, newPid);
+            statement.setString(2, oldPid);
+            statement.setString(3, subject);
+            int updated = statement.executeUpdate();
+            if (updated == 0) {
+                throw new NotFoundException(
+                    "No subscriptions found for pid " + oldPid + " and subject " + subject);
+            }
+            log.debug("Updated {} subscription(s) from pid {} to {} for subject {}",
+                      updated, oldPid, newPid, subject);
+            return updated;
+        } catch (SQLException e) {
+            log.error("Database error: {} updating subscription pid", e.getMessage());
+            throw new PersistenceException("Database error updating subscription pid", e);
+        }
+    }
+
+    @Override
     public LastModificationTimes getLastModificationTimes(SubscriptionResourceType resourceType)
         throws PersistenceException {
 
