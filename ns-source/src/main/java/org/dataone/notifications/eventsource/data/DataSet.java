@@ -244,12 +244,12 @@ public class DataSet {
     }
 
     /**
-     * This method will generate the LastModificationTimes for query. It covers these scenarios:
-     * 1. A fresh start (no records from the NS API database). It will use all node ids from
-     *    existing solr server and the current time as the last modification
-     * 2. There are records from the NS API database (not a fresh start). It will compare the solr
-     *    query result to figure out if new node ids were added. If a new one is found, a node id
-     *    and the current time as the last modification date will be added.
+     * This method will generate the LastModificationTimes for query. It covers these scenarios: 1.
+     * A fresh start (no records from the NS API database). It will use all node ids from existing
+     * solr server and the current time as the last modification 2. There are records from the NS
+     * API database (not a fresh start). It will compare the solr query result to figure out if new
+     * node ids were added. If a new one is found, a node id and the current time as the last
+     * modification date will be added.
      *
      * @param earliestSolrModTimes solr results map which may contain new nodeIds
      * @return the LastModificationTimes combined the remote records and new added nodeIds
@@ -261,17 +261,29 @@ public class DataSet {
         LastModificationTimes lastModTimesFromDb =
             HttpUtils.doGet("/lastModificationTime/datasetChanges", LastModificationTimes.class);
         long currentTime = System.currentTimeMillis();
-        if (lastModTimesFromDb == null || lastModTimesFromDb.entries() == null
-            || lastModTimesFromDb.entries().isEmpty()) {
-            log.debug("The list of Last Modification Times from the NS API DB is empty.");
+        if (lastModTimesFromDb == null || lastModTimesFromDb.entries() == null || lastModTimesFromDb
+            .entries().isEmpty()) {
+            log.debug(
+                "The list of Last Modification Times from the NS API DB is empty. Adding entries "
+                    + "from Solr.");
             List<LastModificationTimes.Entry> entries = new ArrayList<>();
+            if (earliestSolrModTimes.isEmpty()) {
+                log.warn(
+                    "The list of earliest modification times from Solr is empty. Returning empty "
+                        + "LastModificationTimes record");
+                return new LastModificationTimes(entries);
+            }
             for (String nodeId : earliestSolrModTimes.keySet()) {
                 if (nodeId != null && !nodeId.isBlank()) {
+                    log.debug("Adding entry from Solr for nodeId: {}; time: {}", nodeId,
+                              currentTime);
                     entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
                 }
             }
+            LastModificationTimes returnModTimes = new LastModificationTimes(entries);
+            log.debug("Saving new LastModificationTimes entries via API: {}", returnModTimes);
             saveLastModificationEntries(entries);
-            return new LastModificationTimes(entries);
+            return returnModTimes;
         }
 
         // Keep a set for efficient checks against the node IDs already stored in the API.
@@ -329,7 +341,7 @@ public class DataSet {
             }
         }
         log.debug(
-            "The distinct authoritative MNs and their earliest " + "dateModified values are {}",
+            "The distinct authoritative MNs and their earliest dateModified values are {}",
             result);
         return result;
     }
