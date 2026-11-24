@@ -6,6 +6,8 @@
 ns:
   api:
     privateBaseUrl: http://localhost:8080/notifications/v1/private
+  source:
+    solrQueryUrl: http://localhost:8983/solr/metacat-index/select-all
   auth:
     api:
       baseUrl: https://cn-sandbox.test.dataone.org/cn/v2

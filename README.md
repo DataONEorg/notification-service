@@ -211,6 +211,15 @@ Here are some useful links for those unfamiliar with Jakarta EE:
      docker push ghcr.io/dataoneorg/notification-service:"$TAG"
     ```
 
+  - `ns-source`:
+
+    ```shell
+    docker buildx build -t ghcr.io/dataoneorg/notification-source:"$TAG" \
+        -f docker/Dockerfile-source --build-arg TAG="$TAG" --build-arg NS_VERSION="$NS_VERSION" \
+        --platform "$PLATFORM" .
+    docker push ghcr.io/dataoneorg/notification-source:"$TAG"
+    ```
+
 ## Appendix 2: Building and Running on a Localhost Web Application Server
 
 > [!NOTE]
@@ -239,7 +248,11 @@ Here are some useful links for those unfamiliar with Jakarta EE:
     $ java -jar ./ns-consumer/target/ns-consumer-[VERSION].jar
     ```
 
-4. **ns-source:** this is typically run on a regular basis by a cron job. You can trigger it as follows (or schedule the same command in cron):
+4. **ns-source:** the Helm chart runs `DataSet.poll()` once per CronJob invocation.
+   Set `nsSource.schedule` (default: every 15 minutes, UTC) and `nsSource.solrQueryUrl`
+   (the Solr select-all endpoint reachable from the job pod) in your Helm values. Runs
+   cannot overlap. Build and publish the `notification-source` image alongside the API
+   and consumer images. To run one poll locally instead:
 
     ```shell
     $ java -jar ./ns-source/target/ns-source-[VERSION].jar

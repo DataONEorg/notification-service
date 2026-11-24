@@ -2,6 +2,7 @@ package org.dataone.notifications.eventsource.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.event.NsEventMessage;
 import org.dataone.notifications.eventsource.SubscriptionProcessor;
@@ -32,7 +33,7 @@ public class DataSet {
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
     private static final String solrQueryUrl =
-        "http://localhost:8983/solr/metacat-index/select-all";
+        NsConfig.getConfig().getString("ns.source.solrQueryUrl");
     private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
     private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
     private static SubscriptionProcessor subscriptionProcessor;
@@ -42,6 +43,10 @@ public class DataSet {
      */
     public DataSet() throws IOException, TimeoutException {
         subscriptionProcessor = SubscriptionProcessor.getInstance();
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException, TimeoutException {
+        new DataSet().poll();
     }
 
     /**

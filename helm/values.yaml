@@ -414,6 +414,22 @@ tomcat:
   ##
   remoteDebugPort: 5005
 
+## @section nsSource scheduled polling for changes
+nsSource:
+  ## @param nsSource.schedule Kubernetes CronJob schedule (UTC)
+  schedule: "15 11 * * *"
+
+  ## @param nsSource.solrQueryUrl (REQUIRED) Internal Solr select-all endpoint reachable from the CronJob pod
+  solrQueryUrl: ""
+
+  image:
+    ## @param nsSource.image.repository Source image repository
+    repository: ghcr.io/dataoneorg/notification-source
+    ## @param nsSource.image.pullPolicy Source image pull policy
+    pullPolicy: IfNotPresent
+    ## @param nsSource.image.tag Overrides chart appVersion when nonempty
+    tag: ""
+
 ## @Section Default values for nsconsumer subchart
 nsconsumer:
 

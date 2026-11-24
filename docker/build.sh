@@ -94,6 +94,7 @@ docker buildx build \
     --file      Dockerfile-web-api \
     --tag ghcr.io/dataoneorg/notification-service:"$TAG" \
     --platform  "$ARCH" \
+    --pull \
     --build-arg TAG="$TAG" \
     --build-arg NS_VERSION="$NS_VERSION" \
     $CACHE ..
@@ -105,6 +106,19 @@ docker buildx build \
     --file      Dockerfile-consumer \
     --tag ghcr.io/dataoneorg/notification-consumer:"$TAG" \
     --platform  "$ARCH" \
+    --pull \
+    --build-arg TAG="$TAG" \
+    --build-arg NS_VERSION="$NS_VERSION" \
+    $CACHE ..
+echo
+echo "*********************************************************************************************"
+echo "3. ns-source image build..."
+echo
+docker buildx build \
+    --file      Dockerfile-source \
+    --tag ghcr.io/dataoneorg/notification-source:"$TAG" \
+    --platform  "$ARCH" \
+    --pull \
     --build-arg TAG="$TAG" \
     --build-arg NS_VERSION="$NS_VERSION" \
     $CACHE ..

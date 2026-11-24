@@ -1,0 +1,22 @@
+FROM eclipse-temurin:25-jre-resolute
+
+ARG TAG="NO-TAG"
+ARG NS_VERSION=${TAG}
+ARG UID=56700
+ARG GID=56700
+
+WORKDIR /app
+
+RUN groupadd -g $GID notifier && useradd -u $UID -g $GID notifier
+
+ARG JAR_FILE=ns-source/target/ns-source-${NS_VERSION}.jar
+COPY ${JAR_FILE} source.jar
+RUN chown -R notifier:notifier .
+
+USER $UID
+
+LABEL org.opencontainers.image.title="Notifications-Source"
+LABEL org.opencontainers.image.version=${TAG}
+LABEL org.opencontainers.image.source="https://github.com/dataoneorg/notification-service"
+
+ENTRYPOINT ["java","-jar","source.jar"]
