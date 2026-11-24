@@ -164,8 +164,8 @@ class PrivateResourcesTest {
         LastModificationTimes result =
             (LastModificationTimes) privateResources.getLastModificationTime(RESOURCE_TYPE);
 
-        assertEquals(expectedTs, result.runtimes().getFirst().timestamp());
-        assertEquals(NODE_ID, result.runtimes().getFirst().nodeId());
+        assertEquals(expectedTs, result.entries().getFirst().timestamp());
+        assertEquals(NODE_ID, result.entries().getFirst().nodeId());
         verify(mockDataRepo).getLastModificationTimes(RESOURCE_TYPE);
     }
 

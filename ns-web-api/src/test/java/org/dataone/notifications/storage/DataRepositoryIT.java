@@ -199,7 +199,7 @@ class DataRepositoryIT {
         // Insert several rows in one call
         dataRepo.setLastModificationTimes(type, new LastModificationTimes(List.of(node1, node2)));
         List<LastModificationTimes.Entry> stored =
-            dataRepo.getLastModificationTimes(type).runtimes();
+            dataRepo.getLastModificationTimes(type).entries();
         assertEquals(2, stored.size());
         assertTrue(stored.contains(node1), "Expected " + node1 + " to be in: " + stored);
         assertTrue(stored.contains(node2), "Expected " + node2 + " to be in: " + stored);
@@ -211,7 +211,7 @@ class DataRepositoryIT {
             new LastModificationTimes.Entry(now - 100_000, "urn:node:INS3");
         dataRepo.setLastModificationTimes(
             type, new LastModificationTimes(List.of(node1Updated, node3)));
-        stored = dataRepo.getLastModificationTimes(type).runtimes();
+        stored = dataRepo.getLastModificationTimes(type).entries();
         assertEquals(3, stored.size());
         assertTrue(stored.contains(node1Updated), "Expected " + node1Updated + " in: " + stored);
         assertFalse(stored.contains(node1), "Old entry should have been replaced: " + stored);
@@ -232,7 +232,7 @@ class DataRepositoryIT {
                 new LastModificationTimes.Entry(now - 500_000, nodeId))));
 
         List<LastModificationTimes.Entry> stored =
-            dataRepo.getLastModificationTimes(type).runtimes();
+            dataRepo.getLastModificationTimes(type).entries();
         assertEquals(List.of(new LastModificationTimes.Entry(latest, nodeId)), stored);
     }
 }

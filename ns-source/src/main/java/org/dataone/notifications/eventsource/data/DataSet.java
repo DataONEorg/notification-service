@@ -10,7 +10,6 @@ import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.dataone.notifications.resource.SubscriptionResourceType;
-
 import org.dataone.notifications.util.HttpUtils;
 import org.dataone.notifications.util.StringUtils;
 import org.slf4j.Logger;
@@ -20,8 +19,10 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
@@ -45,53 +46,113 @@ public class DataSet {
         subscriptionProcessor = SubscriptionProcessor.getInstance();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, TimeoutException {
+    public static void main(String[] args)
+        throws IOException, InterruptedException, TimeoutException {
         new DataSet().poll();
+    }
+
+    /// Extracts the SubscriptionResourceType from the given parameters.
+    ///
+    /// `formatType` can be `RESOURCE`, `DATA`, or `METADATA`:
+    /// - `DATA` can be ignored because there will always be another event for the corresponding
+    /// resourceMap update, and we don't want to alert twice for the same thing.
+    /// - `RESOURCE` is a resourceMap, which is always a dataset, so return
+    /// `SubscriptionResourceType.datasetChanges`.
+    /// - For `METADATA`:
+    ///   - If `formatId` matches `https://purl.dataone.org/portals-.*`, return
+    /// `SubscriptionResourceType.portalMetaChanges` (portals do not have a resourceMap).
+    ///   - If a `resourceMap` field exists, ignore the event because there will be another event
+    /// for the corresponding resourceMap update, and we don't want to alert twice for the same
+    /// thing.
+    ///   - If a `resourceMap` field does not exist, this is a science-metadata-only dataset; return
+    /// `SubscriptionResourceType.datasetChanges`.
+    ///
+    /// References:
+    ///
+    /// - List of available formats: [DataONE formats](https://cn.dataone.org/cn/v2/formats)
+    /// - Enumeration of available resource types: {@link SubscriptionResourceType}
+    ///
+    /// @param formatType  the format type of the data object, it can be DATA, METADATA, or RESOURCE
+    /// @param formatId    the format id of the data object
+    /// @param resourceMap the list of resourceMap aggregates the object
+    /// @return The resource type as a SubscriptionResourceType
+    /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
+    /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
+    ///
+    protected static SubscriptionResourceType getResourceType(
+        String formatType, String formatId, List<String> resourceMap)
+        throws IgnoredResourceTypeException, UnsupportedResourceTypeException {
+        if (StringUtils.isBlank(formatType)) {
+            throw new IllegalArgumentException("FormatType parameter cannot be blank.");
+        }
+        if (StringUtils.isBlank(formatId)) {
+            throw new IllegalArgumentException("FormatId parameter cannot be blank.");
+        }
+        return switch (formatType) {
+            case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");
+            case "RESOURCE" -> SubscriptionResourceType.datasetChanges;
+            case "METADATA" -> {
+                if (PORTAL_FORMAT_ID_PATTERN.matcher(formatId).matches()) {
+                    log.debug("formatId: {} matches portal pattern -> portalMetaChanges", formatId);
+                    yield SubscriptionResourceType.portalMetaChanges;
+                }
+                if (resourceMap != null && !resourceMap.isEmpty() && !StringUtils.isBlank(
+                    resourceMap.getFirst())) {
+                    log.debug("resourceMap: {} exists -> ignore to avoid duplicate", resourceMap);
+                    throw new IgnoredResourceTypeException(
+                        "formatType: METADATA with resourceMap is ignored");
+                }
+                yield SubscriptionResourceType.datasetChanges;
+            }
+            default ->
+                throw new UnsupportedResourceTypeException("Unsupported formatType: " + formatType);
+        };
     }
 
     /**
      * Poll the solr server and send the candidate objects to the notification queue
+     *
      * @throws IOException
      * @throws InterruptedException
      */
     public void poll() throws IOException, InterruptedException {
-        Map<String, String> nodeIdWithEarliestModificationFromSolr =
-            getMNEarliestModificationMap();
-        if (nodeIdWithEarliestModificationFromSolr.isEmpty()) {
+
+        // Ask Solr which node IDs exist, and their earliest ever modification dates
+        Map<String, String> earliestSolrModTimes = getEarliestSolrMnModTimes();
+        if (earliestSolrModTimes.isEmpty()) {
             log.warn(
-                "The notification service cannot find any nodeIds in the solr service {}. So it "
-                    + "will stop polling.", solrQueryUrl);
+                "The DataSet event source can't find any nodeIds in Solr ({}), so it will exit",
+                solrQueryUrl);
             return;
         }
-        LastModificationTimes originalLatestModificationTimes =
-            getRecordedMnLatestMap(nodeIdWithEarliestModificationFromSolr);
-        if (originalLatestModificationTimes == null
-            || originalLatestModificationTimes.runtimes() == null || originalLatestModificationTimes
-            .runtimes().isEmpty()) {
+
+        // Read saved per-node last mod times from the internal API. Add any nodes that are found in
+        // earliestSolrModTimes, but which do not yet exist in the NS API DB
+        LastModificationTimes lastModTimesForQuery = getLastModTimesForQuery(earliestSolrModTimes);
+        if (lastModTimesForQuery == null || lastModTimesForQuery.entries() == null
+            || lastModTimesForQuery.entries().isEmpty()) {
             return;
         }
         // Build the MN/date conditions.
         List<String> mnQueries = new ArrayList<>();
-        for (LastModificationTimes.Entry e : originalLatestModificationTimes.runtimes()) {
+        for (LastModificationTimes.Entry e : lastModTimesForQuery.entries()) {
             long epochMillis = e.timestamp();   // milliseconds since the epoch (UTC)
             String timestamp = Instant.ofEpochMilli(epochMillis).toString();
             String nodeId = e.nodeId();
             mnQueries.add(
-                "(authoritativeMN:\"" + escapeSolrValue(nodeId) + "\" " +
-                    "AND dateModified:{" + timestamp + " TO *})"
-            );
+                "(authoritativeMN:\"" + escapeSolrValue(nodeId) + "\" " + "AND dateModified:{"
+                    + timestamp + " TO *})");
 
         }
         // Combine all MN/date conditions with OR.
         String mnDateQuery = "(" + String.join(" OR ", mnQueries) + ")";
         // Add the common conditions.
-        String q = mnDateQuery +
-            " AND obsoletedBy:[* TO *]" +
-            " AND (formatType:\"RESOURCE\" OR formatType:\"METADATA\")";
+        String q = mnDateQuery + " AND obsoletedBy:[* TO *]"
+            + " AND (formatType:\"RESOURCE\" OR formatType:\"METADATA\")";
         log.debug("The query is {}", q);
         String cursorMark = "*";
-        // A new map to store the latest modification date for this poll
-        List<LastModificationTimes.Entry> modifiedTimes = new ArrayList<>();
+        // A new list of the latest modification date for this poll
+        List<LastModificationTimes.Entry> newLastModTimes = new ArrayList<>();
         while (true) {
             Map<String, String> params = new HashMap<>();
             params.put("q", q);
@@ -140,8 +201,9 @@ public class DataSet {
                 try {
                     subscriptionResourceType = getResourceType(formatType, formatId, resourceMaps);
                 } catch (Exception e) {
-                    log.warn("Can't get the subscription resource type for {} since {}, and this "
-                                 + "object is ignored.", guid, e.getMessage());
+                    log.warn(
+                        "Can't get the subscription resource type for {} since {}, and this "
+                            + "object is ignored.", guid, e.getMessage());
                     continue;
                 }
                 if (subscriptionResourceType != null) {
@@ -159,7 +221,10 @@ public class DataSet {
                 // Since the modificationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
                     long epochMillis = Instant.parse(modifiedDate).toEpochMilli();
-                    modifiedTimes.add(new LastModificationTimes.Entry(epochMillis, nodeId));
+                    newLastModTimes.add(new LastModificationTimes.Entry(epochMillis, nodeId));
+                    log.debug(
+                        "New modification date {} for node id {} added to newLastModTimes",
+                        modifiedDate, nodeId);
                 }
             }
             // Solr returns the cursor to use for the next request.
@@ -170,103 +235,88 @@ public class DataSet {
             }
             cursorMark = nextCursorMark;
         }
-        // Save the new LastModificationTimeEntries to the remote server
-        saveLastModificationEntries(modifiedTimes);
+        // Save the new LastModificationTimeEntries to the NS API DB
+        saveLastModificationEntries(newLastModTimes);
     }
 
     private String escapeSolrValue(String value) {
         return ClientUtils.escapeQueryChars(value);
     }
 
-
     /**
-     * This method will generate the LastModificationTimes for query. It covers those scenarios:
-     * 1. A fresh start (no records from the remote database). It will use all node ids from
-     * existing solr server and the current time as the last modification
-     * 2. There are records from the remote database (not a fresh start). It will compare the solr
-     * query result to figure out if new node ids were added. If a new one is found, a node id
-     * and the current time as the last modification date will be added.
-     * @param nodeIdWithEarliestModificationFromSolr  a map from solr which may contain the new
-     *                                               node id
-     * @return the LastModificationTimes combined the remote records and new added nodeId
-     * @throws IOException
+     * This method will generate the LastModificationTimes for query. It covers these scenarios:
+     * 1. A fresh start (no records from the NS API database). It will use all node ids from
+     *    existing solr server and the current time as the last modification
+     * 2. There are records from the NS API database (not a fresh start). It will compare the solr
+     *    query result to figure out if new node ids were added. If a new one is found, a node id
+     *    and the current time as the last modification date will be added.
+     *
+     * @param earliestSolrModTimes solr results map which may contain new nodeIds
+     * @return the LastModificationTimes combined the remote records and new added nodeIds
+     * @throws IOException if it can't read the LastModificationTimes from the NS API server
      */
-    private LastModificationTimes getRecordedMnLatestMap(
-        Map<String, String> nodeIdWithEarliestModificationFromSolr) throws IOException {
-        boolean freshStart = false;
-        ArrayList<String> originalNodeIds = new ArrayList<>();
-        // Read the existing lastModificationTimes from the internal service
-        LastModificationTimes result = HttpUtils.doGet(
-               "/lastModificationTime/datasetChanges", LastModificationTimes.class);
-        if (result == null || result.runtimes() == null || result.runtimes().isEmpty()) {
-            log.debug("The LastModificationTimes from the remote server is empty.");
-            freshStart = true;
-        } else {
-            for (LastModificationTimes.Entry e : result.runtimes()) {
-                String nodeId = e.nodeId();
-                if (nodeId != null && nodeId.isBlank()) {
-                    log.debug("Add node id {} into the original node list ", nodeId);
-                    originalNodeIds.add(nodeId);
-                }
-            }
-        }
-        // Add new node IDs
+    private LastModificationTimes getLastModTimesForQuery(
+        Map<String, String> earliestSolrModTimes) throws IOException {
+
+        LastModificationTimes lastModTimesFromDb =
+            HttpUtils.doGet("/lastModificationTime/datasetChanges", LastModificationTimes.class);
         long currentTime = System.currentTimeMillis();
-        // Handle the scenarios of a fresh start or a new node id was found in the solr doc.
-        List<LastModificationTimes.Entry> entries = new ArrayList<>();
-        for (String nodeId : nodeIdWithEarliestModificationFromSolr.keySet()) {
-            if (nodeId == null || nodeId.isBlank()) {
-                log.debug("The node id is null or blank, skip it");
-                continue;
-            }
-            if (freshStart) {
-                log.debug(
-                    "This a fresh start (no recorded file or database). Node id {} and "
-                        + "current time {} will be put into LastModificationTimes.", nodeId,
-                    currentTime);
-                entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
-            } else {
-                if (!originalNodeIds.contains(nodeId)) {
-                    log.debug(
-                        "Found a new node id (it is not in the remote server). Node "
-                            + "id {} and current time {} will be put into map.",
-                        nodeId, currentTime);
-                    result.addEntry(currentTime, nodeId);
+        if (lastModTimesFromDb == null || lastModTimesFromDb.entries() == null
+            || lastModTimesFromDb.entries().isEmpty()) {
+            log.debug("The list of Last Modification Times from the NS API DB is empty.");
+            List<LastModificationTimes.Entry> entries = new ArrayList<>();
+            for (String nodeId : earliestSolrModTimes.keySet()) {
+                if (nodeId != null && !nodeId.isBlank()) {
+                    entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
                 }
             }
-        }
-        // Save the LastModificationTimes if it is a fresh start
-        if (freshStart) {
             saveLastModificationEntries(entries);
-            result = new LastModificationTimes(entries);
+            return new LastModificationTimes(entries);
         }
-        return result;
+
+        // Keep a set for efficient checks against the node IDs already stored in the API.
+        Set<String> recordedNodeIds = new HashSet<>();
+        for (LastModificationTimes.Entry entry : lastModTimesFromDb.entries()) {
+            if (entry.nodeId() != null && !entry.nodeId().isBlank()) {
+                recordedNodeIds.add(entry.nodeId());
+            }
+        }
+        for (String nodeId : earliestSolrModTimes.keySet()) {
+            if (nodeId != null && !nodeId.isBlank() && recordedNodeIds.add(nodeId)) {
+                log.debug(
+                    "Adding new node id {} that was in Solr, but not in the NS API DB. Mod time is "
+                        + "{}", nodeId, currentTime);
+                lastModTimesFromDb = lastModTimesFromDb.addEntry(currentTime, nodeId);
+            }
+        }
+        return lastModTimesFromDb;
     }
 
-    private void saveLastModificationEntries(List<LastModificationTimes.Entry> entries) throws IOException {
+    private void saveLastModificationEntries(List<LastModificationTimes.Entry> entries)
+        throws IOException {
         if (entries != null && !entries.isEmpty()) {
             HttpUtils.doPut(LAST_MODIFICATION_URL, entries);
         } else {
-            log.debug("An empty ModificationTimes.Entry list will not be saved to the remote "
-                          + "server");
+            log.debug("ModificationTimes.Entry list is empty; not saving via api");
         }
     }
 
     /**
      * Get a map, whose key is a distinct mn id and the value is the earliest modification date,
      * from solr
+     *
      * @return an empty map if it finds nothing
      * @throws IOException
      * @throws InterruptedException
      */
-    protected Map<String, String> getMNEarliestModificationMap()
+    protected Map<String, String> getEarliestSolrMnModTimes()
         throws IOException, InterruptedException {
         Map<String, String> params = new HashMap<>();
         params.put("q", "*:*");
         params.put("rows", "0");
-        params.put("json.facet",
-                   "{mns:{type:terms,field:authoritativeMN,limit:-1," +
-                       "facet:{earliestDateModified:'min(dateModified)'}}}");
+        params.put(
+            "json.facet", "{mns:{type:terms,field:authoritativeMN,limit:-1,"
+                + "facet:{earliestDateModified:'min(dateModified)'}}}");
         params.put("wt", "json");
         JsonNode response = solrQueryClient.query(params);
         Map<String, String> result = new HashMap<>();
@@ -274,72 +324,14 @@ public class DataSet {
         if (buckets.isArray()) {
             for (JsonNode bucket : buckets) {
                 String mnId = bucket.path("val").asText();
-                String earliestDateModified =
-                    bucket.path("earliestDateModified").asText();
+                String earliestDateModified = bucket.path("earliestDateModified").asText();
                 result.put(mnId, earliestDateModified);
             }
         }
-        log.debug("The distinct authoritative MNs and their earliest " +
-                      "dateModified values are {}", result);
+        log.debug(
+            "The distinct authoritative MNs and their earliest " + "dateModified values are {}",
+            result);
         return result;
-    }
-
-    /// Extracts the SubscriptionResourceType from the given parameters.
-    ///
-    /// `formatType` can be `RESOURCE`, `DATA`, or `METADATA`:
-    /// - `DATA` can be ignored because there will always be another event for the corresponding
-    ///   resourceMap update, and we don't want to alert twice for the same thing.
-    /// - `RESOURCE` is a resourceMap, which is always a dataset, so return
-    ///   `SubscriptionResourceType.datasetChanges`.
-    /// - For `METADATA`:
-    ///   - If `formatId` matches `https://purl.dataone.org/portals-.*`, return
-    ///     `SubscriptionResourceType.portalMetaChanges` (portals do not have a resourceMap).
-    ///   - If a `resourceMap` field exists, ignore the event because there will be another event
-    ///     for the corresponding resourceMap update, and we don't want to alert twice for the same
-    ///     thing.
-    ///   - If a `resourceMap` field does not exist, this is a science-metadata-only dataset; return
-    ///     `SubscriptionResourceType.datasetChanges`.
-    ///
-    /// References:
-    ///
-    /// - List of available formats: [DataONE formats](https://cn.dataone.org/cn/v2/formats)
-    /// - Enumeration of available resource types: {@link SubscriptionResourceType}
-    ///
-    /// @param formatType  the format type of the data object, it can be DATA, METADATA, or RESOURCE
-    /// @param formatId  the format id of the data object
-    /// @param resourceMap  the list of resourceMap aggregates the object
-    /// @return The resource type as a SubscriptionResourceType
-    /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
-    /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
-    ///
-    protected static SubscriptionResourceType getResourceType(
-        String formatType, String formatId, List<String> resourceMap)
-        throws IgnoredResourceTypeException, UnsupportedResourceTypeException {
-        if (StringUtils.isBlank(formatType)) {
-            throw new IllegalArgumentException("FormatType parameter cannot be blank.");
-        }
-        if (StringUtils.isBlank(formatId)) {
-            throw new IllegalArgumentException("FormatId parameter cannot be blank.");
-        }
-        return switch (formatType) {
-            case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");
-            case "RESOURCE" -> SubscriptionResourceType.datasetChanges;
-            case "METADATA" -> {
-                if (PORTAL_FORMAT_ID_PATTERN.matcher(formatId).matches()) {
-                    log.debug("formatId: {} matches portal pattern -> portalMetaChanges", formatId);
-                    yield SubscriptionResourceType.portalMetaChanges;
-                }
-                if (resourceMap != null && !resourceMap.isEmpty() && !StringUtils.isBlank(
-                    resourceMap.getFirst())) {
-                    log.debug("resourceMap: {} exists -> ignore to avoid duplicate", resourceMap);
-                    throw new IgnoredResourceTypeException(
-                        "formatType: METADATA with resourceMap is ignored");
-                }
-                yield SubscriptionResourceType.datasetChanges;
-            }
-            default ->
-                throw new UnsupportedResourceTypeException("Unsupported formatType: " + formatType);
-        };
     }
 
 }

@@ -3,10 +3,10 @@ package org.dataone.notifications.event;
 import java.util.ArrayList;
 import java.util.List;
 
-public record LastModificationTimes(List<Entry> runtimes) {
+public record LastModificationTimes(List<Entry> entries) {
 
     public LastModificationTimes {
-        runtimes = List.copyOf(runtimes);
+        entries = List.copyOf(entries);
     }
 
     /**
@@ -16,7 +16,7 @@ public record LastModificationTimes(List<Entry> runtimes) {
      * @return a new LastModificationTimes record
      */
     public LastModificationTimes addEntry(Long timestamp, String nodeId) {
-        List<Entry> updated = new ArrayList<>(runtimes);
+        List<Entry> updated = new ArrayList<>(entries);
         updated.add(new Entry(timestamp, nodeId));
         return new LastModificationTimes(updated);
     }

@@ -283,7 +283,7 @@ public class NsDataRepository implements DataRepository {
             log.error("LastModificationTimes is null");
             throw new IllegalArgumentException("LastModificationTimes is null");
         }
-        List<LastModificationTimes.Entry> entries = runtimes.runtimes();
+        List<LastModificationTimes.Entry> entries = runtimes.entries();
         if (entries.isEmpty()) {
             return;
         }

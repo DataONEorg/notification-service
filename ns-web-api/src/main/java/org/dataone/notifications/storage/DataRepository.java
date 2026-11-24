@@ -59,7 +59,7 @@ public interface DataRepository {
     /**
      * Retrieves the last modification time timestamps and nodeIds for a given resourceType.
      *
-     * @param resourceType the type of resource for which to retrieve the runtimes & nodeIds - see
+     * @param resourceType the type of resource for which to retrieve the entries & nodeIds - see
      *     ///             {@link SubscriptionResourceType} enum for valid values
      * @return a LastModificationTimes record for the specified resourceType, containing 0..n
      *     LastModificationTimes.Entry records, each containing a timestamp and nodeId. This method
@@ -78,7 +78,7 @@ public interface DataRepository {
      * the provided List is null, an IllegalArgumentException will be thrown. Entries are never
      * deleted by this method.
      *
-     * @param resourceType the type of resource for which to set the runtimes & nodeIds - see
+     * @param resourceType the type of resource for which to set the entries & nodeIds - see
      *                     {@link SubscriptionResourceType} enum for valid values
      * @param entries      a List of {@link LastModificationTimes.Entry} records, each containing a
      *                     timestamp and nodeId to be set for the given resourceType.

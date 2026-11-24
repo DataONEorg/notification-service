@@ -107,7 +107,7 @@ class PrivateResourcesSmokeIT {
 
     @Test
     void setLastRuntime_malformedBody_returnsClientError() {
-        try (Response r = put(TYPE, "{\"runtimes\": \"not-a-list\"}")) {
+        try (Response r = put(TYPE, "{\"entries\": \"not-a-list\"}")) {
             int status = r.getStatus();
             assertEquals(4, status / 100, "unexpected status: " + status);
         }
@@ -236,8 +236,8 @@ class PrivateResourcesSmokeIT {
     }
 
     private static JsonNode findEntry(JsonNode root, String nodeId) {
-        JsonNode entries = root.get("runtimes");
-        assertNotNull(entries, "runtimes missing from response");
+        JsonNode entries = root.get("entries");
+        assertNotNull(entries, "entries missing from response");
         for (JsonNode entry : entries) {
             if (nodeId.equals(entry.get("nodeId").asString())) {
                 return entry;
@@ -274,7 +274,7 @@ class PrivateResourcesSmokeIT {
         for (ObjectNode e : entries) {
             array.add(e);
         }
-        return MAPPER.createObjectNode().set("runtimes", array).toString();
+        return MAPPER.createObjectNode().set("entries", array).toString();
     }
 
     private Response put(String resourceType, String jsonBody) {

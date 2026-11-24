@@ -52,7 +52,7 @@ public class HttpUtils {
      /// ```java
      ///   LastModificationTimes result = HttpUtils.doGet(
      ///       "/lastModificationTime/datasetChanges", LastModificationTimes.class);
-     ///   for (LastModificationTimes.Entry e : result.runtimes()) {
+     ///   for (LastModificationTimes.Entry e : result.entries()) {
      ///       long epochMillis = e.timestamp();   // milliseconds since the epoch (UTC)
      ///       String nodeId = e.nodeId();
      ///       Instant lastRun = Instant.ofEpochMilli(epochMillis);  // if an Instant is needed

@@ -119,7 +119,7 @@ class HttpUtilsTest {
     @Test
     void doGet_typed_deserializesResponse() throws IOException {
         when(response.body()).thenReturn(
-            "{\"runtimes\":[{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}]}");
+            "{\"entries\":[{\"nodeId\":\"urn:node:KNB\",\"timestamp\":123}]}");
 
         assertEquals(
             new LastModificationTimes(
@@ -245,19 +245,19 @@ class HttpUtilsTest {
         assertEquals("application/json", request.headers().firstValue("Content-Type").orElse(null));
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
         JsonNode sent = new ObjectMapper().readTree(bodyOf(request));
-        assertEquals(2, sent.get("runtimes").size());
-        assertEquals(1700000000000L, sent.get("runtimes").get(0).get("timestamp").asLong());
-        assertTrue(sent.get("runtimes").get(0).get("timestamp").isIntegralNumber());
-        assertEquals("urn:node:KNB", sent.get("runtimes").get(0).get("nodeId").asString());
-        assertEquals(1700000060000L, sent.get("runtimes").get(1).get("timestamp").asLong());
-        assertEquals("urn:node:ARCTIC", sent.get("runtimes").get(1).get("nodeId").asString());
+        assertEquals(2, sent.get("entries").size());
+        assertEquals(1700000000000L, sent.get("entries").get(0).get("timestamp").asLong());
+        assertTrue(sent.get("entries").get(0).get("timestamp").isIntegralNumber());
+        assertEquals("urn:node:KNB", sent.get("entries").get(0).get("nodeId").asString());
+        assertEquals(1700000060000L, sent.get("entries").get(1).get("timestamp").asLong());
+        assertEquals("urn:node:ARCTIC", sent.get("entries").get(1).get("nodeId").asString());
     }
 
     @Test
     void doPut_emptyEntries_sendsEmptyEntriesArray() throws Exception {
         HttpUtils.doPut("/x", List.of());
 
-        assertEquals("{\"runtimes\":[]}", bodyOf(sentRequest()));
+        assertEquals("{\"entries\":[]}", bodyOf(sentRequest()));
     }
 
     @Test

@@ -50,7 +50,7 @@ public class PrivateResources {
 
     /// Gets the last modification time timestamp and nodeId pairs for a given resourceType.
     ///
-    /// @param resourceType the type of resource for which to retrieve the runtimes & nodeIds - see
+    /// @param resourceType the type of resource for which to retrieve the entries & nodeIds - see
     ///                     {@link SubscriptionResourceType} enum for valid values
     /// @return a record containing the last modification time timestamp (integer milliseconds since
     /// the epoch (UTC)) and nodeId pairs for the specified resourceType
@@ -61,7 +61,7 @@ public class PrivateResources {
     public Record getLastModificationTime(
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType
     ){
-        log.debug("Request to get last successful source runtimes for resourceType: {}",
+        log.debug("Request to get last successful source entries for resourceType: {}",
             resourceType);
         LastModificationTimes response = dataRepository.getLastModificationTimes(resourceType);
         if (response == null) {
@@ -69,7 +69,7 @@ public class PrivateResources {
             throw new IllegalArgumentException(
                 "No lastModificationTime found for resourceType: " + resourceType);
         }
-        if (response.runtimes().isEmpty()) {
+        if (response.entries().isEmpty()) {
             log.warn("No lastModificationTimes found for resourceType: {}", resourceType);
             throw new NotFoundException(
                 "No lastModificationTime found for resourceType: " + resourceType);
@@ -151,7 +151,7 @@ public class PrivateResources {
     /// ```json
     ///   PUT /private/lastModificationTime/datasetChanges
     ///   Content-Type: application/json
-    ///   {"runtimes": [
+    ///   {"entries": [
     ///     {"timestamp": 1794338367000, "nodeId": "urn:node:KNB"},
     ///     {"timestamp": 1794338379000, "nodeId": "urn:node:ARCTIC"}
     ///   ]}
@@ -161,7 +161,7 @@ public class PrivateResources {
     ///                 timestamp (integer milliseconds since the epoch (UTC)) and nodeId pairs to
     ///                 set for the specified resourceType
     /// @param resourceType SubscriptionResourceType enum value representing the type of resource
-    ///                     for which to set the runtimes & nodeIds - see
+    ///                     for which to set the entries & nodeIds - see
     ///                     {@link SubscriptionResourceType} enum for valid values
     ///
     @PUT
@@ -176,7 +176,7 @@ public class PrivateResources {
         if (runtimes == null) {
             throw new BadRequestException("Request body is required");
         }
-        for (LastModificationTimes.Entry entry : runtimes.runtimes()) {
+        for (LastModificationTimes.Entry entry : runtimes.entries()) {
             if (entry.timestamp() == null || entry.nodeId() == null || entry.nodeId().isBlank()) {
                 throw new BadRequestException(
                     "Each entry requires a timestamp and nodeId: " + entry);
