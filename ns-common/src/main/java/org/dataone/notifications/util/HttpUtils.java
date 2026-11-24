@@ -67,12 +67,18 @@ public class HttpUtils {
      ///
     public static <T> T doGet(String requestUri, Class<T> type) throws IOException {
         String body = doGet(requestUri);
+        T returnClass;
         try {
-            return MAPPER.readValue(body, type);
+            returnClass = MAPPER.readValue(body, type);
+            if (returnClass == null) {
+                log.debug("doGet({}) returned no records; returning null", requestUri);
+                return null;
+            }
         } catch (JacksonException e) {
             throw new IOException(
                 "Unable to parse response of GET " + requestUri + " as " + type.getName(), e);
         }
+        return returnClass;
     }
 
      /// Sends an HTTP GET to the internal api service and returns the JSON response as a String.
@@ -99,7 +105,10 @@ public class HttpUtils {
             HttpResponse<String> response =
                 CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
-            if (status < 200 || status >= 300) {
+            if (status == 404) {
+                log.debug("GET {} returned 404 Not Found", path);
+                return null;
+            } else if (status < 200 || status >= 300) {
                 throw new IOException(
                     "GET " + path + " failed with HTTP " + status + ": " + response.body());
             }

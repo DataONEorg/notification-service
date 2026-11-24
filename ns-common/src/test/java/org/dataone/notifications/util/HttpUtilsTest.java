@@ -2,6 +2,7 @@ package org.dataone.notifications.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -127,13 +128,20 @@ class HttpUtilsTest {
     }
 
     @Test
-    void doGet_non2xx_throwsIOExceptionWithStatusAndBody() {
+    void doGet_404_returnsNull() throws IOException {
         when(response.statusCode()).thenReturn(404);
+
+        assertNull(HttpUtils.doGet("/x"), "Expected null to be returned");
+    }
+
+    @Test
+    void doGet_non2xx_throwsIOExceptionWithStatusAndBody() {
+        when(response.statusCode()).thenReturn(500);
         when(response.body()).thenReturn("nope");
 
         IOException e = assertThrows(IOException.class, () -> HttpUtils.doGet("/x"));
 
-        assertTrue(e.getMessage().contains("404"));
+        assertTrue(e.getMessage().contains("500"));
         assertTrue(e.getMessage().contains("nope"));
     }
 
