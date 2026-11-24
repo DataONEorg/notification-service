@@ -103,7 +103,7 @@ helm upgrade --install ns -n notify --create-namespace \
 
 | Name                        | Description                                                           | Value             |
 | --------------------------- | --------------------------------------------------------------------- | ----------------- |
-| `tomcat.extraCatalinaOpts`  | Extra JVM options for Tomcat. SEE NOTES+DEFAULTS BELOW!               | `[]`              |
+| `tomcat.extraCatalinaOpts`  | Extra JVM options for Tomcat                                          | `SEE VALUES.YAML` |
 | `tomcat.jmxEnabled`         | Enable JMX for Tomcat, to inspect JVM usage of CPU, memory, etc.      | `false`           |
 | `tomcat.jmxPort`            | The port to use for JMX connections. IMPORTANT: If you change this... | `9010`            |
 | `tomcat.jmxCatalinaOpts`    | Tomcat JVM options for enabling JMX                                   | `see values.yaml` |

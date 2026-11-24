@@ -338,7 +338,8 @@ resources:
 
 ## @section Tomcat Configuration
 tomcat:
-  ## @param tomcat.extraCatalinaOpts [array] Extra JVM options for Tomcat. SEE NOTES+DEFAULTS BELOW!
+  ## @param tomcat.extraCatalinaOpts [default: SEE VALUES.YAML] Extra JVM options for Tomcat
+  ## IMPORTANT NOTES:
   ## 1. Do not set JMX-related values here, without first checking they're not already defined in
   ##    tomcat.jmxCatalinaOpts (assuming tomcat.jmxEnabled is true)
   ## 2. You can also set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead
