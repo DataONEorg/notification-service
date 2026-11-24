@@ -249,7 +249,7 @@ Here are some useful links for those unfamiliar with Jakarta EE:
     ```
 
 4. **ns-source:** the Helm chart runs `DataSet.poll()` once per CronJob invocation.
-   Set `nsSource.schedule` (default: every 15 minutes, UTC) and `nsSource.solrQueryUrl`
+   Set `nsSource.schedule` (default: every 15 minutes, UTC) and `nssource.solrQueryUrl`
    (the Solr select-all endpoint reachable from the job pod) in your Helm values. Runs
    cannot overlap. Build and publish the `notification-source` image alongside the API
    and consumer images. To run one poll locally instead:

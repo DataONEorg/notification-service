@@ -338,7 +338,7 @@ resources:
 
 ## @section Tomcat Configuration
 tomcat:
-  ## @param tomcat.extraCatalinaOpts Extra JVM options to pass to Tomcat. SEE IMPORTANT NOTES BELOW:
+  ## @param tomcat.extraCatalinaOpts [array] Extra JVM options for Tomcat. SEE NOTES+DEFAULTS BELOW!
   ## 1. Do not set JMX-related values here, without first checking they're not already defined in
   ##    tomcat.jmxCatalinaOpts (assuming tomcat.jmxEnabled is true)
   ## 2. You can also set -Xms and/or -Xmx here, but it is safer to set -XX:MaxRAMPercentage instead
@@ -414,25 +414,29 @@ tomcat:
   ##
   remoteDebugPort: 5005
 
-## @section nsSource scheduled polling for changes
-nsSource:
-  ## @param nsSource.schedule Kubernetes CronJob schedule (UTC)
+## @section nssource scheduled polling for changes
+nssource:
+  ## @param nssource.schedule Kubernetes CronJob schedule (UTC)
   schedule: "15 11 * * *"
 
-  ## @param nsSource.solrQueryUrl (REQUIRED) Internal Solr select-all endpoint reachable from the CronJob pod
+  ## @param nssource.solrQueryUrl (REQUIRED) Solr select-all endpoint reachable by CronJob pod
+  ## Example: "http://metacatarctic-solr-headless.arctic.svc:8983/solr/metacat-index/select-all"
+  ##
   solrQueryUrl: ""
 
   image:
-    ## @param nsSource.image.repository Source image repository
+    ## @param nssource.image.repository Source image repository
+    ##
     repository: ghcr.io/dataoneorg/notification-source
-    ## @param nsSource.image.pullPolicy Source image pull policy
+    ## @param nssource.image.pullPolicy Source image pull policy
+    ##
     pullPolicy: IfNotPresent
-    ## @param nsSource.image.tag Overrides chart appVersion when nonempty
+    ## @param nssource.image.tag Overrides chart appVersion when nonempty
+    ##
     tag: ""
 
 ## @Section Default values for nsconsumer subchart
 nsconsumer:
-
   ## @param nsconsumer.replicaCount The number of replicas for the nsconsumer deployment
   ##
   replicaCount: 1
@@ -543,7 +547,7 @@ nsconsumer:
   ##    Note that -XX:MaxRAMPercentage will be ignored by the JVM if you also set a value for -Xmx
   ##    (i.e. -Xmx takes precedence over MaxRAMPercentage)
   ##
-  ## (extraCatalinaOpts is a YAML LIST, so each entry must be preceded by a DASH (-) and a space. It
+  ## (extraJavaOpts is a YAML LIST, so each entry must be preceded by a DASH (-) and a space. It
   ## looks strange when the options also contain dashes, but is correct YAML syntax.)
   ##
   extraJavaOpts:

@@ -1,11 +1,11 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "notifications.fullname" . }}-source
+  name: {{ include "nssource.fullname" . }}
   labels:
     {{- include "notifications.labels" . | nindent 4 }}
 spec:
-  schedule: {{ .Values.nsSource.schedule | quote }}
+  schedule: {{ .Values.nssource.schedule | quote }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -18,8 +18,8 @@ spec:
           serviceAccountName: {{ include "notifications.serviceAccountName" . }}
           containers:
             - name: ns-source
-              image: "{{ .Values.nsSource.image.repository }}:{{ default .Chart.AppVersion .Values.nsSource.image.tag }}"
-              imagePullPolicy: {{ .Values.nsSource.image.pullPolicy }}
+              image: "{{ .Values.nssource.image.repository }}:{{ default .Chart.AppVersion .Values.nssource.image.tag }}"
+              imagePullPolicy: {{ .Values.nssource.image.pullPolicy }}
               env:
                 - name: NS_PROPERTIES_YAML_PATH
                   value: /etc/dataone/notification-service/properties.yaml

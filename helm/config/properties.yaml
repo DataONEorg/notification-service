@@ -2,7 +2,7 @@ ns:
   api:
     privateBaseUrl: {{ include "notifications.private.api.url" . }}
   source:
-    solrQueryUrl: {{ required "nsSource.solrQueryUrl IS REQUIRED" .Values.nsSource.solrQueryUrl | quote }}
+    solrQueryUrl: {{ required "nssource.solrQueryUrl IS REQUIRED" .Values.nssource.solrQueryUrl | quote }}
   auth:
     api:
       baseUrl: {{ .Values.ns.auth.api.baseUrl | default "https://cn-sandbox.test.dataone.org/cn/v2" }}
