@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * The class to poll the solr server and find the candidate objects for the notification service
  */
-public class DataSet {
+public class DataSet implements AutoCloseable {
     private static final Pattern PORTAL_FORMAT_ID_PATTERN =
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
@@ -37,7 +37,7 @@ public class DataSet {
         NsConfig.getConfig().getString("ns.source.solrQueryUrl");
     private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
     private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
-    private static SubscriptionProcessor subscriptionProcessor;
+    private final SubscriptionProcessor subscriptionProcessor;
 
     /**
      * Constructor
@@ -48,7 +48,14 @@ public class DataSet {
 
     public static void main(String[] args)
         throws IOException, InterruptedException, TimeoutException {
-        new DataSet().poll();
+        try (DataSet dataSet = new DataSet()) {
+            dataSet.poll();
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        subscriptionProcessor.close();
     }
 
     /// Extracts the SubscriptionResourceType from the given parameters.

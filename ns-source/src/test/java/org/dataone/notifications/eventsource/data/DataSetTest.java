@@ -4,11 +4,17 @@ import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.verify;
 
 /**
  * The JUnit tests for the DataSet class
@@ -19,6 +25,32 @@ public class DataSetTest {
     private static final String PORTAL_1_1_0 = "https://purl.dataone.org/portals-1.1.0";
     private static final List<String> RESOURCE_MAP_LIST = List.of("urn:uuid:abc");
 
+    @Test
+    void main_closesDataSetAfterPoll() throws Exception {
+        try (MockedConstruction<DataSet> dataSets = mockConstruction(DataSet.class)) {
+            DataSet.main(new String[0]);
+
+            DataSet dataSet = dataSets.constructed().getFirst();
+            verify(dataSet).poll();
+            verify(dataSet).close();
+        }
+    }
+
+    @Test
+    void main_closesDataSetAndPreservesPollFailure() throws Exception {
+        IOException failure = new IOException("poll failed");
+        IOException closeFailure = new IOException("close failed");
+        try (MockedConstruction<DataSet> dataSets = mockConstruction(DataSet.class,
+            (dataSet, context) -> {
+                doThrow(failure).when(dataSet).poll();
+                doThrow(closeFailure).when(dataSet).close();
+            })) {
+            IOException thrown = assertThrows(IOException.class, () -> DataSet.main(new String[0]));
+            assertSame(failure, thrown);
+            assertSame(closeFailure, thrown.getSuppressed()[0]);
+            verify(dataSets.constructed().getFirst()).close();
+        }
+    }
 
     @Test
     void resource_returnsDatasetChanges() {

@@ -20,12 +20,12 @@ import java.util.concurrent.TimeoutException;
  * The class to get/update subscription information for a pid. Also, it will submit the event
  * information to RabbitMQ.
  */
-public class SubscriptionProcessor {
+public class SubscriptionProcessor implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionProcessor.class);
     private static volatile SubscriptionProcessor processor;
     private static final RabbitMqProperties properties =
         RabbitMqProperties.from(NsConfig.getConfig());
-    private static RabbitMqConnection rabbitMqConnection;
+    private final RabbitMqConnection rabbitMqConnection;
     private Channel channel;
     private final ObjectMapper objectMapper;
 
@@ -53,8 +53,30 @@ public class SubscriptionProcessor {
      */
     private SubscriptionProcessor() throws IOException, TimeoutException {
         rabbitMqConnection = new RabbitMqConnection(properties);
-        channel = rabbitMqConnection.newChannel();
-        objectMapper = new ObjectMapper();
+        try {
+            channel = rabbitMqConnection.newChannel();
+            objectMapper = new ObjectMapper();
+        } catch (IOException | TimeoutException | RuntimeException | Error e) {
+            try {
+                rabbitMqConnection.close();
+            } catch (IOException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        synchronized (SubscriptionProcessor.class) {
+            try {
+                rabbitMqConnection.close();
+            } finally {
+                if (processor == this) {
+                    processor = null;
+                }
+            }
+        }
     }
 
     /**

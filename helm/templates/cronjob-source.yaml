@@ -7,8 +7,12 @@ metadata:
 spec:
   schedule: {{ .Values.nssource.schedule | quote }}
   concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      ## Retry failures up to this many times; the next scheduled run retries naturally
+      backoffLimit: 3
       template:
         metadata:
           annotations:
