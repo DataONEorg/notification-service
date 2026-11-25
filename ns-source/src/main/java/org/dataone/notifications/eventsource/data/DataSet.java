@@ -164,8 +164,8 @@ public class DataSet implements EventSource, AutoCloseable {
             + " AND (formatType:\"RESOURCE\" OR formatType:\"METADATA\")";
         log.debug("The query is {}", q);
         String cursorMark = "*";
-        // A new list of the latest modification date for this poll
-        List<LastModificationTimes.Entry> newLastModTimes = new ArrayList<>();
+        // A new list of the latest modification dates for this poll
+        List<LastModificationTimes.Entry> lastModTimeUpdates = new ArrayList<>();
         while (true) {
             Map<String, String> params = new HashMap<>();
             params.put("q", q);
@@ -188,8 +188,8 @@ public class DataSet implements EventSource, AutoCloseable {
                 }
                 String newId = doc.path("obsoletedBy").asText(null);
                 if (newId == null || newId.isBlank()) {
-                    log.warn("The new guid can't be blank for processing. The record will be "
-                                 + "ignored.");
+                    log.warn(
+                        "The new guid can't be blank for processing. The record will be ignored.");
                     continue;
                 }
                 String nodeId = doc.path("authoritativeMN").asText(null);
@@ -234,9 +234,9 @@ public class DataSet implements EventSource, AutoCloseable {
                 // Since the modificationDate is desc, the first record has the newest value
                 if (nodeId != null && modifiedDate != null) {
                     long epochMillis = Instant.parse(modifiedDate).toEpochMilli();
-                    newLastModTimes.add(new LastModificationTimes.Entry(epochMillis, nodeId));
+                    lastModTimeUpdates.add(new LastModificationTimes.Entry(epochMillis, nodeId));
                     log.debug(
-                        "New modification date {} for node id {} added to newLastModTimes",
+                        "New modification date {} for node id {} added to lastModTimeUpdates",
                         modifiedDate, nodeId);
                 }
             }
@@ -248,8 +248,10 @@ public class DataSet implements EventSource, AutoCloseable {
             }
             cursorMark = nextCursorMark;
         }
+        log.debug("The list of updates to LastModificationTimes has {} entries",
+                  lastModTimeUpdates.size());
         // Save the new LastModificationTimeEntries to the NS API DB
-        saveLastModificationEntries(newLastModTimes);
+        saveLastModificationEntries(lastModTimeUpdates);
     }
 
     private String escapeSolrValue(String value) {
