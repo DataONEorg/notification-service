@@ -411,12 +411,22 @@ tomcat:
   ##
   remoteDebugEnabled: false
 
-  ## @param tomcat.remoteDebugPort The port to use for remote debugging connections
+  ## @param tomcat.remoteDebugPort The port to use for remote debugging connections.
+  ## Ignored if remoteDebugEnabled is false.
   ##
   remoteDebugPort: 5005
 
 ## @section nssource scheduled polling for changes
 nssource:
+  ## @param nssource.remoteDebugEnabled Enable remote debugging for nssource container JVM
+  ##
+  remoteDebugEnabled: false
+
+  ## @param nssource.remoteDebugPort The port to use for remote debugging connections.
+  ## Ignored if remoteDebugEnabled is false.
+  ##
+  remoteDebugPort: 5005
+
   ## @param nssource.schedule Kubernetes CronJob schedule (UTC)
   schedule: "15 11 * * *"
 
@@ -424,6 +434,11 @@ nssource:
   ## Example: "http://metacatarctic-solr-headless.arctic.svc:8983/solr/metacat-index/select-all"
   ##
   solrQueryUrl: ""
+
+  ## @param nssource.extraJavaOpts Additional Java options to pass to the JVM
+  ##
+  extraJavaOpts:
+    - -XX:MaxRAMPercentage=75
 
   image:
     ## @param nssource.image.repository Source image repository
@@ -436,8 +451,35 @@ nssource:
     ##
     tag: ""
 
+  ## Resource requests and limits for the notification source deployment
+  resources:
+    requests:
+      ## @param nssource.resources.requests.cpu CPU requested for the nssource container
+      ##
+      cpu: 100m
+      ## @param nssource.resources.requests.memory Memory requested for the nssource container
+      ##
+      memory: 128Mi
+    limits:
+      ## @param nssource.resources.limits.cpu Maximum CPU the nssource container may use
+      ##
+      cpu: 500m
+      ## @param nssource.resources.limits.memory Maximum memory the nssource container may use
+      ##
+      memory: 500Mi
+
+
 ## @Section Default values for nsconsumer subchart
 nsconsumer:
+  ## @param nsconsumer.remoteDebugEnabled Enable remote debugging for nsconsumer container JVM
+  ##
+  remoteDebugEnabled: false
+
+  ## @param nsconsumer.remoteDebugPort The port to use for remote debugging connections.
+  ## Ignored if remoteDebugEnabled is false.
+  ##
+  remoteDebugPort: 5005
+
   ## @param nsconsumer.replicaCount The number of replicas for the nsconsumer deployment
   ##
   replicaCount: 1
@@ -472,10 +514,10 @@ nsconsumer:
     limits:
       ## @param nsconsumer.resources.limits.cpu Maximum CPU the nsconsumer container may use
       ##
-      cpu: 200m
+      cpu: 500m
       ## @param nsconsumer.resources.limits.memory Maximum memory the nsconsumer container may use
       ##
-      memory: 256Mi
+      memory: 500Mi
 
   serviceAccount:
     ## @param nsconsumer.serviceAccount.create Should a service account be created for nsconsumer?

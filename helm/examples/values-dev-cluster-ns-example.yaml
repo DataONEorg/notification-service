@@ -32,9 +32,8 @@ image:
   pullPolicy: Always
 
 tomcat:
-  jmxEnabled: true
   remoteDebugEnabled: true
-  remoteDebugPort: 5005
+  jmxEnabled: true
 
 ingress:
   annotations:
@@ -54,7 +53,16 @@ ingress:
         - *hostname
       secretName: ingress-tls-cert
 
+nssource:
+  remoteDebugEnabled: true
+  schedule: "15 11 * * *"
+  solrQueryUrl: "http://metacatbrooke-solr-headless.brooke.svc:8983/solr/metacat-index/select-all"
+  image:
+    tag: develop
+    pullPolicy: Always
+
 nsconsumer:
+  remoteDebugEnabled: true
   image:
     tag: develop
     pullPolicy: Always

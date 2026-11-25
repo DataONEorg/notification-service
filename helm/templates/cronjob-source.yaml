@@ -20,11 +20,19 @@ spec:
             - name: ns-source
               image: "{{ .Values.nssource.image.repository }}:{{ default .Chart.AppVersion .Values.nssource.image.tag }}"
               imagePullPolicy: {{ .Values.nssource.image.pullPolicy }}
+              resources:
+                {{- toYaml .Values.nssource.resources | nindent 16 }}
               env:
                 - name: NS_PROPERTIES_YAML_PATH
                   value: /etc/dataone/notification-service/properties.yaml
                 - name: JAVA_TOOL_OPTIONS
-                  value: -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+                  value: >-
+                    {{ join " " .Values.nssource.extraJavaOpts }}
+                      -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
+                    {{- if .Values.nssource.remoteDebugEnabled }}
+                      -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:
+                      {{- .Values.nssource.remoteDebugPort }}
+                    {{- end }}
                 {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
                 {{- if not $secretName }}
                 {{- $secretName = printf "%s-%s-default-user" .Release.Name .Values.rmq.rmqOperator.nameOverride }}
@@ -39,6 +47,11 @@ spec:
                     secretKeyRef:
                       name: {{ $secretName }}
                       key: {{ .Values.rmq.rmqConnection.rmqPasswordKey }}
+              {{- if .Values.nssource.remoteDebugEnabled }}
+              ports:
+                - containerPort: {{ .Values.nssource.remoteDebugPort }}
+                  name: jdwp
+              {{- end }}
               volumeMounts:
                 - mountPath: /etc/dataone/notification-service
                   name: {{ .Release.Name }}-config-volume

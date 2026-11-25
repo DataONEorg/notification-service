@@ -108,17 +108,26 @@ helm upgrade --install ns -n notify --create-namespace \
 | `tomcat.jmxPort`            | The port to use for JMX connections. IMPORTANT: If you change this... | `9010`            |
 | `tomcat.jmxCatalinaOpts`    | Tomcat JVM options for enabling JMX                                   | `see values.yaml` |
 | `tomcat.remoteDebugEnabled` | Enable remote debugging for Tomcat                                    | `false`           |
-| `tomcat.remoteDebugPort`    | The port to use for remote debugging connections                      | `5005`            |
+| `tomcat.remoteDebugPort`    | The port to use for remote debugging connections.                     | `5005`            |
 
 ### nssource scheduled polling for changes
 
 | Name                                                      | Description                                                  | Value                                                                                         |
 | --------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `nssource.remoteDebugEnabled`                             | Enable remote debugging for nssource container JVM           | `false`                                                                                       |
+| `nssource.remoteDebugPort`                                | The port to use for remote debugging connections.            | `5005`                                                                                        |
 | `nssource.schedule`                                       | Kubernetes CronJob schedule (UTC)                            | `15 11 * * *`                                                                                 |
 | `nssource.solrQueryUrl`                                   | (REQUIRED) Solr select-all endpoint reachable by CronJob pod | `""`                                                                                          |
+| `nssource.extraJavaOpts`                                  | Additional Java options to pass to the JVM                   | `["-XX:MaxRAMPercentage=75"]`                                                                 |
 | `nssource.image.repository`                               | Source image repository                                      | `ghcr.io/dataoneorg/notification-source`                                                      |
 | `nssource.image.pullPolicy`                               | Source image pull policy                                     | `IfNotPresent`                                                                                |
 | `nssource.image.tag`                                      | Overrides chart appVersion when nonempty                     | `""`                                                                                          |
+| `nssource.resources.requests.cpu`                         | CPU requested for the nssource container                     | `100m`                                                                                        |
+| `nssource.resources.requests.memory`                      | Memory requested for the nssource container                  | `128Mi`                                                                                       |
+| `nssource.resources.limits.cpu`                           | Maximum CPU the nssource container may use                   | `500m`                                                                                        |
+| `nssource.resources.limits.memory`                        | Maximum memory the nssource container may use                | `500Mi`                                                                                       |
+| `nsconsumer.remoteDebugEnabled`                           | Enable remote debugging for nsconsumer container JVM         | `false`                                                                                       |
+| `nsconsumer.remoteDebugPort`                              | The port to use for remote debugging connections.            | `5005`                                                                                        |
 | `nsconsumer.replicaCount`                                 | The number of replicas for the nsconsumer deployment         | `1`                                                                                           |
 | `nsconsumer.nameOverride`                                 | String to partially override the nsconsumer chart name       | `""`                                                                                          |
 | `nsconsumer.fullNameOverride`                             | String to fully override the nsconsumer resource names       | `""`                                                                                          |
@@ -126,8 +135,8 @@ helm upgrade --install ns -n notify --create-namespace \
 | `nsconsumer.image.pullPolicy`                             | The nsconsumer image pull policy                             | `IfNotPresent`                                                                                |
 | `nsconsumer.resources.requests.cpu`                       | CPU requested for the nsconsumer container                   | `100m`                                                                                        |
 | `nsconsumer.resources.requests.memory`                    | Memory requested for the nsconsumer container                | `128Mi`                                                                                       |
-| `nsconsumer.resources.limits.cpu`                         | Maximum CPU the nsconsumer container may use                 | `200m`                                                                                        |
-| `nsconsumer.resources.limits.memory`                      | Maximum memory the nsconsumer container may use              | `256Mi`                                                                                       |
+| `nsconsumer.resources.limits.cpu`                         | Maximum CPU the nsconsumer container may use                 | `500m`                                                                                        |
+| `nsconsumer.resources.limits.memory`                      | Maximum memory the nsconsumer container may use              | `500Mi`                                                                                       |
 | `nsconsumer.serviceAccount.create`                        | Should a service account be created for nsconsumer?          | `false`                                                                                       |
 | `nsconsumer.serviceAccount.name`                          | The name of the service account to use for nsconsumer        | `""`                                                                                          |
 | `nsconsumer.readinessProbe.enabled`                       | Enable readinessProbe for container                          | `true`                                                                                        |

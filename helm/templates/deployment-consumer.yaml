@@ -36,9 +36,9 @@ spec:
               value: >-
                 {{ join " " .Values.nsconsumer.extraJavaOpts }}
                 -Dlog4j2.configurationFile=/etc/dataone/notification-service/log4j2-k8s.xml
-                {{- if .Values.tomcat.remoteDebugEnabled }}
+                {{- if .Values.nsconsumer.remoteDebugEnabled }}
                 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:
-                  {{- .Values.tomcat.remoteDebugPort }}
+                  {{- .Values.nsconsumer.remoteDebugPort }}
                 {{- end }}
             {{- $secretName := .Values.rmq.rmqConnection.existingSecret }}
             {{- if not $secretName }}
@@ -77,9 +77,9 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
-          {{- if .Values.tomcat.remoteDebugEnabled }}
+          {{- if .Values.nsconsumer.remoteDebugEnabled }}
           ports:
-            - containerPort: {{ .Values.tomcat.remoteDebugPort }}
+            - containerPort: {{ .Values.nsconsumer.remoteDebugPort }}
               name: jdwp
           {{- end }}
           {{- if .Values.nsconsumer.readinessProbe.enabled }}

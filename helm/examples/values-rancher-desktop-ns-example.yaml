@@ -32,9 +32,24 @@ image:
     tag: LOCAL
     pullPolicy: Never
 
-## Use 'pullPolicy: Never' to pull from locally-build images
-##
+tomcat:
+  remoteDebugEnabled: true
+  jmxEnabled: true
+
+nssource:
+  remoteDebugEnabled: true
+  schedule: "15 11 * * *"
+  solrQueryUrl: "http://metacatbrooke-solr-headless.brooke.svc:8983/solr/metacat-index/select-all"
+  ## Use 'pullPolicy: Never' to pull from locally-build images
+  ##
+  image:
+    tag: LOCAL
+    pullPolicy: Never
+
 nsconsumer:
+  remoteDebugEnabled: true
+  ## Use 'pullPolicy: Never' to pull from locally-build images
+  ##
   image:
     tag: LOCAL
     pullPolicy: Never
@@ -47,6 +62,7 @@ nsconsumer:
         existingSecret: "mailpit-auth"
       accountSvc:
         existingSecret: "ns-account-svc-token"
+
 rmq:
   rmqOperator:
     persistence:
