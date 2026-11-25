@@ -2,7 +2,11 @@ ns:
   api:
     privateBaseUrl: {{ include "notifications.private.api.url" . }}
   source:
-    solrQueryUrl: {{ required "nssource.solrQueryUrl IS REQUIRED" .Values.nssource.solrQueryUrl | quote }}
+    {{- if hasKey .Values.nssource.eventsources "dataset" }}
+    {{- $_ := required "nssource.eventsources.dataset.solrQueryUrl IS REQUIRED" .Values.nssource.eventsources.dataset.solrQueryUrl }}
+    {{- end }}
+    eventsources:
+      {{- toYaml .Values.nssource.eventsources | nindent 6 }}
   auth:
     api:
       baseUrl: {{ .Values.ns.auth.api.baseUrl | default "https://cn-sandbox.test.dataone.org/cn/v2" }}

@@ -248,15 +248,17 @@ Here are some useful links for those unfamiliar with Jakarta EE:
     $ java -jar ./ns-consumer/target/ns-consumer-[VERSION].jar
     ```
 
-4. **ns-source:** the Helm chart runs `DataSet.poll()` once per CronJob invocation.
-   Set `nsSource.schedule` (default: every 15 minutes, UTC) and `nssource.solrQueryUrl`
-   (the Solr select-all endpoint reachable from the job pod) in your Helm values. Runs
-   cannot overlap. Build and publish the `notification-source` image alongside the API
-   and consumer images. To run one poll locally instead:
+4. **ns-source:** This is run by a cron job in k8s, but can be run locally using:
 
     ```shell
     $ java -jar ./ns-source/target/ns-source-[VERSION].jar
     ```
+
+   You can add new sources under `nssource.eventsources`, each with a `className`
+   and any source-specific settings. Source classes must implement the `EventSource` interface, have
+   a public no-argument constructor, and leave the shared `SubscriptionProcessor` open
+   for the runner to close.
+
 
 ## License
 ```

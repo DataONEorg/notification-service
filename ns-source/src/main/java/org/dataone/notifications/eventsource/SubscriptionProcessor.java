@@ -46,6 +46,12 @@ public class SubscriptionProcessor implements AutoCloseable {
         return processor;
     }
 
+    public static synchronized void closeInstance() throws IOException {
+        if (processor != null) {
+            processor.close();
+        }
+    }
+
     /**
      * Default constructor
      * @throws IOException if the rabbitMqConnection connection cannot be established

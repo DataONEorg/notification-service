@@ -430,10 +430,14 @@ nssource:
   ## @param nssource.schedule Kubernetes CronJob schedule (UTC)
   schedule: "15 11 * * *"
 
-  ## @param nssource.solrQueryUrl (REQUIRED) Solr select-all endpoint reachable by CronJob pod
-  ## Example: "http://metacatarctic-solr-headless.arctic.svc:8983/solr/metacat-index/select-all"
-  ##
-  solrQueryUrl: ""
+  ## Each source requires a className and may provide its own settings.
+  eventsources:
+    dataset:
+      ## @param nssource.eventsources.dataset.className Dataset event source class
+      className: "org.dataone.notifications.eventsource.data.DataSet"
+      ## @param nssource.eventsources.dataset.solrQueryUrl (REQUIRED) Solr select-all endpoint
+      ## Example: "http://metacatarctic-solr-headless.arctic.svc:8983/solr/metacat-index/select-all"
+      solrQueryUrl: ""
 
   ## @param nssource.extraJavaOpts Additional Java options to pass to the JVM
   ##
@@ -604,7 +608,7 @@ nsconsumer:
   ## which configures the {@link org.dataone.notifications.event.notifier.channel.EmailNotifier}.
   ##
   ## IMPORTANT: Each listener must have at least a className defined, which is the fully qualified
-  ## class name of the NotificationListener implementation to use (see, for example,
+  ## class name of the NotificationListener implementation to use. For example, see:
   ##   nsconsumer.notifiers.email.className
   ## which is set to:
   ##   "org.dataone.notifications.event.notifier.channel.EmailNotifier"

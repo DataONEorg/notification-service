@@ -39,7 +39,9 @@ tomcat:
 nssource:
   remoteDebugEnabled: true
   schedule: "15 11 * * *"
-  solrQueryUrl: "http://metacatbrooke-solr-headless.brooke.svc:8983/solr/metacat-index/select-all"
+  eventsources:
+    dataset:
+      solrQueryUrl: "http://metacatbrooke-solr-headless.brooke.svc:8983/solr/metacat-index/select-all"
   ## Use 'pullPolicy: Never' to pull from locally-build images
   ##
   image:
