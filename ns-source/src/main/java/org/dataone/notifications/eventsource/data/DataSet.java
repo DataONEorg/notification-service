@@ -248,10 +248,13 @@ public class DataSet implements EventSource, AutoCloseable {
             }
             cursorMark = nextCursorMark;
         }
-        log.debug("The list of updates to LastModificationTimes has {} entries",
-                  lastModTimeUpdates.size());
-        // Save the new LastModificationTimeEntries to the NS API DB
-        saveLastModificationEntries(lastModTimeUpdates);
+        if (lastModTimeUpdates.isEmpty()) {
+            log.debug("No new LastModificationTimes found in Solr; nothing to save via NS API");
+        } else {
+            log.debug("Saving {} new LastModificationTimes entries (from Solr) via NS API: {}",
+                      lastModTimeUpdates.size(), lastModTimeUpdates);
+            saveLastModificationEntries(lastModTimeUpdates);
+        }
     }
 
     private String escapeSolrValue(String value) {
