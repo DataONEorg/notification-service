@@ -215,6 +215,7 @@ public class HttpUtils {
         } catch (JacksonException e) {
             throw new IOException("Unable to serialize body of PUT " + path + " as JSON", e);
         }
+        log.debug("PUT {} with body: {}", path, json);
 
         HttpRequest request =
             HttpRequest.newBuilder(URI.create(BASE_URL + path)).timeout(TIMEOUT_SEC)
