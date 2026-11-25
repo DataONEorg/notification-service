@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.event.NsEventMessage;
+import org.dataone.notifications.eventsource.EventSource;
 import org.dataone.notifications.eventsource.SubscriptionProcessor;
 import org.dataone.notifications.eventsource.data.solr.SolrQueryClient;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
@@ -29,13 +30,12 @@ import java.util.regex.Pattern;
 /**
  * The class to poll the solr server and find the candidate objects for the notification service
  */
-public class DataSet implements AutoCloseable {
+public class DataSet implements EventSource, AutoCloseable {
     private static final Pattern PORTAL_FORMAT_ID_PATTERN =
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
-    private static final String solrQueryUrl =
-        NsConfig.getConfig().getString("ns.source.solrQueryUrl");
-    private static final SolrQueryClient solrQueryClient = new SolrQueryClient(solrQueryUrl);
+    private final String solrQueryUrl;
+    private final SolrQueryClient solrQueryClient;
     private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
     private final SubscriptionProcessor subscriptionProcessor;
 
@@ -43,6 +43,11 @@ public class DataSet implements AutoCloseable {
      * Constructor
      */
     public DataSet() throws IOException, TimeoutException {
+        solrQueryUrl = NsConfig.getConfig().getString("ns.source.eventsources.dataset.solrQueryUrl");
+        if (solrQueryUrl == null || solrQueryUrl.isBlank()) {
+            throw new IllegalArgumentException("ns.source.eventsources.dataset.solrQueryUrl is required");
+        }
+        solrQueryClient = new SolrQueryClient(solrQueryUrl);
         subscriptionProcessor = SubscriptionProcessor.getInstance();
     }
 
@@ -122,6 +127,7 @@ public class DataSet implements AutoCloseable {
      * @throws IOException
      * @throws InterruptedException
      */
+    @Override
     public void poll() throws IOException, InterruptedException {
 
         // Ask Solr which node IDs exist, and their earliest ever modification dates

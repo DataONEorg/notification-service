@@ -1,19 +1,24 @@
 package org.dataone.notifications.eventsource.data;
 
+import org.apache.commons.configuration2.MapConfiguration;
+import org.dataone.notifications.NsConfig;
 import org.dataone.notifications.exception.IgnoredResourceTypeException;
 import org.dataone.notifications.exception.UnsupportedResourceTypeException;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -24,6 +29,17 @@ public class DataSetTest {
     private static final String PORTAL_1_0_0 = "https://purl.dataone.org/portals-1.0.0";
     private static final String PORTAL_1_1_0 = "https://purl.dataone.org/portals-1.1.0";
     private static final List<String> RESOURCE_MAP_LIST = List.of("urn:uuid:abc");
+
+    @Test
+    void constructor_rejectsMissingDatasetSolrUrl() {
+        try (MockedStatic<NsConfig> config = mockStatic(NsConfig.class)) {
+            config.when(NsConfig::getConfig).thenReturn(new MapConfiguration(Map.of()));
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                           DataSet::new);
+            assertEquals("ns.source.eventsources.dataset.solrQueryUrl is required",
+                         failure.getMessage());
+        }
+    }
 
     @Test
     void main_closesDataSetAfterPoll() throws Exception {
