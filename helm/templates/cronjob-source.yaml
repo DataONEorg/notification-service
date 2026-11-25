@@ -11,14 +11,14 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      ## Retry failures up to this many times; the next scheduled run retries naturally
-      backoffLimit: 3
+      ## A failed run is retried at the next scheduled time.
+      backoffLimit: 0
       template:
         metadata:
           annotations:
             checksum/config: {{ include "notifications.config.checksum" . }}
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           serviceAccountName: {{ include "notifications.serviceAccountName" . }}
           containers:
             - name: ns-source
