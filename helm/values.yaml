@@ -676,9 +676,14 @@ nsconsumer:
         ## @param nsconsumer.notifiers.email.accountSvc.existingSecret name of Secret for API token
         ## This secret must have been created manually before initial deployment, and must use
         ## 'token' (without quotes) as the exact key name, e.g.:
-        ##   $ kubectl create secret generic <release-name>-account-svc-token \
+        ##   $ kubectl create secret generic <release-name>-<cn-name>-account-svc-token \
         ##     --from-literal=token=<your-token-string>
-        ## The value of existingSecret would be "<release-name>-account-svc-token" in this example.
+        ##
+        ## The value of existingSecret would then be "<release-name>-<cn-name>-account-svc-token",
+        ## for example:
+        ##    existingSecret: ns-cnsandbox-account-svc-token
+        ##    existingSecret: ns-cnstage-account-svc-token
+        ##    existingSecret: ns-cnprod-account-svc-token
         ##
         existingSecret: ""
 
