@@ -23,6 +23,17 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ include "nsconsumer.serviceAccountName" . }}
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z -w2 "{{ .Values.rmq.rmqConnection.hostname }}" "{{ .Values.rmq.rmqConnection.port }}"; do
+                echo "waiting for rabbitmq..."
+                sleep 2
+              done
       containers:
         - name: nsconsumer
           image: "{{ .Values.nsconsumer.image.repository }}:{{ default .Chart.AppVersion .Values.nsconsumer.image.tag }}"
