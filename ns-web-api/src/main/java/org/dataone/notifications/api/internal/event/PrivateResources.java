@@ -98,8 +98,8 @@ public class PrivateResources {
             .stream()
             .map(Subscription::subject)
             .toList();
-        log.debug("Got {} subscriber subjects for resourceType: {}, pid: {}",
-                  subjects.size(), resourceType, pid);
+        log.debug("Got {} subscriber subjects for resourceType: {}, pid: {}: {}",
+                  subjects.size(), resourceType, pid, subjects);
         return subjects;
     }
 
