@@ -35,6 +35,7 @@ public class DataSet implements EventSource, AutoCloseable {
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
     private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
+    private static final String NULL_SUBSCRIBER_ID = null;
     private final String solrQueryUrl;
     private final SolrQueryClient solrQueryClient;
     private final SubscriptionProcessor subscriptionProcessor;
@@ -223,6 +224,8 @@ public class DataSet implements EventSource, AutoCloseable {
                 SubscriptionResourceType subscriptionResourceType;
                 try {
                     subscriptionResourceType = getResourceType(formatType, formatId, resourceMaps);
+                    log.debug(
+                        "subscriptionResourceType for {} is {}", guid, subscriptionResourceType);
                 } catch (Exception e) {
                     log.warn(
                         "Can't get the subscription resource type for {} since: {}. This object "
@@ -232,9 +235,11 @@ public class DataSet implements EventSource, AutoCloseable {
                 if (subscriptionResourceType != null) {
                     // The null value is subscriberId
                     NsEventMessage.NsEvent event =
-                        new NsEventMessage.NsEvent(null, guid, newId, subscriptionResourceType);
+                        new NsEventMessage.NsEvent(
+                            NULL_SUBSCRIBER_ID, guid, newId, subscriptionResourceType);
                     NsEventMessage message = new NsEventMessage(event);
                     try {
+                        log.debug("Calling subscriptionProcessor.process({})", message);
                         subscriptionProcessor.process(message);
                     } catch (Exception e) {
                         log.warn("Couldn't process the guid {} since {}.", guid, e.getMessage());

@@ -105,6 +105,7 @@ public class SubscriptionProcessor implements AutoCloseable {
             log.debug("There are no subscribers for pid {} with type {}", pid, type.name());
             return;
         }
+        log.debug("The {} event for pid {} has {} subscribers", type, pid, subscribers.size());
         for (String subscriber : subscribers) {
             if (subscriber != null && subscriber.isBlank()) {
                 message = message.withSubscriberId(subscriber);
