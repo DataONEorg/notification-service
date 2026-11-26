@@ -34,18 +34,20 @@ public class DataSet implements EventSource, AutoCloseable {
     private static final Pattern PORTAL_FORMAT_ID_PATTERN =
         Pattern.compile("https://purl\\.dataone\\.org/portals-.*");
     private static final Logger log = LoggerFactory.getLogger(DataSet.class);
+    private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
     private final String solrQueryUrl;
     private final SolrQueryClient solrQueryClient;
-    private static final String LAST_MODIFICATION_URL = "/lastModificationTime/datasetChanges";
     private final SubscriptionProcessor subscriptionProcessor;
 
     /**
      * Constructor
      */
     public DataSet() throws IOException, TimeoutException {
-        solrQueryUrl = NsConfig.getConfig().getString("ns.source.eventsources.dataset.solrQueryUrl");
+        solrQueryUrl =
+            NsConfig.getConfig().getString("ns.source.eventsources.dataset.solrQueryUrl");
         if (solrQueryUrl == null || solrQueryUrl.isBlank()) {
-            throw new IllegalArgumentException("ns.source.eventsources.dataset.solrQueryUrl is required");
+            throw new IllegalArgumentException(
+                "ns.source.eventsources.dataset.solrQueryUrl is required");
         }
         solrQueryClient = new SolrQueryClient(solrQueryUrl);
         subscriptionProcessor = SubscriptionProcessor.getInstance();
@@ -56,11 +58,6 @@ public class DataSet implements EventSource, AutoCloseable {
         try (DataSet dataSet = new DataSet()) {
             dataSet.poll();
         }
-    }
-
-    @Override
-    public void close() throws IOException {
-        subscriptionProcessor.close();
     }
 
     /// Extracts the SubscriptionResourceType from the given parameters.
@@ -86,7 +83,7 @@ public class DataSet implements EventSource, AutoCloseable {
     ///
     /// @param formatType  the format type of the data object, it can be DATA, METADATA, or RESOURCE
     /// @param formatId    the format id of the data object
-    /// @param resourceMap the list of resourceMap aggregates the object
+    /// @param resourceMap the list of resourceMap aggregates for the object
     /// @return The resource type as a SubscriptionResourceType
     /// @throws IgnoredResourceTypeException     If the resource type is ignored (e.g., "DATA")
     /// @throws UnsupportedResourceTypeException If the resource type cannot be determined.
@@ -100,8 +97,13 @@ public class DataSet implements EventSource, AutoCloseable {
         if (StringUtils.isBlank(formatId)) {
             throw new IllegalArgumentException("FormatId parameter cannot be blank.");
         }
+        log.debug(
+            "Determine SubscriptionResourceType for formatType: {}, formatId: {}, resourceMap: {}",
+            formatType, formatId, resourceMap);
         return switch (formatType) {
-            case "DATA" -> throw new IgnoredResourceTypeException("formatType: DATA is ignored");
+            case "DATA" -> throw new IgnoredResourceTypeException(
+                "formatType: DATA is ignored; there should be a separate event for the "
+                    + "corresponding resourceMap update (formatType: RESOURCE);");
             case "RESOURCE" -> SubscriptionResourceType.datasetChanges;
             case "METADATA" -> {
                 if (PORTAL_FORMAT_ID_PATTERN.matcher(formatId).matches()) {
@@ -112,13 +114,20 @@ public class DataSet implements EventSource, AutoCloseable {
                     resourceMap.getFirst())) {
                     log.debug("resourceMap: {} exists -> ignore to avoid duplicate", resourceMap);
                     throw new IgnoredResourceTypeException(
-                        "formatType: METADATA with resourceMap is ignored");
+                        "formatType: METADATA with resourceMap is ignored; there should be a "
+                            + "separate event for the corresponding resourceMap update "
+                            + "(formatType: RESOURCE)");
                 }
                 yield SubscriptionResourceType.datasetChanges;
             }
             default ->
                 throw new UnsupportedResourceTypeException("Unsupported formatType: " + formatType);
         };
+    }
+
+    @Override
+    public void close() throws IOException {
+        subscriptionProcessor.close();
     }
 
     /**
@@ -201,8 +210,6 @@ public class DataSet implements EventSource, AutoCloseable {
                 String modifiedDate = doc.path("dateModified").asText(null);
                 String formatId = doc.path("formatId").asText(null);
                 String formatType = doc.path("formatType").asText(null);
-                log.debug(
-                    "The id is {}, the new id is {} and the node id is {}", guid, newId, nodeId);
                 List<String> resourceMaps = new ArrayList<>();
                 JsonNode resourceMapNode = doc.path("resourceMap");
                 if (resourceMapNode.isArray()) {
@@ -210,13 +217,16 @@ public class DataSet implements EventSource, AutoCloseable {
                         resourceMaps.add(node.asText());
                     }
                 }
-                SubscriptionResourceType subscriptionResourceType = null;
+                log.debug(
+                    "oldPid {}; newPid {}; nodeId {}; formatType {}; formatId {}; resourceMaps {}",
+                    guid, newId, nodeId, formatType, formatId, resourceMaps);
+                SubscriptionResourceType subscriptionResourceType;
                 try {
                     subscriptionResourceType = getResourceType(formatType, formatId, resourceMaps);
                 } catch (Exception e) {
                     log.warn(
-                        "Can't get the subscription resource type for {} since {}, and this "
-                            + "object is ignored.", guid, e.getMessage());
+                        "Can't get the subscription resource type for {} since: {}. This object "
+                            + "will be ignored.", guid, e.getMessage());
                     continue;
                 }
                 if (subscriptionResourceType != null) {
@@ -251,8 +261,9 @@ public class DataSet implements EventSource, AutoCloseable {
         if (lastModTimeUpdates.isEmpty()) {
             log.debug("No new LastModificationTimes found in Solr; nothing to save via NS API");
         } else {
-            log.debug("Saving {} new LastModificationTimes entries (from Solr) via NS API: {}",
-                      lastModTimeUpdates.size(), lastModTimeUpdates);
+            log.debug(
+                "Saving {} new LastModificationTimes entries (from Solr) via NS API: {}",
+                lastModTimeUpdates.size(), lastModTimeUpdates);
             saveLastModificationEntries(lastModTimeUpdates);
         }
     }
@@ -293,8 +304,9 @@ public class DataSet implements EventSource, AutoCloseable {
             }
             for (String nodeId : earliestSolrModTimes.keySet()) {
                 if (nodeId != null && !nodeId.isBlank()) {
-                    log.debug("Adding entry from Solr for nodeId: {}; time: {}", nodeId,
-                              currentTime);
+                    log.debug(
+                        "Adding entry from Solr for nodeId: {}; time: {}", nodeId,
+                        currentTime);
                     entries.add(new LastModificationTimes.Entry(currentTime, nodeId));
                 }
             }
