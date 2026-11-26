@@ -108,9 +108,14 @@ public class SubscriptionProcessor implements AutoCloseable {
             log.debug("There are no subscribers for pid {} with type {}", pid, type.name());
             return;
         }
-        log.debug("The {} event for pid {} has {} subscribers", type, pid, subscribers.size());
+        log.debug(
+            "The {} event for pid {} has {} subscribers: {}",
+                type, pid, subscribers.size(), subscribers);
         for (String subscriber : subscribers) {
-            if (subscriber != null && subscriber.isBlank()) {
+            if (subscriber == null || subscriber.isBlank()) {
+                log.warn(
+                    "This subscriber id is null or blank for pid {} and type {}", pid, type.name());
+            } else {
                 message = message.withSubscriberId(subscriber);
                 try {
                     submit(message);
@@ -134,9 +139,6 @@ public class SubscriptionProcessor implements AutoCloseable {
                         "Could not update the subscription for {} and {} with the new pid " + "{}",
                         pid, type.name(), newPid);
                 }
-            } else {
-                log.warn(
-                    "The subscriber id is null or blank for pid {} and type {}", pid, type.name());
             }
         }
     }

@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 @RequestScoped
 @Path("/private")
 public class PrivateResources {
-    private static final int SEVEN_DAYS_IN_SECONDS = 60 * 60 * 24 * 7;
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     private final DataRepository dataRepository;
 
