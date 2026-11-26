@@ -22,17 +22,39 @@ import java.util.concurrent.TimeoutException;
  */
 public class SubscriptionProcessor implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionProcessor.class);
-    private static volatile SubscriptionProcessor processor;
     private static final RabbitMqProperties properties =
         RabbitMqProperties.from(NsConfig.getConfig());
+    private static volatile SubscriptionProcessor processor;
     private final RabbitMqConnection rabbitMqConnection;
-    private Channel channel;
     private final ObjectMapper objectMapper;
+    private Channel channel;
+
+    /**
+     * Default constructor
+     *
+     * @throws IOException      if the rabbitMqConnection connection cannot be established
+     * @throws TimeoutException if the rabbitMqConnection connection times out
+     */
+    private SubscriptionProcessor() throws IOException, TimeoutException {
+        rabbitMqConnection = new RabbitMqConnection(properties);
+        try {
+            channel = rabbitMqConnection.newChannel();
+            objectMapper = new ObjectMapper();
+        } catch (IOException | TimeoutException | RuntimeException | Error e) {
+            try {
+                rabbitMqConnection.close();
+            } catch (IOException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
+        }
+    }
 
     /**
      * Get the singleton instance of the class
+     *
      * @return an instance of this class
-     * @throws IOException if the rabbitMqConnection connection cannot be established
+     * @throws IOException      if the rabbitMqConnection connection cannot be established
      * @throws TimeoutException if the rabbitMqConnection connection times out
      */
     public static SubscriptionProcessor getInstance() throws IOException, TimeoutException {
@@ -52,26 +74,6 @@ public class SubscriptionProcessor implements AutoCloseable {
         }
     }
 
-    /**
-     * Default constructor
-     * @throws IOException if the rabbitMqConnection connection cannot be established
-     * @throws TimeoutException if the rabbitMqConnection connection times out
-     */
-    private SubscriptionProcessor() throws IOException, TimeoutException {
-        rabbitMqConnection = new RabbitMqConnection(properties);
-        try {
-            channel = rabbitMqConnection.newChannel();
-            objectMapper = new ObjectMapper();
-        } catch (IOException | TimeoutException | RuntimeException | Error e) {
-            try {
-                rabbitMqConnection.close();
-            } catch (IOException closeException) {
-                e.addSuppressed(closeException);
-            }
-            throw e;
-        }
-    }
-
     @Override
     public void close() throws IOException {
         synchronized (SubscriptionProcessor.class) {
@@ -87,7 +89,8 @@ public class SubscriptionProcessor implements AutoCloseable {
 
     /**
      * Process the event message
-     * @param message  the message need to be processed
+     *
+     * @param message the message need to be processed
      */
     public void process(NsEventMessage message) {
 
@@ -123,38 +126,49 @@ public class SubscriptionProcessor implements AutoCloseable {
                 }
                 try {
                     updateSubscriptions(pid, newPid, type);
-                    log.debug("The subscription for {} and {} has been updated with the new pid "
-                                  + "{}", pid, type.name(), newPid);
+                    log.debug(
+                        "The subscription for {} and {} has been updated with the new pid " + "{}",
+                        pid, type.name(), newPid);
                 } catch (Exception e) {
-                    log.error("Could not update the subscription for {} and {} with the new pid "
-                                  + "{}", pid, type.name(), newPid);
+                    log.error(
+                        "Could not update the subscription for {} and {} with the new pid " + "{}",
+                        pid, type.name(), newPid);
                 }
+            } else {
+                log.warn(
+                    "The subscriber id is null or blank for pid {} and type {}", pid, type.name());
             }
         }
     }
 
     /**
      * Get the all subscriber ids for a given pid for the subscription resource type
+     *
      * @param pid  the object id for the subscription
-     * @param type  the subscription resource type for the object
+     * @param type the subscription resource type for the object
      * @return the list of subscriber ids; null will return if there are no subscribers
      */
     private List<String> getSubscribers(String pid, SubscriptionResourceType type) {
         try {
             List<String> subjects = HttpUtils.getSubscriptionSubjects(pid, type);
+            log.debug(
+                "Retrieved the following {} subscribers for pid {} and type {}: {}",
+                subjects.size(), pid, type.name(), subjects);
             return subjects.isEmpty() ? null : subjects;
         } catch (IOException e) {
-            log.error("Error retrieving subscribers for pid {} and type {}: {}",
-                      pid, type, e.getMessage());
+            log.error(
+                "Error retrieving subscribers for pid {} and type {}: {}", pid, type,
+                e.getMessage());
             return null;
         }
     }
 
     /**
      * Update the subscription to a new pid from an old one.
-     * @param pid  the old subscription object
-     * @param newPid  the new subscription object
-     * @param type  the type of the subscription resource
+     *
+     * @param pid    the old subscription object
+     * @param newPid the new subscription object
+     * @param type   the type of the subscription resource
      */
     private void updateSubscriptions(String pid, String newPid, SubscriptionResourceType type) {
         try {
@@ -166,16 +180,19 @@ public class SubscriptionProcessor implements AutoCloseable {
             for (String subject : subjects) {
                 try {
                     int updated = HttpUtils.updateSubscriptionPid(pid, newPid, subject);
-                    log.debug("Updated {} subscription(s) from pid {} to {} for subject {}",
-                              updated, pid, newPid, subject);
+                    log.debug(
+                        "Updated {} subscription(s) from pid {} to {} for subject {}",
+                        updated, pid, newPid, subject);
                 } catch (Exception e) {
-                    log.error("Could not update subscription from pid {} to {} for subject {}: {}",
-                              pid, newPid, subject, e.getMessage());
+                    log.error(
+                        "Could not update subscription from pid {} to {} for subject {}: {}",
+                        pid, newPid, subject, e.getMessage());
                 }
             }
         } catch (IOException e) {
-            log.error("Error retrieving subscriptions for pid {} and type {}: {}",
-                      pid, type, e.getMessage());
+            log.error(
+                "Error retrieving subscriptions for pid {} and type {}: {}", pid, type,
+                e.getMessage());
         }
     }
 
@@ -196,17 +213,17 @@ public class SubscriptionProcessor implements AutoCloseable {
             channel = rabbitMqConnection.newChannel();
             log.debug("Created a new RabbitMQ connection");
         }
-        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
-            .contentType("application/json")
-            .contentEncoding("UTF-8")
-            .deliveryMode(2)  // Persistent
-            .build();
+        AMQP.BasicProperties properties =
+            new AMQP.BasicProperties.Builder().contentType("application/json")
+                .contentEncoding("UTF-8").deliveryMode(2)  // Persistent
+                .build();
         channel.basicPublish(
             SubscriptionProcessor.properties.exchangeName(),
             SubscriptionProcessor.properties.routingKey(), properties, payload);
     }
 
-    private void ensureNotNull(Object obj, String objectReadableName) throws IllegalArgumentException {
+    private void ensureNotNull(Object obj, String objectReadableName)
+        throws IllegalArgumentException {
         if (obj == null) {
             throw new IllegalArgumentException(
                 "The " + objectReadableName + " in the NsEventMessage object cannot be " + "null.");
