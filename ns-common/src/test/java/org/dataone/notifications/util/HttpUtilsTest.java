@@ -186,7 +186,7 @@ class HttpUtilsTest {
                      subjects);
         HttpRequest request = sentRequest();
         assertEquals("GET", request.method());
-        assertEquals(BASE_URL + "/subscriptions/datasetChanges/urn%3Auuid%3A1234",
+        assertEquals(BASE_URL + "/subscriptions/datasetChanges?pid=urn%3Auuid%3A1234",
                      request.uri().toString());
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
     }
@@ -198,7 +198,7 @@ class HttpUtilsTest {
         HttpUtils.getSubscriptionSubjects(
             "pid with spaces", SubscriptionResourceType.datasetChanges);
 
-        assertEquals(BASE_URL + "/subscriptions/datasetChanges/pid%20with%20spaces",
+        assertEquals(BASE_URL + "/subscriptions/datasetChanges?pid=pid+with+spaces",
                      sentRequest().uri().toString());
     }
 
@@ -289,8 +289,8 @@ class HttpUtilsTest {
         assertEquals(2, updated);
         HttpRequest request = sentRequest();
         assertEquals("PUT", request.method());
-        assertEquals(BASE_URL + "/subscriptions/urn%3Auuid%3Aold/urn%3Auuid%3Anew/"
-                         + "http%3A%2F%2Forcid.org%2F0000-0001-2345-6789",
+        assertEquals(BASE_URL + "/subscriptions?oldPid=urn%3Auuid%3Aold&newPid=urn%3Auuid%3Anew"
+                         + "&subject=http%3A%2F%2Forcid.org%2F0000-0001-2345-6789",
                      request.uri().toString());
     }
 
@@ -300,7 +300,28 @@ class HttpUtilsTest {
 
         HttpUtils.updateSubscriptionPid("old pid", "new pid", "user id");
 
-        assertEquals(BASE_URL + "/subscriptions/old%20pid/new%20pid/user%20id",
+        assertEquals(BASE_URL + "/subscriptions?oldPid=old+pid&newPid=new+pid&subject=user+id",
+                     sentRequest().uri().toString());
+    }
+
+    @Test
+    void subscriptionQueries_encodeReservedCharacters() throws Exception {
+        when(response.body()).thenReturn("[]");
+        HttpUtils.getSubscriptionSubjects("https://example.org/a+b?x=1&y=2 #",
+                                          SubscriptionResourceType.datasetChanges);
+        assertEquals(BASE_URL + "/subscriptions/datasetChanges"
+                         + "?pid=https%3A%2F%2Fexample.org%2Fa%2Bb%3Fx%3D1%26y%3D2+%23",
+                     sentRequest().uri().toString());
+
+        reset(client);
+        when(response.body()).thenReturn("{\"updated\":1}");
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(response);
+        HttpUtils.updateSubscriptionPid("old/path+1", "new/path?x=1&y=2",
+                                        "http://orcid.org/id+one &two");
+        assertEquals(BASE_URL + "/subscriptions?oldPid=old%2Fpath%2B1"
+                         + "&newPid=new%2Fpath%3Fx%3D1%26y%3D2"
+                         + "&subject=http%3A%2F%2Forcid.org%2Fid%2Bone+%26two",
                      sentRequest().uri().toString());
     }
 

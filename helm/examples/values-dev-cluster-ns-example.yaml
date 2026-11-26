@@ -85,6 +85,7 @@ nsconsumer:
 
       accountSvc:
         existingSecret: "ns-cnstage-account-svc-token"
+        url: https://cn-stage.test.dataone.org/cn/v2/accounts
 
 rmq:
   rmqOperator:

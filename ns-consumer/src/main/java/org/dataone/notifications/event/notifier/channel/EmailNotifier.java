@@ -40,12 +40,9 @@ import org.xml.sax.SAXException;
 @Default
 public class EmailNotifier implements NotificationListener {
     private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
-    private static final Duration A_S_HTTP_TIMEOUT_SEC = Duration.ofSeconds(NsConfig.getConfig()
-                                                                                .getInt(
-                                                                                    "ns.messaging"
-                                                                                        +
-                                                                                        ".notifiers.email.accountSvc.connectTimeoutSec",
-                                                                                    10));
+    private static final Duration A_S_HTTP_TIMEOUT_SEC =
+        Duration.ofSeconds(NsConfig.getConfig().getInt(
+            "ns.messaging.notifiers.email.accountSvc.connectTimeoutSec", 10));
     private static final HttpClient A_S_HTTP_CLIENT =
         HttpClient.newBuilder().connectTimeout(A_S_HTTP_TIMEOUT_SEC).build();
     private static final DocumentBuilderFactory DOC_BUILDER_FACTORY = newSecureDbf();
@@ -259,9 +256,12 @@ public class EmailNotifier implements NotificationListener {
                     "GET " + acctSvcUrl + " failed with HTTP " + status + ": " + response.body());
             }
             return new InternetAddress(extractEmail(response.body(), subscriber));
+        } catch (IOException e) {
+            log.error("IOException during Account Svc GET {}: {}", acctSvcUrl, e.getMessage());
+            throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException("Interrupted during GET " + acctSvcUrl, e);
+            throw new IOException("Interrupted during Account Svc GET " + acctSvcUrl, e);
         }
     }
 }

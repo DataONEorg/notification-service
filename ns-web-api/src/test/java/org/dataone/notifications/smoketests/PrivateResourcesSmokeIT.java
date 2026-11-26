@@ -188,7 +188,7 @@ class PrivateResourcesSmokeIT {
             .path(PRIVATE_PATH)
             .path("subscriptions")
             .path(TYPE)
-            .path(pid)
+            .queryParam("pid", pid)
             .request()
             .get()) {
             String body = r.readEntity(String.class);
@@ -210,7 +210,7 @@ class PrivateResourcesSmokeIT {
             .path(PRIVATE_PATH)
             .path("subscriptions")
             .path(TYPE)
-            .path("no-such-pid-" + Instant.now().toEpochMilli())
+            .queryParam("pid", "no-such-pid-" + Instant.now().toEpochMilli())
             .request()
             .get()) {
             String body = r.readEntity(String.class);
@@ -227,11 +227,28 @@ class PrivateResourcesSmokeIT {
             .path(PRIVATE_PATH)
             .path("subscriptions")
             .path("notAResourceType")
-            .path("some-pid")
+            .queryParam("pid", "some-pid")
             .request()
             .get()) {
             int status = r.getStatus();
             assertEquals(4, status / 100, "unexpected status: " + status);
+        }
+    }
+
+    @Test
+    void updateSubscriptionPid_withOrcidSubject_returnsUpdatedCount() {
+        String oldPid = "https://example.org/no-such-pid-" + Instant.now().toEpochMilli();
+        try (Response r = client.target(baseUrl)
+            .path(URI_PREFIX)
+            .path(PRIVATE_PATH)
+            .path("subscriptions")
+            .queryParam("oldPid", oldPid)
+            .queryParam("newPid", "https://example.org/new-pid")
+            .queryParam("subject", "http://orcid.org/0000-0001-2345-6789")
+            .request()
+            .put(Entity.json("{}"))) {
+            assertEquals(200, r.getStatus(), "unexpected status");
+            assertEquals(0, MAPPER.readTree(r.readEntity(String.class)).get("updated").asInt());
         }
     }
 

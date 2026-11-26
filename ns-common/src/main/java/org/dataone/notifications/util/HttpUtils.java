@@ -136,22 +136,20 @@ public class HttpUtils {
      ///
     public static List<String> getSubscriptionSubjects(
         String pid, SubscriptionResourceType resourceType) throws IOException {
-        // URLEncoder uses form encoding, so fix spaces (%20) for path segments
-        String encodedPid =
-            URLEncoder.encode(pid, StandardCharsets.UTF_8).replace("+", "%20");
-        String body = doGet("/subscriptions/" + resourceType + "/" + encodedPid);
+        String encodedPid = URLEncoder.encode(pid, StandardCharsets.UTF_8);
+        String path = "/subscriptions/" + resourceType + "?pid=" + encodedPid;
+        String body = doGet(path);
         try {
             return MAPPER.readValue(
                 body, MAPPER.getTypeFactory().constructCollectionType(List.class, String.class));
         } catch (JacksonException e) {
             throw new IOException(
-                "Unable to parse response of GET /subscriptions/" + resourceType + "/" + pid
-                    + " as List<String>", e);
+                "Unable to parse response of GET " + path + " as List<String>", e);
         }
     }
 
      /// Sends an HTTP PUT to the internal api service to update subscription pids. Calls the
-     /// private endpoint {@code PUT /private/subscriptions/{oldPid}/{newPid}/{subject}}.
+     /// private endpoint {@code PUT /private/subscriptions?oldPid=...&newPid=...&subject=...}.
      ///
      /// Example:
      /// ```java
@@ -168,15 +166,11 @@ public class HttpUtils {
      ///
     public static int updateSubscriptionPid(String oldPid, String newPid, String subject)
         throws IOException {
-        // URLEncoder uses form encoding, so fix spaces (%20) for path segments
-        String encodedOldPid =
-            URLEncoder.encode(oldPid, StandardCharsets.UTF_8).replace("+", "%20");
-        String encodedNewPid =
-            URLEncoder.encode(newPid, StandardCharsets.UTF_8).replace("+", "%20");
-        String encodedSubject =
-            URLEncoder.encode(subject, StandardCharsets.UTF_8).replace("+", "%20");
-        String path = "/subscriptions/" + encodedOldPid + "/" + encodedNewPid + "/"
-            + encodedSubject;
+        String encodedOldPid = URLEncoder.encode(oldPid, StandardCharsets.UTF_8);
+        String encodedNewPid = URLEncoder.encode(newPid, StandardCharsets.UTF_8);
+        String encodedSubject = URLEncoder.encode(subject, StandardCharsets.UTF_8);
+        String path = "/subscriptions?oldPid=" + encodedOldPid + "&newPid=" + encodedNewPid
+            + "&subject=" + encodedSubject;
         String body = doPut(path, List.of());
         try {
             return MAPPER.readTree(body).get("updated").asInt();

@@ -7,6 +7,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import org.dataone.notifications.event.LastModificationTimes;
 import org.dataone.notifications.resource.SubscriptionResourceType;
 import org.dataone.notifications.storage.Subscription;
@@ -85,11 +86,11 @@ public class PrivateResources {
     /// @return a List of subject (user id) Strings; empty if no subscriptions exist
     ///
     @GET
-    @Path("/subscriptions/{resourceType}/{pid}")
+    @Path("/subscriptions/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> getSubscriptionSubjects(
         @NotNull @PathParam("resourceType") SubscriptionResourceType resourceType,
-        @NotNull @PathParam("pid") String pid
+        @NotNull @QueryParam("pid") String pid
     ) {
         log.debug("Request to get subscriber subjects for resourceType: {}, pid: {}",
                   resourceType, pid);
@@ -105,8 +106,8 @@ public class PrivateResources {
     /// Updates all subscriptions for a given subject, replacing the old pid with the new pid.
     ///
     /// Example resulting request:
-    /// ```json
-    ///   PUT /private/subscriptions/urn:uuid:old-pid/urn:uuid:new-pid/http://orcid.org/0000-0001-2345-6789
+    /// ```text
+    ///   PUT /private/subscriptions?oldPid=urn%3Auuid%3Aold-pid&newPid=urn%3Auuid%3Anew-pid&subject=http%3A%2F%2Forcid.org%2F0000-0001-2345-6789
     /// ```
     ///
     /// @param oldPid the current pid to be replaced
@@ -115,12 +116,12 @@ public class PrivateResources {
     /// @return a record containing the number of subscriptions updated
     ///
     @PUT
-    @Path("/subscriptions/{oldPid}/{newPid}/{subject}")
+    @Path("/subscriptions")
     @Produces(MediaType.APPLICATION_JSON)
     public Record updateSubscriptionPid(
-        @NotNull @PathParam("oldPid") String oldPid,
-        @NotNull @PathParam("newPid") String newPid,
-        @NotNull @PathParam("subject") String subject
+        @NotNull @QueryParam("oldPid") String oldPid,
+        @NotNull @QueryParam("newPid") String newPid,
+        @NotNull @QueryParam("subject") String subject
     ) {
         log.debug("Request to update subscription pid from {} to {} for subject {}",
                   oldPid, newPid, subject);

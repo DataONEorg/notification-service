@@ -189,11 +189,12 @@ public class SubscriptionProcessor implements AutoCloseable {
                     log.error(
                         "Could not update subscription from pid {} to {} for subject {}: {}",
                         pid, newPid, subject, e.getMessage());
+                    throw e;
                 }
             }
         } catch (IOException e) {
             log.error(
-                "Error retrieving subscriptions for pid {} and type {}: {}", pid, type,
+                "Error updating subscriptions for pid {} and type {}: {}", pid, type,
                 e.getMessage());
         }
     }
